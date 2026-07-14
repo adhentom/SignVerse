@@ -1,0 +1,45 @@
+# Architecture
+
+## Direction
+
+SignVerse AI will use a retrieval-first interpretation pipeline. Website text or captions are preferred over audio. Input is normalized and segmented, translated into a reviewed ISL gloss representation, validated, and then mapped to approved sign assets. Fully generated avatar motion is a later capability, not an MVP dependency.
+
+## Planned system boundaries
+
+### Chrome extension
+
+- Site-specific content adapters for generic websites, YouTube, and Google Meet.
+- A Manifest V3 service worker for permissions, session coordination, authentication state, and backend communication.
+- An isolated interpreter overlay for synchronized playback and accessibility controls.
+- Local asset and preference storage.
+
+### Backend
+
+- API and orchestration layer for authentication, consent, validation, quotas, and session lifecycle.
+- Streaming gateway for incremental interpretation, ordering, reconnection, and backpressure.
+- Workers for speech-to-text, language processing, asset retrieval, media composition, and future avatar inference.
+- PostgreSQL for transactional metadata, object storage and CDN for media, and Redis for ephemeral coordination.
+
+### Interpretation pipeline
+
+```text
+Input acquisition
+→ language identification
+→ transcription when required
+→ text normalization and clause segmentation
+→ contextual ISL gloss generation
+→ lexicon and grammar validation
+→ confidence assessment
+→ validated sign retrieval or explicit fallback
+→ playback manifest
+→ extension overlay
+```
+
+## Architectural constraints
+
+- The extension must not rely on a permanently running service worker.
+- Content-script input is untrusted and must be validated.
+- The backend owns durable interpretation session state.
+- Provider-specific STT and language-model integrations remain behind internal boundaries.
+- Raw datasets and model artifacts do not belong in Git.
+- Human review by native ISL users and qualified language experts is required for language assets and product evaluation.
