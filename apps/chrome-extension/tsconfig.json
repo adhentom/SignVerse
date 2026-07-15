@@ -15,7 +15,15 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["chrome", "node"]
+    "types": ["chrome", "node", "vite/client"]
   },
-  "include": ["background", "content", "popup", "shared", "vite.config.ts"]
+  "include": [
+    "background",
+    "content",
+    "overlay",
+    "popup",
+    "shared",
+    "vite.config.ts",
+    "vite.content.config.ts"
+  ]
 }

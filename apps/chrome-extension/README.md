@@ -18,9 +18,13 @@ The unpacked extension is produced in `apps/chrome-extension/dist`.
 
 ## Current communication flow
 
-1. The popup requests access to the active HTTP or HTTPS tab.
-2. Chrome injects the packaged content script using `activeTab` and `scripting` permissions.
-3. The popup sends a versioned, correlated message to the content script.
+1. Chrome injects the packaged generic-web content script into HTTP and HTTPS pages.
+2. The content script mounts the floating React widget inside an isolated Shadow DOM.
+3. The popup sends a versioned, correlated message to the content script on the active tab.
 4. The content script validates the message and responds with local mock state.
+
+## Floating widget
+
+The mock-only accessibility widget is draggable, collapsible, responsive, and honors reduced-motion preferences. It displays interpreter readiness and placeholder cards for Website, YouTube, and Google Meet modes. It does not collect page data or connect to external services.
 
 The background service worker handles extension lifecycle events and content-script readiness notifications. It stores no durable in-memory state.

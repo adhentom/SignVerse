@@ -21,18 +21,10 @@ async function getActiveTab(): Promise<chrome.tabs.Tab> {
   return tab;
 }
 
-async function ensureContentScript(tabId: number): Promise<void> {
-  await chrome.scripting.executeScript({
-    target: { tabId },
-    files: ['content.js'],
-  });
-}
-
 async function sendToContent(
   type: ExtensionMessage['type'],
 ): Promise<ContentStatus> {
   const tab = await getActiveTab();
-  await ensureContentScript(tab.id!);
 
   const message = createMessage(type);
   const response = (await chrome.tabs.sendMessage(tab.id!, message)) as ExtensionResponse;
