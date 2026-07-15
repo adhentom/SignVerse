@@ -1,0 +1,16 @@
+{
+  "name": "signverse-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SignVerse AI monorepo",
+  "scripts": {
+    "build": "npm run build --workspace @signverse/chrome-extension",
+    "typecheck": "npm run typecheck --workspace @signverse/chrome-extension"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  }
+}
