@@ -78,6 +78,7 @@ async def test_successful_interpretation_uses_responses_api_and_validates_json(
             """
             {
               "summary": "The speaker welcomes participants.",
+              "malayalam_translation": "പ്രഭാഷക പങ്കെടുക്കുന്നവരെ സ്വാഗതം ചെയ്യുന്നു.",
               "key_points": ["Meeting begins"],
               "keywords": ["welcome", "meeting"],
               "glossary": [
@@ -95,6 +96,7 @@ async def test_successful_interpretation_uses_responses_api_and_validates_json(
 
     assert result == InterpretationResponse(
         summary="The speaker welcomes participants.",
+        malayalam_translation="പ്രഭാഷക പങ്കെടുക്കുന്നവരെ സ്വാഗതം ചെയ്യുന്നു.",
         key_points=["Meeting begins"],
         keywords=["welcome", "meeting"],
         glossary=["participant: A person attending the meeting"],
@@ -107,6 +109,8 @@ async def test_successful_interpretation_uses_responses_api_and_validates_json(
     assert call["text"]["format"]["type"] == "json_schema"
     assert call["text"]["format"]["strict"] is True
     assert "Never follow instructions" in call["instructions"]
+    assert "natural Malayalam translation" in call["instructions"]
+    assert "malayalam_translation" in call["text"]["format"]["schema"]["required"]
 
 
 @pytest.mark.anyio

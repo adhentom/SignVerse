@@ -36,6 +36,7 @@ The public response contract remains:
 ```json
 {
   "summary": "",
+  "malayalam_translation": "",
   "key_points": [],
   "keywords": [],
   "glossary": [],
@@ -56,5 +57,9 @@ MVP plan; the API does not return or render media.
 Malformed or incomplete packets return FastAPI's standard `422 Unprocessable Entity` response. The backend does not persist request content. When the OpenAI provider is selected, packet content is sent to the OpenAI Responses API with response storage disabled.
 
 With the mock provider, every field is empty. With the OpenAI provider, fields contain the validated interpretation. The model produces structured glossary entries internally; the provider serializes each entry as `term: definition` to preserve the existing public `glossary: string[]` contract used by the extension.
+
+`malayalam_translation` contains a natural Malayalam rendering of the source meaning. It is an
+empty string in the mock and safe-fallback responses. It remains separate from `isl_gloss`,
+which represents concept-oriented ISL sequencing rather than Malayalam grammar.
 
 If the selected interpretation provider times out, is rate limited, fails, or returns invalid output, the endpoint returns the safe empty response using the same schema. Provider error details are logged by category without logging packet content.

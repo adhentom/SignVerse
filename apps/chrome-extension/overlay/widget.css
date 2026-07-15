@@ -540,6 +540,68 @@
   color: var(--sv-text-muted);
 }
 
+.sv-translation-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 11px;
+}
+
+.sv-translation-toolbar > span {
+  color: var(--sv-primary-bright);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.sv-translation-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--sv-border-strong);
+  border-radius: 9px;
+  color: var(--sv-text-secondary);
+  background: var(--sv-surface-soft);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 680;
+}
+
+.sv-translation-toolbar button:hover:not(:disabled) {
+  border-color: rgba(169, 156, 255, 0.35);
+  color: var(--sv-text);
+  background: var(--sv-primary-soft);
+}
+
+.sv-translation-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.sv-translation-toolbar .sv-ui-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.sv-translation-scroll {
+  overflow-y: auto;
+  max-height: 180px;
+  margin-top: 9px;
+  padding: 11px 12px;
+  border: 1px solid var(--sv-border);
+  border-radius: 10px;
+  color: #dedbf2;
+  background: rgba(255, 255, 255, 0.025);
+  font-family: "Noto Sans Malayalam", "Nirmala UI", Inter, sans-serif;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  scrollbar-color: rgba(169, 156, 255, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
 .sv-result-list,
 .sv-glossary-list,
 .sv-chip-list {

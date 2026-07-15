@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type {
   InterpretationErrorCode,
   InterpretationResponse,
@@ -52,7 +53,38 @@ function EmptyCopy({ children }: { children: string }) {
   return <p className="sv-empty-copy">{children}</p>;
 }
 
+async function writeToClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  textarea.remove();
+  if (!copied) throw new Error('Clipboard copy was rejected.');
+}
+
 function InterpretationResult({ response }: { response: InterpretationResponse }) {
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+
+  useEffect(() => setCopyStatus('idle'), [response.malayalam_translation]);
+
+  async function copyTranslation() {
+    try {
+      await writeToClipboard(response.malayalam_translation);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('error');
+    }
+  }
+
   return (
     <div className="sv-result-stack">
       <CollapsibleCard
@@ -64,6 +96,31 @@ function InterpretationResult({ response }: { response: InterpretationResponse }
         <p className="sv-summary-copy">
           {response.summary || 'No summary was returned for this content.'}
         </p>
+      </CollapsibleCard>
+
+      <CollapsibleCard defaultExpanded icon="translate" title="Malayalam Translation">
+        <div className="sv-translation-toolbar">
+          <span lang="ml">മലയാളം</span>
+          <button
+            aria-label="Copy Malayalam translation"
+            disabled={!response.malayalam_translation}
+            onClick={() => void copyTranslation()}
+            type="button"
+          >
+            <UIIcon name={copyStatus === 'copied' ? 'check' : 'copy'} />
+            {copyStatus === 'copied' ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+        <div className="sv-translation-scroll" lang="ml" tabIndex={0}>
+          {response.malayalam_translation || 'മലയാള പരിഭാഷ ലഭ്യമല്ല.'}
+        </div>
+        <span aria-live="polite" className="sv-visually-hidden">
+          {copyStatus === 'copied'
+            ? 'Malayalam translation copied to clipboard.'
+            : copyStatus === 'error'
+              ? 'Malayalam translation could not be copied.'
+              : ''}
+        </span>
       </CollapsibleCard>
 
       <CollapsibleCard badge={`${response.key_points.length}`} icon="list" title="Key Points">

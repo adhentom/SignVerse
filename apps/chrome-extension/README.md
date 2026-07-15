@@ -2,7 +2,7 @@
 
 This package contains the SignVerse Chrome extension. It uses Manifest V3, TypeScript, Vite, React, and Tailwind CSS.
 
-The current implementation sends extracted content to the configured SignVerse FastAPI backend through the Manifest V3 background service worker. The backend may use its mock or OpenAI interpretation provider; no speech processing, translation, avatar, or animation is connected.
+The current implementation sends extracted content to the configured SignVerse FastAPI backend through the Manifest V3 background service worker. The backend may use its mock or OpenAI interpretation provider and returns Malayalam translation alongside the ISL interpretation. No speech processing, avatar, or animation is connected.
 
 ## Commands
 
@@ -36,6 +36,10 @@ It includes connection and platform status, animated pipeline progress, skeleton
 collapsible interpretation cards, an interactive playback-plan console, and contextual source
 content for websites, YouTube, and Google Meet. Keyboard users can close it with Escape and
 return through the focused floating action button.
+
+The Malayalam Translation card is independently collapsible and scrollable, identifies its
+content as Malayalam for assistive technology, and provides an accessible copy action with
+success or failure feedback.
 
 The interface uses visible focus states, semantic landmarks, ARIA live regions, high-contrast
 media queries, and reduced-motion behavior. Backend failures distinguish offline, timeout,
