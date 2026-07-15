@@ -25,6 +25,48 @@ const RESULT = {
 };
 
 describe('BackendClient', () => {
+  it('invokes fetch without binding the BackendClient as its receiver', async () => {
+    const health = {
+      status: 'ok',
+      service: 'signverse-api',
+      version: '0.1.0',
+      environment: 'test',
+    } as const;
+    const request = function (this: unknown): Promise<Response> {
+      expect(this).toBeUndefined();
+      return Promise.resolve(new Response(JSON.stringify(health), { status: 200 }));
+    } as typeof fetch;
+
+    const client = new BackendClient(
+      { baseUrl: 'https://api.signverse.test', timeoutMs: 1_000 },
+      request,
+    );
+
+    await expect(client.health()).resolves.toEqual(health);
+  });
+
+  it('requests and validates backend health', async () => {
+    const health = {
+      status: 'ok',
+      service: 'signverse-api',
+      version: '0.1.0',
+      environment: 'test',
+    } as const;
+    const request = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify(health), { status: 200 }),
+    );
+    const client = new BackendClient(
+      { baseUrl: 'https://api.signverse.test', timeoutMs: 1_000 },
+      request,
+    );
+
+    await expect(client.health()).resolves.toEqual(health);
+    expect(request).toHaveBeenCalledWith(
+      'https://api.signverse.test/health',
+      expect.objectContaining({ method: 'GET' }),
+    );
+  });
+
   it('posts ContentPackets to the configured interpret endpoint', async () => {
     const request = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify(RESULT), {

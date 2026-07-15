@@ -4,12 +4,17 @@ import {
 } from '../../shared/backendMessages';
 import type { ContentPacket } from '../../shared/contentPacket';
 import type { InterpretationResponse } from '../../shared/interpretation';
+import { sendRuntimeMessage } from './runtimeMessaging';
 
 export async function requestInterpretation(
   packet: ContentPacket,
 ): Promise<InterpretationResponse> {
   const request = createInterpretContentRequest(packet);
-  const response: unknown = await chrome.runtime.sendMessage(request);
+  console.info('[SignVerse] interpretation_request_dispatched', {
+    correlationId: request.correlationId,
+    platform: packet.platform,
+  });
+  const response: unknown = await sendRuntimeMessage(request);
 
   if (!isInterpretContentResponse(response) || response.correlationId !== request.correlationId) {
     throw {
@@ -22,5 +27,8 @@ export async function requestInterpretation(
     throw response.error;
   }
 
+  console.info('[SignVerse] interpretation_request_succeeded', {
+    correlationId: request.correlationId,
+  });
   return response.data;
 }

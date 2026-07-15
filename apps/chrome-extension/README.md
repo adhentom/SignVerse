@@ -23,11 +23,19 @@ The build derives `host_permissions` from that URL, so each environment grants n
 
 1. Chrome injects the packaged generic-web content script into HTTP and HTTPS pages.
 2. The content script mounts the floating React widget inside an isolated Shadow DOM.
-3. The content script normalizes website text or the current YouTube/Meet caption into a `ContentPacket`.
-4. The content script sends a versioned, correlated interpretation request to the background service worker.
-5. The service worker validates the packet and calls `POST /interpret` through the typed backend client.
-6. The service worker validates and returns the interpretation response to the content script.
-7. The widget renders interpretation and sign-playback planning states.
+3. The content script requests backend health from the background service worker; the worker calls `GET /health` at startup and on widget retries.
+4. The content script normalizes website text or the current YouTube/Meet caption into a `ContentPacket`.
+5. The content script sends a versioned, correlated interpretation request to the background service worker.
+6. The service worker validates the packet and calls `POST /interpret` through the typed backend client.
+7. The service worker validates and returns the interpretation response to the content script.
+8. The widget renders connectivity, interpretation, and sign-playback planning states.
+
+Backend requests are made by the Manifest V3 service worker, so inspect its DevTools console and
+Network panel from `chrome://extensions` rather than the webpage Network panel. Logs prefixed with
+`[SignVerse]` identify service-worker startup, the resolved backend URL, request lifecycle, and
+message-handler failures. Reloading an unpacked extension invalidates content scripts already
+running in open tabs; SignVerse detects this state and asks the user to refresh the page before it
+can reconnect to the new service worker.
 
 ## Accessibility sidebar
 

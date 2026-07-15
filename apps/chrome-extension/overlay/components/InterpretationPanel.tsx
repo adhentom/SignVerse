@@ -13,6 +13,10 @@ interface InterpretationPanelProps {
 }
 
 const ERROR_DETAILS: Record<InterpretationErrorCode, { title: string; detail: string }> = {
+  'extension-context-invalidated': {
+    title: 'Page refresh required',
+    detail: 'SignVerse was updated while this page was open. Refresh to load the current extension.',
+  },
   configuration: {
     title: 'Backend not configured',
     detail: 'Add the SignVerse backend URL and rebuild the extension.',
@@ -179,14 +183,18 @@ export function InterpretationPanel({ onRetry, state }: InterpretationPanelProps
         <span className="sv-error-visual"><UIIcon name="alert" /></span>
         <div>
           <span className="sv-error-label">
-            {state.code === 'connection-failure' ? 'Offline' : 'Connection issue'}
+            {state.code === 'extension-context-invalidated'
+              ? 'Extension updated'
+              : state.code === 'connection-failure'
+                ? 'Offline'
+                : 'Connection issue'}
           </span>
           <h3>{details.title}</h3>
           <p>{details.detail}</p>
           {state.message && <small className="sv-error-technical">{state.message}</small>}
           <button className="sv-retry-button" onClick={onRetry} type="button">
             <UIIcon name="refresh" />
-            Retry
+            {state.code === 'extension-context-invalidated' ? 'Refresh page' : 'Retry'}
           </button>
         </div>
       </section>

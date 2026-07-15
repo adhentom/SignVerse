@@ -213,6 +213,18 @@
   background: var(--sv-surface-soft);
 }
 
+.sv-connection-action {
+  margin-left: auto;
+  padding: 5px 7px;
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  border-radius: 7px;
+  color: #fecdd3;
+  background: rgba(251, 113, 133, 0.1);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
 .sv-connection-dot {
   flex: 0 0 auto;
   width: 9px;

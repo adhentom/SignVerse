@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { BackendHealthState } from '../shared/backendHealth';
 import type { GoogleMeetLiveSnapshot } from '../shared/googleMeet';
 import type { InterpretationState } from '../shared/interpretation';
 import type { LiveContentSnapshot } from '../shared/liveContent';
@@ -16,6 +17,7 @@ import { UIIcon } from './components/UIIcon';
 import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
 
 interface FloatingWidgetProps {
+  backendHealthState: BackendHealthState;
   contentState: WebsiteContentState;
   interpretationState: InterpretationState;
   liveState: LiveContentSnapshot | null;
@@ -23,16 +25,27 @@ interface FloatingWidgetProps {
   platform: PlatformInfo;
 }
 
-function connectionCopy(state: InterpretationState): { label: string; tone: string } {
-  if (state.status === 'ready') return { label: 'Connected', tone: 'online' };
-  if (state.status === 'loading') return { label: 'Processing', tone: 'processing' };
-  if (state.status === 'error') {
+function connectionCopy(
+  healthState: BackendHealthState,
+  interpretationState: InterpretationState,
+): { label: string; tone: string } {
+  if (healthState.status === 'connected') {
+    return interpretationState.status === 'loading'
+      ? { label: 'Processing', tone: 'processing' }
+      : { label: 'Connected', tone: 'online' };
+  }
+  if (healthState.status === 'checking') return { label: 'Checking', tone: 'processing' };
+  if (healthState.status === 'error') {
     return {
-      label: state.code === 'connection-failure' ? 'Offline' : 'Unavailable',
+      label: healthState.code === 'extension-context-invalidated'
+        ? 'Refresh required'
+        : healthState.code === 'connection-failure'
+          ? 'Offline'
+          : 'Unavailable',
       tone: 'offline',
     };
   }
-  return { label: 'Standing by', tone: 'idle' };
+  return { label: 'Unavailable', tone: 'offline' };
 }
 
 function SourcePanel({
@@ -50,6 +63,7 @@ function SourcePanel({
 }
 
 export function FloatingWidget({
+  backendHealthState,
   contentState,
   interpretationState,
   liveState,
@@ -60,7 +74,7 @@ export function FloatingWidget({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const shouldMoveFocus = useRef(false);
-  const connection = connectionCopy(interpretationState);
+  const connection = connectionCopy(backendHealthState, interpretationState);
 
   useEffect(() => {
     if (!shouldMoveFocus.current) return;
@@ -116,6 +130,17 @@ export function FloatingWidget({
                   <span>Connection</span>
                   <strong>{connection.label}</strong>
                 </div>
+                {backendHealthState.status === 'error' &&
+                  backendHealthState.code === 'extension-context-invalidated' && (
+                    <button
+                      aria-label="Refresh page to reconnect SignVerse"
+                      className="sv-connection-action"
+                      onClick={onRetry}
+                      type="button"
+                    >
+                      Refresh
+                    </button>
+                  )}
               </div>
               <div className="sv-platform-status">
                 <span className="sv-platform-icon"><UIIcon name="globe" /></span>

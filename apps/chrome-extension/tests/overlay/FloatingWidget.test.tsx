@@ -22,6 +22,15 @@ describe('FloatingWidget', () => {
     act(() => {
       root.render(
         <FloatingWidget
+          backendHealthState={{
+            status: 'connected',
+            health: {
+              status: 'ok',
+              service: 'signverse-api',
+              version: '0.1.0',
+              environment: 'test',
+            },
+          }}
           contentState={{
             status: 'ready',
             content: {
@@ -46,6 +55,7 @@ describe('FloatingWidget', () => {
 
     const sidebar = container.querySelector('aside');
     expect(sidebar?.getAttribute('aria-label')).toContain('accessibility sidebar');
+    expect(sidebar?.textContent).toContain('Connected');
     act(() => sidebar?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' })));
 
     const openButton = container.querySelector<HTMLButtonElement>(
@@ -54,5 +64,37 @@ describe('FloatingWidget', () => {
     expect(openButton).not.toBeNull();
     act(() => openButton?.click());
     expect(container.querySelector('aside')).not.toBeNull();
+  });
+
+  it('offers page refresh recovery for an invalidated extension context', () => {
+    const retry = vi.fn();
+    act(() => {
+      root.render(
+        <FloatingWidget
+          backendHealthState={{
+            status: 'error',
+            code: 'extension-context-invalidated',
+            message: 'Refresh required.',
+          }}
+          contentState={{ status: 'loading' }}
+          interpretationState={{ status: 'idle' }}
+          liveState={null}
+          onRetry={retry}
+          platform={{
+            id: 'website',
+            displayName: 'Generic website',
+            modeLabel: 'Website Mode',
+            statusLabel: 'Website Reading',
+          }}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain('Refresh required');
+    const refresh = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Refresh page to reconnect SignVerse"]',
+    );
+    act(() => refresh?.click());
+    expect(retry).toHaveBeenCalledOnce();
   });
 });
