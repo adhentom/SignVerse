@@ -27,6 +27,9 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/signverse_api"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"resources/lexicon/lexicon.json" = "signverse_api/resources/lexicon/lexicon.json"
+
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers --cov=signverse_api --cov-report=term-missing --cov-fail-under=90"
 testpaths = ["tests"]

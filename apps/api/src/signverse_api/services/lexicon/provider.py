@@ -1,5 +1,6 @@
 from typing import Protocol, runtime_checkable
 
+from signverse_api.models.lexicon import LexiconHealth
 from signverse_api.models.linguistics import InterpretationGloss, ISLToken
 
 
@@ -9,20 +10,22 @@ class LexiconProvider(Protocol):
 
     async def lookup(
         self,
-        concept: str,
-        *,
-        language: str,
-        region: str | None = None,
+        token: str | ISLToken,
     ) -> ISLToken | None: ...
+
+    async def lookupConcept(self, concept: str) -> ISLToken | None: ...
+
+    async def listCategories(self) -> list[str]: ...
+
+    async def listTokens(self) -> list[ISLToken]: ...
+
+    async def health(self) -> LexiconHealth: ...
 
     async def validate(self, gloss: InterpretationGloss) -> bool: ...
 
     async def suggest(
         self,
         concept: str,
-        *,
-        language: str,
-        region: str | None = None,
         limit: int = 10,
     ) -> list[ISLToken]: ...
 

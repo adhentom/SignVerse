@@ -28,6 +28,11 @@ storage-neutral `LexiconProvider` boundary. These models are not connected to th
 AI provider yet. Their purpose is to keep proposed AI interpretation separate from governed
 gloss validation, sign retrieval, and eventual rendering.
 
+The first provider is a read-only local JSON lexicon with draft candidate entries. A
+deterministic validator reports token support, confidence adjustments, and category coverage.
+Draft entries remain confidence-blocked until provenance, licensing, and native ISL review are
+complete. The lexicon and validator are internal and do not change `/interpret`.
+
 ### Interpretation pipeline
 
 ```text
