@@ -9,6 +9,9 @@ from signverse_api import __version__
 from signverse_api.api.router import api_router
 from signverse_api.config import Settings, get_settings
 from signverse_api.logging import RequestLoggingMiddleware, configure_logging
+from signverse_api.providers.base import ClosableInterpretationProvider
+from signverse_api.providers.factory import create_interpretation_provider
+from signverse_api.services.interpretation import InterpretationService
 
 logger = logging.getLogger(__name__)
 
@@ -16,12 +19,24 @@ logger = logging.getLogger(__name__)
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved_settings = settings or get_settings()
     configure_logging(resolved_settings.log_level)
+    provider = create_interpretation_provider(resolved_settings)
+    interpretation_service = InterpretationService(provider)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-        logger.info("service_started", extra={"environment": resolved_settings.environment})
-        yield
-        logger.info("service_stopped")
+        logger.info(
+            "service_started",
+            extra={
+                "environment": resolved_settings.environment,
+                "interpretation_provider": provider.name,
+            },
+        )
+        try:
+            yield
+        finally:
+            if isinstance(provider, ClosableInterpretationProvider):
+                await provider.close()
+            logger.info("service_stopped")
 
     app = FastAPI(
         title="SignVerse AI Interpretation API",
@@ -33,6 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = resolved_settings
+    app.state.interpretation_service = interpretation_service
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(
         CORSMiddleware,

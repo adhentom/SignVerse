@@ -22,4 +22,4 @@ Retention schedules, lawful basis, regional requirements, vendor subprocessors, 
 
 ## Current integration limitation
 
-The first end-to-end integration automatically submits available website text or settled live captions to the explicitly configured mock backend after the extension loads. The mock service does not persist content, but explicit in-widget activation and meeting-participant consent controls are still required before any production or user study release.
+The first end-to-end integration automatically submits available website text or settled live captions to the configured backend after the extension loads. The OpenAI provider requests `store=false`, but third-party processing, retention terms, data residency, and subprocessors still require formal review. Explicit in-widget activation and meeting-participant consent controls are required before any production or user study release.

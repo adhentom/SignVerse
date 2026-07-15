@@ -55,10 +55,11 @@ Website text or current YouTube/Meet caption
 → typed client POST /interpret with timeout
 → FastAPI ContentPacket validation
 → interpretation service boundary
-→ mock InterpretationResponse
+→ configured mock or OpenAI provider
+→ validated InterpretationResponse or safe empty fallback
 → service worker response validation
 → correlated content-script response
 → floating widget interpretation panel
 ```
 
-Only the background service worker has backend host permission; the content script contains no direct network client. The integration performs no provider calls and stores no packet content. Authentication, user activation/consent controls, retries, streaming, durable sessions, and response schema versioning remain future work.
+Only the background service worker has backend host permission; the content script contains no direct network client. OpenAI credentials remain exclusively in the backend environment. Authentication, user activation/consent controls, streaming, durable sessions, and response schema versioning remain future work.

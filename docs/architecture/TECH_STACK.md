@@ -1,6 +1,6 @@
 # Proposed Technology Stack
 
-These choices describe the intended implementation direction. FastAPI, Pydantic Settings, Uvicorn, Pytest, Ruff, and mypy are now configured for the backend foundation; remaining infrastructure choices are not implemented.
+These choices describe the intended implementation direction. FastAPI, Pydantic Settings, Uvicorn, the official OpenAI Python SDK, Pytest, Ruff, and mypy are configured for the backend; remaining infrastructure choices are not implemented.
 
 | Area | Planned choice |
 |---|---|
@@ -10,6 +10,7 @@ These choices describe the intended implementation direction. FastAPI, Pydantic 
 | Extension testing | Playwright with Chrome extension fixtures |
 | Backend API | Python 3.12 and FastAPI |
 | API contracts | OpenAPI and JSON Schema |
+| AI provider | OpenAI Responses API behind a configurable provider boundary |
 | Real-time transport | Authenticated WebSocket |
 | Background work | Redis with Celery or Dramatiq, selected during implementation planning |
 | Primary database | PostgreSQL |
@@ -21,4 +22,4 @@ These choices describe the intended implementation direction. FastAPI, Pydantic 
 | Packaging and deployment | Docker and managed containers initially |
 | CI/CD | GitHub Actions |
 
-Speech-to-text and language-model providers remain undecided until latency, Indian language support, code-switching behavior, privacy, retention, and cost are benchmarked.
+The OpenAI provider is an initial interpretation implementation, not a linguistic-quality approval. Model choice, prompting, Indian language and code-switching behavior, privacy, retention, latency, and cost require evaluation before production use.

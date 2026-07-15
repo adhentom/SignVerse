@@ -29,6 +29,6 @@ Speech / website text / captions
 
 ## Current status
 
-The Chrome extension foundation, website extraction, platform detection, and live-caption extraction for YouTube and Google Meet are implemented. The background service worker now posts shared `ContentPacket` values to the configured FastAPI backend, which returns a stable mock interpretation response displayed by the widget. No interpretation provider is connected.
+The Chrome extension foundation, website extraction, platform detection, and live-caption extraction for YouTube and Google Meet are implemented. The background service worker posts shared `ContentPacket` values to FastAPI, which can use the default mock provider or a configured OpenAI Responses API provider. The validated response is displayed by the widget.
 
 Backend setup and API documentation are available in [`apps/api/README.md`](apps/api/README.md).
