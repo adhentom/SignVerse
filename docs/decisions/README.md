@@ -12,6 +12,11 @@ This directory will contain Architecture Decision Records (ADRs). Each material 
 6. The first usable release targets a constrained content domain rather than unrestricted interpretation.
 7. The privacy posture is caption-first, explicitly activated, and retains no raw audio by default.
 
+## Accepted implementation decisions
+
+- [ADR 0001: ContentPacket and Disposable Live Adapter Sessions](0001-content-packet-and-live-adapter-sessions.md)
+- [ADR 0002: FastAPI Backend Boundary](0002-fastapi-backend-boundary.md)
+
 ## ADR naming convention
 
 Use `NNNN-short-decision-title.md`, beginning with `0001`.

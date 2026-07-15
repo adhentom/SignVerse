@@ -1,6 +1,6 @@
 # Proposed Technology Stack
 
-These choices describe the intended implementation direction; no dependencies are installed by this scaffold.
+These choices describe the intended implementation direction. FastAPI, Pydantic Settings, Uvicorn, Pytest, Ruff, and mypy are now configured for the backend foundation; remaining infrastructure choices are not implemented.
 
 | Area | Planned choice |
 |---|---|

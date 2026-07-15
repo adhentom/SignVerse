@@ -21,6 +21,8 @@ SignVerse AI will use a retrieval-first interpretation pipeline. Website text or
 - Workers for speech-to-text, language processing, asset retrieval, media composition, and future avatar inference.
 - PostgreSQL for transactional metadata, object storage and CDN for media, and Redis for ephemeral coordination.
 
+The current backend foundation is a modular FastAPI application under `apps/api`. It exposes `/health` and a mock `/interpret` boundary, validates the extension's `ContentPacket`, and keeps routing, services, models, configuration, and structured logging separate. It does not yet communicate with the extension or implement durable state, streaming, authentication, workers, or provider integrations.
+
 ### Interpretation pipeline
 
 ```text

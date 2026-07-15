@@ -44,3 +44,14 @@ YouTube watch URL
 ```
 
 This flow is fully local. It does not call a backend, external API, speech service, language model, translation system, or avatar renderer.
+
+## Current backend boundary
+
+```text
+ContentPacket JSON
+→ FastAPI request validation
+→ interpretation service boundary
+→ mock InterpretationResponse
+```
+
+The backend boundary is independently runnable but is not connected to the extension. It performs no external calls and stores no packet content. Authentication, session envelopes, retries, streaming, and extension transport remain future approved work.
