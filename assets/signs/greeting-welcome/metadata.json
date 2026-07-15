@@ -1,0 +1,9 @@
+{
+  "token_id": "greeting-welcome",
+  "asset_id": "asset-placeholder-welcome",
+  "display_name": "Welcome",
+  "category": "Greetings",
+  "review_status": "draft",
+  "animation_type": "placeholder",
+  "version": "1.0"
+}

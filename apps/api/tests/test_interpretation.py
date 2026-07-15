@@ -23,6 +23,7 @@ async def test_interpret_accepts_extension_content_packet(client: AsyncClient) -
         "glossary": [],
         "isl_gloss": [],
         "confidence": 0.0,
+        "playback": {"items": [], "unsupported_tokens": []},
     }
 
 

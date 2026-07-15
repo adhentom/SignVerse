@@ -1,0 +1,9 @@
+{
+  "token_id": "action-help",
+  "asset_id": "asset-placeholder-help",
+  "display_name": "Help",
+  "category": "Actions",
+  "review_status": "draft",
+  "animation_type": "placeholder",
+  "version": "1.0"
+}

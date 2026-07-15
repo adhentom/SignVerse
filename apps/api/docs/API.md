@@ -40,9 +40,18 @@ The public response contract remains:
   "keywords": [],
   "glossary": [],
   "isl_gloss": [],
-  "confidence": 0.0
+  "confidence": 0.0,
+  "playback": {
+    "items": [],
+    "unsupported_tokens": []
+  }
 }
 ```
+
+`playback.items` preserves governed token order. Each item contains `token_id`, `asset_id`,
+nominal `duration` in seconds, and governed `confidence`. `unsupported_tokens` includes unknown
+gloss labels and governed tokens without a registered placeholder asset. This is an additive
+MVP plan; the API does not return or render media.
 
 Malformed or incomplete packets return FastAPI's standard `422 Unprocessable Entity` response. The backend does not persist request content. When the OpenAI provider is selected, packet content is sent to the OpenAI Responses API with response storage disabled.
 

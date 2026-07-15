@@ -27,7 +27,7 @@ The build derives `host_permissions` from that URL, so each environment grants n
 4. The content script sends a versioned, correlated interpretation request to the background service worker.
 5. The service worker validates the packet and calls `POST /interpret` through the typed backend client.
 6. The service worker validates and returns the interpretation response to the content script.
-7. The widget renders interpretation loading, result, and failure states.
+7. The widget renders interpretation and sign-playback planning states.
 
 ## Floating widget
 
@@ -73,3 +73,9 @@ On active `meet.google.com` session routes, the Google Meet adapter creates a lo
 Meet caption selectors are isolated from the session so DOM changes can be accommodated without changing packet or UI contracts. Caption content remains ephemeral in the extension and is sent to the configured backend for interpretation.
 
 The background service worker owns backend configuration, timeout handling, network failures, response validation, and the `POST /interpret` call. It stores no durable state.
+
+## Sign Playback MVP
+
+The widget displays the backend's governed placeholder plan: token order, asset identifiers,
+nominal duration, confidence, and unsupported tokens. It includes loading and empty states. The
+extension does not download, execute, or animate sign assets in this milestone.

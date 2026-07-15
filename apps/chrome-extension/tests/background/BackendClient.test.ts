@@ -17,6 +17,10 @@ const RESULT = {
   glossary: [],
   isl_gloss: [],
   confidence: 0,
+  playback: {
+    items: [],
+    unsupported_tokens: [],
+  },
 };
 
 describe('BackendClient', () => {
@@ -56,6 +60,23 @@ describe('BackendClient', () => {
       { baseUrl: 'https://api.signverse.test', timeoutMs: 1_000 },
       vi.fn<typeof fetch>().mockResolvedValue(
         new Response(JSON.stringify({ summary: 'Incomplete' }), { status: 200 }),
+      ),
+    );
+
+    await expect(client.interpret(PACKET)).rejects.toMatchObject({ code: 'invalid-response' });
+  });
+
+  it('rejects invalid playback plans', async () => {
+    const client = new BackendClient(
+      { baseUrl: 'https://api.signverse.test', timeoutMs: 1_000 },
+      vi.fn<typeof fetch>().mockResolvedValue(
+        new Response(JSON.stringify({
+          ...RESULT,
+          playback: {
+            items: [{ token_id: 'hello', asset_id: 'asset', duration: -1, confidence: 2 }],
+            unsupported_tokens: [],
+          },
+        }), { status: 200 }),
       ),
     );
 

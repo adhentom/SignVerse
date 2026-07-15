@@ -9,6 +9,7 @@ import { ContentPreview } from './components/ContentPreview';
 import { GoogleMeetCaptionPanel } from './components/GoogleMeetCaptionPanel';
 import { InterpretationPanel } from './components/InterpretationPanel';
 import { ModeCard } from './components/ModeCard';
+import { SignPlaybackPanel } from './components/SignPlaybackPanel';
 import { SignVerseMark } from './components/SignVerseMark';
 import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
 import { useDraggable } from './hooks/useDraggable';
@@ -127,6 +128,12 @@ export function FloatingWidget({
           <InterpretationPanel state={interpretationState} />
 
           <div className="sv-section-heading">
+            <span>Sign Playback</span>
+            <span className="sv-placeholder-label">Placeholder plan</span>
+          </div>
+          <SignPlaybackPanel state={interpretationState} />
+
+          <div className="sv-section-heading">
             <span>Modes</span>
             <span className="sv-placeholder-label">Placeholders</span>
           </div>
@@ -145,7 +152,7 @@ export function FloatingWidget({
             <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
               <path d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M3 7h10v7H3V7Z" stroke="currentColor" strokeWidth="1.3" />
             </svg>
-            Sent only to the configured backend · Mock results are not stored
+            Sent only to the configured backend · The extension stores no results
           </p>
         </div>
       </section>

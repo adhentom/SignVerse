@@ -12,6 +12,8 @@ from signverse_api.logging import RequestLoggingMiddleware, configure_logging
 from signverse_api.providers.base import ClosableInterpretationProvider
 from signverse_api.providers.factory import create_interpretation_provider
 from signverse_api.services.interpretation import InterpretationService
+from signverse_api.services.lexicon import GlossValidator, JSONLexiconProvider
+from signverse_api.services.playback import PlaybackPlanner, PlaybackService, SignAssetRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     resolved_settings = settings or get_settings()
     configure_logging(resolved_settings.log_level)
     provider = create_interpretation_provider(resolved_settings)
-    interpretation_service = InterpretationService(provider)
+    lexicon = JSONLexiconProvider()
+    playback_service = PlaybackService(
+        lexicon=lexicon,
+        validator=GlossValidator(lexicon),
+        planner=PlaybackPlanner(SignAssetRegistry()),
+    )
+    interpretation_service = InterpretationService(provider, playback_service)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
