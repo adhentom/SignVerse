@@ -61,7 +61,7 @@ function WidgetContainer() {
   const activePacket = platformAdapter.platform.id === 'website'
     ? websitePacket
     : liveState?.currentPacket ?? null;
-  const interpretationState = useInterpretation(
+  const { retry, state: interpretationState } = useInterpretation(
     activePacket,
     platformAdapter.platform.id === 'website' ? 0 : 350,
   );
@@ -84,6 +84,7 @@ function WidgetContainer() {
       platform={platformAdapter.platform}
       liveState={liveState}
       interpretationState={interpretationState}
+      onRetry={retry}
     />
   );
 }

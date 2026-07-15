@@ -29,9 +29,17 @@ The build derives `host_permissions` from that URL, so each environment grants n
 6. The service worker validates and returns the interpretation response to the content script.
 7. The widget renders interpretation and sign-playback planning states.
 
-## Floating widget
+## Accessibility sidebar
 
-The accessibility widget is draggable, collapsible, responsive, and honors reduced-motion preferences. It displays interpreter readiness, structured visible webpage text, and placeholder cards for Website, YouTube, and Google Meet modes.
+The extension renders a responsive, collapsible SignVerse sidebar inside an isolated Shadow DOM.
+It includes connection and platform status, animated pipeline progress, skeleton loading,
+collapsible interpretation cards, an interactive playback-plan console, and contextual source
+content for websites, YouTube, and Google Meet. Keyboard users can close it with Escape and
+return through the focused floating action button.
+
+The interface uses visible focus states, semantic landmarks, ARIA live regions, high-contrast
+media queries, and reduced-motion behavior. Backend failures distinguish offline, timeout,
+configuration, unavailable, and invalid-response states and provide a local retry action.
 
 Website extraction runs in the generic-web content adapter. It collects the page title plus visible semantic headings and paragraphs while excluding hidden content, scripts, styles, the SignVerse widget, and common advertisement containers. The normalized packet is sent only to the configured backend and is not persisted by the extension.
 
@@ -77,5 +85,6 @@ The background service worker owns backend configuration, timeout handling, netw
 ## Sign Playback MVP
 
 The widget displays the backend's governed placeholder plan: token order, asset identifiers,
-nominal duration, confidence, and unsupported tokens. It includes loading and empty states. The
-extension does not download, execute, or animate sign assets in this milestone.
+nominal duration, confidence, and unsupported tokens. Local Play, Pause, Next, timeline, and
+progress controls demonstrate plan scheduling without downloading, executing, or animating sign
+assets.

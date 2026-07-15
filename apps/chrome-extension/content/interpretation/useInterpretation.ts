@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { ContentPacket } from '../../shared/contentPacket';
 import type { InterpretationErrorCode, InterpretationState } from '../../shared/interpretation';
 import { requestInterpretation } from './requestInterpretation';
@@ -11,9 +11,11 @@ interface RequestError {
 export function useInterpretation(
   packet: ContentPacket | null,
   debounceMs = 0,
-): InterpretationState {
+): { retry: () => void; state: InterpretationState } {
   const [state, setState] = useState<InterpretationState>({ status: 'idle' });
+  const [attempt, setAttempt] = useState(0);
   const packetKey = packet ? JSON.stringify(packet) : '';
+  const retry = useCallback(() => setAttempt((current) => current + 1), []);
 
   useEffect(() => {
     if (!packet) {
@@ -45,7 +47,7 @@ export function useInterpretation(
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [packetKey, debounceMs]);
+  }, [packetKey, debounceMs, attempt]);
 
-  return state;
+  return { retry, state };
 }

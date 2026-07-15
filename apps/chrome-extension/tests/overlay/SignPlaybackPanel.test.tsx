@@ -39,17 +39,20 @@ describe('SignPlaybackPanel', () => {
       }} />);
     });
 
-    expect(container.textContent).toContain('Token sequence');
+    expect(container.textContent).toContain('ISL Playback');
+    expect(container.textContent).toContain('Current sign');
     expect(container.textContent).toContain('greeting-hello');
     expect(container.textContent).toContain('asset-placeholder-hello');
     expect(container.textContent).toContain('75%');
     expect(container.textContent).toContain('object-water');
+    expect(container.querySelector('input[aria-label="Playback timeline"]')).not.toBeNull();
+    expect(container.querySelectorAll('.sv-player-controls button')).toHaveLength(3);
   });
 
   it('announces loading state', () => {
     act(() => root.render(<SignPlaybackPanel state={{ status: 'loading' }} />));
 
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
-    expect(container.textContent).toContain('Planning sign playback');
+    expect(container.textContent).toContain('Preparing ISL playback');
   });
 });
