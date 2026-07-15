@@ -18,6 +18,7 @@ This directory will contain Architecture Decision Records (ADRs). Each material 
 - [ADR 0002: FastAPI Backend Boundary](0002-fastapi-backend-boundary.md)
 - [ADR 0003: Background-Owned Backend Transport](0003-background-owned-backend-transport.md)
 - [ADR 0004: Configurable Interpretation Providers](0004-configurable-interpretation-providers.md)
+- [ADR 0005: Governed Gloss Pipeline Boundary](0005-governed-gloss-pipeline-boundary.md)
 
 ## ADR naming convention
 
