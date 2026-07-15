@@ -4,8 +4,10 @@ import type { WebsiteContentState } from '../shared/websiteContent';
 import type { YouTubeLiveSnapshot } from '../shared/youtube';
 import type { GoogleMeetLiveSnapshot } from '../shared/googleMeet';
 import type { LiveContentSnapshot } from '../shared/liveContent';
+import type { InterpretationState } from '../shared/interpretation';
 import { ContentPreview } from './components/ContentPreview';
 import { GoogleMeetCaptionPanel } from './components/GoogleMeetCaptionPanel';
+import { InterpretationPanel } from './components/InterpretationPanel';
 import { ModeCard } from './components/ModeCard';
 import { SignVerseMark } from './components/SignVerseMark';
 import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
@@ -37,12 +39,14 @@ interface FloatingWidgetProps {
   contentState: WebsiteContentState;
   platform: PlatformInfo;
   liveState: LiveContentSnapshot | null;
+  interpretationState: InterpretationState;
 }
 
 export function FloatingWidget({
   contentState,
   platform,
   liveState,
+  interpretationState,
 }: FloatingWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { widgetRef, position, isDragging, dragHandleProps } = useDraggable();
@@ -117,6 +121,12 @@ export function FloatingWidget({
           )}
 
           <div className="sv-section-heading">
+            <span>Interpretation</span>
+            <span className="sv-placeholder-label">Backend response</span>
+          </div>
+          <InterpretationPanel state={interpretationState} />
+
+          <div className="sv-section-heading">
             <span>Modes</span>
             <span className="sv-placeholder-label">Placeholders</span>
           </div>
@@ -135,7 +145,7 @@ export function FloatingWidget({
             <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
               <path d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M3 7h10v7H3V7Z" stroke="currentColor" strokeWidth="1.3" />
             </svg>
-            Processed locally · Nothing is sent or stored
+            Sent only to the configured backend · Mock results are not stored
           </p>
         </div>
       </section>
