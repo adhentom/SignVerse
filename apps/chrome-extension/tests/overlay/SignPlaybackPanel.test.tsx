@@ -43,7 +43,9 @@ describe('SignPlaybackPanel', () => {
     expect(container.textContent).toContain('Animated avatar demo');
     expect(container.textContent).toContain('Current sign');
     expect(container.textContent).toContain('greeting-hello');
-    expect(container.textContent).toContain('lottie');
+    expect(container.textContent).toContain('glb');
+    expect(container.querySelector('select[aria-label="Interpreter avatar"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Drag interpreter"]')).not.toBeNull();
     expect(container.textContent).toContain('75%');
     expect(container.textContent).toContain('object-water');
     expect(container.querySelector('input[aria-label="Playback timeline"]')).not.toBeNull();

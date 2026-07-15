@@ -1,6 +1,6 @@
 import type { SignAsset } from './types';
 
-const LOTTIE_SOURCE = 'avatar/signverse-avatar.json';
+const HUMANOID_SOURCE = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/RiggedFigure/glTF-Binary/RiggedFigure.glb';
 
 const ASSETS: SignAsset[] = [
   ['asset-placeholder-hello', 'greeting-hello', 'Hello'],
@@ -17,10 +17,10 @@ const ASSETS: SignAsset[] = [
   asset_id,
   token_id,
   display_name,
-  format: 'lottie',
-  source: LOTTIE_SOURCE,
+  format: 'glb',
+  source: HUMANOID_SOURCE,
   duration: 1.2,
-  license: 'SignVerse demo asset; linguistic review pending',
+  license: 'CC BY 4.0 — © 2017 Cesium; demonstration motion, linguistic review pending',
   version: '1.0',
   review_status: 'draft',
 }));

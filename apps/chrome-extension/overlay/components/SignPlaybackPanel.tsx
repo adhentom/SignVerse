@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { signAssetRegistry } from '../../playback/AssetRegistry';
+import { AVATAR_PROFILES, type AvatarProfileId } from '../../playback/avatarProfiles';
 import { usePlaybackController } from '../../playback/usePlaybackController';
 import type { InterpretationState, PlaybackSequence } from '../../shared/interpretation';
 import { AvatarRenderer } from './AvatarRenderer';
 import { CollapsibleCard } from './CollapsibleCard';
 import { MalayalamCaptionTrack } from './MalayalamCaptionTrack';
 import { UIIcon } from './UIIcon';
+import { useAvatarPreference } from '../hooks/useAvatarPreference';
 
 const EMPTY_SEQUENCE: PlaybackSequence = { items: [], unsupported_tokens: [] };
 
@@ -40,6 +42,8 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
   const completion = totalDuration > 0 ? Math.min(100, (snapshot.elapsed / totalDuration) * 100) : 0;
   const [reducedMotion, setReducedMotion] = useState(false);
   const [rendererAttempt, setRendererAttempt] = useState(0);
+  const { profile, select: selectAvatar } = useAvatarPreference();
+  const [position, setPosition] = useState({ x: 24, y: 80 });
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;
@@ -60,6 +64,20 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
     else if (event.key === 'Home') controller.restart();
   }
 
+  function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const origin = { pointerX: event.clientX, pointerY: event.clientY, ...position };
+    const move = (next: PointerEvent) => setPosition({
+      x: Math.max(0, Math.min(window.innerWidth - 220, origin.x + next.clientX - origin.pointerX)),
+      y: Math.max(0, Math.min(window.innerHeight - 180, origin.y + next.clientY - origin.pointerY)),
+    });
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop, { once: true });
+  }
+
   return (
     <div
       aria-label="ISL avatar playback controller"
@@ -71,12 +89,14 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
         Animated avatar demo · sign assets remain draft pending native ISL review
       </p>
 
-      <div className="sv-player-stage">
+      <div className="sv-player-stage sv-interpreter-overlay" style={{ left: position.x, top: position.y }}>
+        <button aria-label="Drag interpreter" className="sv-avatar-drag-handle" onPointerDown={startDrag} type="button">SignVerse Interpreter · drag</button>
         <AvatarRenderer
           asset={currentAsset}
           nextAsset={nextAsset}
           onError={controller.fail}
           playing={snapshot.state === 'Playing'}
+          profile={profile}
           progress={scheduled?.localProgress ?? 0}
           reducedMotion={reducedMotion}
           retryKey={rendererAttempt}
@@ -90,6 +110,13 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
             : current ? 'Animation asset unavailable' : 'Waiting for a supported token'}</small>
         </div>
       </div>
+
+      <label className="sv-avatar-select">
+        <span>Interpreter avatar</span>
+        <select aria-label="Interpreter avatar" onChange={(event) => selectAvatar(event.currentTarget.value as AvatarProfileId)} value={profile.id}>
+          {AVATAR_PROFILES.map((avatar) => <option key={avatar.id} value={avatar.id}>{avatar.label}</option>)}
+        </select>
+      </label>
 
       {snapshot.state === 'Error' && (
         <div className="sv-playback-error" role="alert">

@@ -41,11 +41,11 @@ linguistic word-to-sign alignment. The caption region scrolls independently.
 All renderers implement the same lifecycle: mount a loaded asset, play, pause, seek, and destroy.
 The factory currently exposes:
 
-- Lottie adapter — active default, rendered as SVG through `lottie-web`.
+- Lottie adapter — retained for lightweight vector assets.
 - SVG-sequence adapter — displays a safe ordered list of image sources without injecting SVG
   markup into the page.
-- GLB adapter — explicit interface stub that returns an unsupported-format error until a reviewed
-  3D engine and asset pipeline are selected.
+- GLB/VRM adapter — Three.js WebGL rendering, skinned animation playback, mixer time control,
+  cross-fades, profile tinting/scaling, and VRM loading through `@pixiv/three-vrm`.
 
 The React component knows only the renderer interface. A future renderer can therefore be added
 without modifying scheduling or playback controls.
@@ -59,8 +59,15 @@ confidence; a duration disagreement is a registry/backend quality issue and does
 response contract.
 
 Production assets require traceable provenance, redistribution and display rights, performer
-consent, native ISL review, regional metadata, and reviewed timing. The current Lottie file is an
-original neutral avatar motion used solely to exercise renderer mechanics.
+consent, native ISL review, regional metadata, and reviewed timing. The current 3D demonstration
+uses Khronos glTF Sample Assets' **Rigged Figure**, © 2017 Cesium, under CC BY 4.0. The registry
+pins source commit `2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf`. Its motion is a renderer
+demonstration, not validated ISL.
+
+Six selectable presentation profiles reuse this licensed rig with different scale and color
+treatment. The selected profile is stored in `chrome.storage.local`; profiles are interface
+preferences, not identity claims. The WebGL interpreter is separate from the results sidebar and
+can be dragged or resized anywhere in the viewport.
 
 ## Accessibility and performance
 
@@ -76,7 +83,8 @@ original neutral avatar motion used solely to exercise renderer mechanics.
 ## Future avatar engines
 
 MediaPipe may supply pose capture or validation, but should not become the playback asset format.
-Ready Player Me, VRM, Sign3D, or another GLB-capable engine can implement the existing renderer
-interface once rig, retargeting, transition, facial-marker, and licensing requirements are
-approved. A production 3D adapter should load off the main thread where possible, reuse models
-and clips, validate skeleton compatibility, and retain the same explicit missing-asset fallback.
+Ready Player Me, Sign3D, or reviewed VRM models can replace the current registry source once rig,
+retargeting, transition, facial-marker, and licensing requirements are approved. Production ISL
+clips must include reviewed hand shape, finger articulation, skeletal motion, and non-manual
+facial markers. The renderer retains explicit missing-asset fallback and never reinterprets
+tokens.

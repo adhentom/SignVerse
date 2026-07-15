@@ -2,9 +2,11 @@ import { memo, useEffect, useRef, useState } from 'react';
 import { signAssetLoader } from '../../playback/AssetLoader';
 import { createRenderer } from '../../playback/RendererFactory';
 import type { RendererState, SignAsset } from '../../playback/types';
+import type { AvatarProfile } from '../../playback/avatarProfiles';
 
 interface AvatarRendererProps {
   asset?: SignAsset;
+  profile: AvatarProfile;
   nextAsset?: SignAsset;
   playing: boolean;
   progress: number;
@@ -33,6 +35,7 @@ async function mountWithTimeout(operation: Promise<void>): Promise<void> {
 
 export const AvatarRenderer = memo(function AvatarRenderer({
   asset,
+  profile,
   nextAsset,
   playing,
   progress,
@@ -63,7 +66,7 @@ export const AvatarRenderer = memo(function AvatarRenderer({
     void signAssetLoader.load(asset)
       .then(async (loaded) => {
         if (!active || !target.current) return;
-        const nextRenderer = createRenderer(asset.format);
+        const nextRenderer = createRenderer(asset.format, profile);
         renderer.current = nextRenderer;
         await mountWithTimeout(nextRenderer.mount(target.current, loaded, reducedMotion));
         if (!active) return;
@@ -82,7 +85,7 @@ export const AvatarRenderer = memo(function AvatarRenderer({
       renderer.current?.destroy();
       renderer.current = undefined;
     };
-  }, [asset?.asset_id, reducedMotion, retryKey]);
+  }, [asset?.asset_id, profile.id, reducedMotion, retryKey]);
 
   useEffect(() => {
     const activeRenderer = renderer.current;

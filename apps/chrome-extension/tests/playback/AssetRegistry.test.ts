@@ -8,12 +8,13 @@ describe('AssetRegistry', () => {
 
     expect(asset).toMatchObject({
       token_id: 'greeting-hello',
-      format: 'lottie',
+      format: 'glb',
       duration: 1.2,
       version: '1.0',
       review_status: 'draft',
     });
     expect(asset?.license).toContain('linguistic review pending');
+    expect(asset?.license).toContain('CC BY 4.0');
     expect(registry.lookup('missing')).toBeUndefined();
   });
 });

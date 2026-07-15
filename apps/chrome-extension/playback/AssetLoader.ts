@@ -8,6 +8,7 @@ export class AssetLoadError extends Error {
 }
 
 function assetUrl(source: string): string {
+  if (/^https?:\/\//u.test(source)) return source;
   return typeof chrome === 'undefined' ? source : chrome.runtime.getURL(source);
 }
 
@@ -45,7 +46,9 @@ export class AssetLoader {
       }
       let data: unknown;
       try {
-        data = await response.json();
+        data = asset.format === 'glb' || asset.format === 'vrm'
+          ? await response.arrayBuffer()
+          : await response.json();
       } catch {
         throw new AssetLoadError('corrupted', `Animation asset ${asset.asset_id} is corrupted.`);
       }

@@ -1,7 +1,7 @@
 import type { PlaybackItem } from '../shared/interpretation';
 
 export type RendererState = 'Idle' | 'Loading' | 'Playing' | 'Paused' | 'Finished' | 'Error';
-export type AssetFormat = 'lottie' | 'svg-sequence' | 'glb';
+export type AssetFormat = 'lottie' | 'svg-sequence' | 'glb' | 'vrm';
 
 export interface SignAsset {
   asset_id: string;
