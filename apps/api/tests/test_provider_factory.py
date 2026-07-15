@@ -15,7 +15,11 @@ def test_mock_provider_is_the_development_default() -> None:
 
 
 def test_openai_provider_requires_api_key() -> None:
-    settings = Settings(environment="test", interpretation_provider="openai")
+    settings = Settings(
+        environment="test",
+        interpretation_provider="openai",
+        openai_api_key=None,
+    )
 
     with pytest.raises(ValueError, match="OPENAI_API_KEY is required"):
         create_interpretation_provider(settings)

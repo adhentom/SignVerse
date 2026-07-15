@@ -23,6 +23,11 @@ SignVerse AI will use a retrieval-first interpretation pipeline. Website text or
 
 The current backend is a modular FastAPI application under `apps/api`. It exposes `/health` and `/interpret`, validates the extension's `ContentPacket`, and keeps routing, services, providers, prompts, models, configuration, and structured logging separate. Interpretation uses a configuration-selected mock or OpenAI provider. The extension communicates with `/interpret` only through its background service worker. Durable state, streaming, authentication, and workers are not implemented.
 
+The internal linguistic foundation defines ordered, versioned `ISLToken` values and a
+storage-neutral `LexiconProvider` boundary. These models are not connected to the public API or
+AI provider yet. Their purpose is to keep proposed AI interpretation separate from governed
+gloss validation, sign retrieval, and eventual rendering.
+
 ### Interpretation pipeline
 
 ```text
