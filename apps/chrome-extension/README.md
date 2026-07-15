@@ -53,4 +53,17 @@ On `youtube.com/watch` pages, the YouTube adapter creates a local live-content s
 
 The session is stopped automatically when the content-script React effect unmounts. It performs no network requests and does not persist caption text.
 
+## Google Meet live captions
+
+On active `meet.google.com` session routes, the Google Meet adapter creates a local live-content session that:
+
+- observes accessible live-caption regions and caption-control state;
+- captures the meeting title, speaker, language, timestamp, and participant count when available;
+- updates partial utterances in place and retains the last 10 completed speaker entries;
+- preserves history through caption interruptions and meeting reconnects;
+- emits unified `ContentPacket<GoogleMeetPacketMetadata>` values; and
+- reports disabled captions, session entry, interruptions, and reconnect status to the widget.
+
+Meet caption selectors are isolated from the session so DOM changes can be accommodated without changing packet or UI contracts. Caption content remains ephemeral and local to the page.
+
 The background service worker handles extension lifecycle events and content-script readiness notifications. It stores no durable in-memory state.

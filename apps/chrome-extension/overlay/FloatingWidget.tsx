@@ -2,7 +2,10 @@ import { useState } from 'react';
 import type { PlatformInfo } from '../shared/platform';
 import type { WebsiteContentState } from '../shared/websiteContent';
 import type { YouTubeLiveSnapshot } from '../shared/youtube';
+import type { GoogleMeetLiveSnapshot } from '../shared/googleMeet';
+import type { LiveContentSnapshot } from '../shared/liveContent';
 import { ContentPreview } from './components/ContentPreview';
+import { GoogleMeetCaptionPanel } from './components/GoogleMeetCaptionPanel';
 import { ModeCard } from './components/ModeCard';
 import { SignVerseMark } from './components/SignVerseMark';
 import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
@@ -33,13 +36,13 @@ const MODES: ModePlaceholder[] = [
 interface FloatingWidgetProps {
   contentState: WebsiteContentState;
   platform: PlatformInfo;
-  youtubeState: YouTubeLiveSnapshot | null;
+  liveState: LiveContentSnapshot | null;
 }
 
 export function FloatingWidget({
   contentState,
   platform,
-  youtubeState,
+  liveState,
 }: FloatingWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { widgetRef, position, isDragging, dragHandleProps } = useDraggable();
@@ -93,7 +96,15 @@ export function FloatingWidget({
                 <span>Live captions</span>
                 <span className="sv-placeholder-label">Official YouTube track</span>
               </div>
-              <YouTubeCaptionPanel snapshot={youtubeState} />
+              <YouTubeCaptionPanel snapshot={liveState as YouTubeLiveSnapshot | null} />
+            </>
+          ) : platform.id === 'google-meet' ? (
+            <>
+              <div className="sv-section-heading">
+                <span>Live captions</span>
+                <span className="sv-placeholder-label">Google Meet stream</span>
+              </div>
+              <GoogleMeetCaptionPanel snapshot={liveState as GoogleMeetLiveSnapshot | null} />
             </>
           ) : (
             <>

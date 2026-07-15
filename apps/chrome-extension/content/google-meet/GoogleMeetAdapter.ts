@@ -1,7 +1,10 @@
 import type { PlatformInfo } from '../../shared/platform';
+import type { GoogleMeetPacketMetadata } from '../../shared/googleMeet';
+import type { LiveContentAdapter } from '../adapters/PlatformAdapter';
 import { SemanticContentAdapter } from '../adapters/SemanticContentAdapter';
+import { GoogleMeetCaptionSession } from './GoogleMeetCaptionSession';
 
-export class GoogleMeetAdapter extends SemanticContentAdapter {
+export class GoogleMeetAdapter extends SemanticContentAdapter implements LiveContentAdapter<GoogleMeetPacketMetadata> {
   readonly platform: PlatformInfo = {
     id: 'google-meet',
     displayName: 'Google Meet',
@@ -10,6 +13,10 @@ export class GoogleMeetAdapter extends SemanticContentAdapter {
   };
 
   matches(url: URL): boolean {
-    return url.hostname.toLocaleLowerCase() === 'meet.google.com';
+    return url.hostname.toLowerCase() === 'meet.google.com';
+  }
+
+  createLiveSession(context = { document, window }): GoogleMeetCaptionSession {
+    return new GoogleMeetCaptionSession(context.document, context.window);
   }
 }
