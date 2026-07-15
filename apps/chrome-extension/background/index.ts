@@ -1,8 +1,24 @@
 import { getBackendConfig } from '../config/backendConfig';
 import { BackendClient } from './BackendClient';
-import { createInterpretationMessageHandler } from './interpretationMessageHandler';
+import {
+  createBackendHealthMessageHandler,
+  createInterpretationMessageHandler,
+} from './interpretationMessageHandler';
 
-const backendClient = new BackendClient(getBackendConfig());
+const backendConfig = getBackendConfig();
+const backendClient = new BackendClient(backendConfig);
+
+console.info('[SignVerse] background_service_worker_started', {
+  backendUrl: backendConfig.baseUrl || 'not configured',
+  timeoutMs: backendConfig.timeoutMs,
+});
+
+void backendClient.health()
+  .then((health) => console.info('[SignVerse] startup_health_check_succeeded', health))
+  .catch((error: unknown) => {
+    const reason = error instanceof Error ? error.message : 'Unknown health error';
+    console.warn(`[SignVerse] startup_health_check_failed: ${reason}`);
+  });
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === 'install') {
@@ -11,6 +27,7 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 });
 
 chrome.runtime.onMessage.addListener(createInterpretationMessageHandler(backendClient));
+chrome.runtime.onMessage.addListener(createBackendHealthMessageHandler(backendClient));
 
 chrome.runtime.onMessage.addListener((message: unknown, sender) => {
   if (

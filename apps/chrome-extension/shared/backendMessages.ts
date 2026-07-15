@@ -1,4 +1,5 @@
 import { isContentPacket, type ContentPacket } from './contentPacket';
+import { isBackendHealth, type BackendHealth } from './backendHealth';
 import {
   isInterpretationResponse,
   type InterpretationErrorCode,
@@ -12,6 +13,12 @@ export interface InterpretContentRequest {
   type: 'SIGNVERSE_INTERPRET_CONTENT';
   correlationId: string;
   packet: ContentPacket;
+}
+
+export interface BackendHealthRequest {
+  schemaVersion: typeof BACKEND_MESSAGE_SCHEMA_VERSION;
+  type: 'SIGNVERSE_CHECK_BACKEND_HEALTH';
+  correlationId: string;
 }
 
 export type InterpretContentResponse =
@@ -28,6 +35,42 @@ export type InterpretContentResponse =
         message: string;
       };
     };
+
+export type BackendHealthResponse =
+  | { ok: true; correlationId: string; data: BackendHealth }
+  | {
+      ok: false;
+      correlationId: string;
+      error: { code: InterpretationErrorCode; message: string };
+    };
+
+export function createBackendHealthRequest(): BackendHealthRequest {
+  return {
+    schemaVersion: BACKEND_MESSAGE_SCHEMA_VERSION,
+    type: 'SIGNVERSE_CHECK_BACKEND_HEALTH',
+    correlationId: crypto.randomUUID(),
+  };
+}
+
+export function isBackendHealthRequest(value: unknown): value is BackendHealthRequest {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<BackendHealthRequest>;
+  return (
+    candidate.schemaVersion === BACKEND_MESSAGE_SCHEMA_VERSION &&
+    candidate.type === 'SIGNVERSE_CHECK_BACKEND_HEALTH' &&
+    typeof candidate.correlationId === 'string'
+  );
+}
+
+export function isBackendHealthResponse(value: unknown): value is BackendHealthResponse {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.ok !== 'boolean' || typeof candidate.correlationId !== 'string') {
+    return false;
+  }
+  if (candidate.ok === true) return isBackendHealth(candidate.data);
+  return isBackendError(candidate.error);
+}
 
 export function createInterpretContentRequest(packet: ContentPacket): InterpretContentRequest {
   return {
@@ -66,8 +109,13 @@ export function isInterpretContentResponse(value: unknown): value is InterpretCo
     return isInterpretationResponse(candidate.data);
   }
 
-  const error = candidate.error as Record<string, unknown> | null;
+  return isBackendError(candidate.error);
+}
+
+function isBackendError(value: unknown): boolean {
+  const error = value as Record<string, unknown> | null;
   const errorCodes = [
+    'extension-context-invalidated',
     'configuration',
     'timeout',
     'connection-failure',

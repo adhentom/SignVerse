@@ -13,6 +13,7 @@ import type { ContentPacket } from '../shared/contentPacket';
 import { adapterFactory } from './adapters/AdapterFactory';
 import { supportsLiveContent } from './adapters/PlatformAdapter';
 import { useInterpretation } from './interpretation/useInterpretation';
+import { useBackendHealth } from './interpretation/useBackendHealth';
 import { websiteContentToPacket } from './interpretation/websiteContentPacket';
 
 declare global {
@@ -65,6 +66,7 @@ function WidgetContainer() {
     activePacket,
     platformAdapter.platform.id === 'website' ? 0 : 350,
   );
+  const { retry: retryHealth, state: backendHealthState } = useBackendHealth();
 
   useEffect(() => {
     if (!supportsLiveContent(platformAdapter)) {
@@ -84,7 +86,19 @@ function WidgetContainer() {
       platform={platformAdapter.platform}
       liveState={liveState}
       interpretationState={interpretationState}
-      onRetry={retry}
+      backendHealthState={backendHealthState}
+      onRetry={() => {
+        console.info('[SignVerse] retry_requested');
+        if (
+          backendHealthState.status === 'error' &&
+          backendHealthState.code === 'extension-context-invalidated'
+        ) {
+          window.location.reload();
+          return;
+        }
+        retryHealth();
+        retry();
+      }}
     />
   );
 }

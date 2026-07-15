@@ -22,6 +22,7 @@ export interface InterpretationResponse {
 }
 
 export type InterpretationErrorCode =
+  | 'extension-context-invalidated'
   | 'configuration'
   | 'timeout'
   | 'connection-failure'
