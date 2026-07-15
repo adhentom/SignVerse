@@ -5,8 +5,9 @@ SignVerse AI is a planned Chrome extension and backend platform for interpreting
 This repository contains the approved architecture scaffold, the Chrome extension, and the
 FastAPI backend. The extension sends validated content packets through its background service
 worker to the configured interpretation provider. Malayalam translation is included in the
-interpretation response. Speech processing, other translation targets, real sign
-assets, avatar rendering, and animation generation are not implemented.
+interpretation response. Speech processing, other translation targets, reviewed sign assets,
+and animation generation are not implemented. The extension includes a local animated avatar
+renderer using clearly labeled draft demonstration motion.
 
 ## Planned product flow
 
@@ -36,7 +37,7 @@ Speech / website text / captions
 The Chrome extension foundation, website extraction, platform detection, and live-caption extraction for YouTube and Google Meet are implemented. The background service worker posts shared `ContentPacket` values to FastAPI, which can use the default mock provider or a configured OpenAI Responses API provider. The validated response is displayed by the widget.
 
 The backend also contains a draft governed lexicon and placeholder sign-asset registry. It
-returns an ordered playback plan that the widget displays as text; no placeholder is an approved
-ISL sign and no media playback occurs yet.
+returns an ordered playback plan that the extension plays through a format-neutral avatar
+runtime. No bundled demonstration asset is an approved ISL sign.
 
 Backend setup and API documentation are available in [`apps/api/README.md`](apps/api/README.md).

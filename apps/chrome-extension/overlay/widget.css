@@ -1424,6 +1424,220 @@
   to { opacity: 0; transform: scale(1.18); }
 }
 
+/* Avatar playback runtime */
+.sv-avatar-shell {
+  position: relative;
+  display: grid;
+  width: 104px;
+  height: 118px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(169, 156, 255, 0.2);
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 25%, rgba(124, 108, 255, 0.25), transparent 72%);
+}
+
+.sv-avatar-renderer,
+.sv-avatar-renderer svg,
+.sv-avatar-renderer img {
+  width: 100%;
+  height: 100%;
+}
+
+.sv-avatar-renderer img {
+  object-fit: contain;
+}
+
+.sv-avatar-loading,
+.sv-avatar-fallback {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  color: var(--sv-text-secondary);
+  background: rgba(11, 15, 24, 0.86);
+  font-size: 11px;
+  text-align: center;
+}
+
+.sv-renderer-state {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 2px 5px;
+  border-radius: 999px;
+  color: #d8d3ff;
+  background: rgba(12, 14, 23, 0.82);
+  font-size: 8px;
+  font-weight: 760;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sv-renderer-state--playing {
+  color: #b9f6d5;
+}
+
+.sv-player-stage {
+  grid-template-columns: 104px minmax(0, 1fr);
+  min-height: 142px;
+}
+
+.sv-player-controls {
+  grid-template-columns: repeat(4, 36px) minmax(72px, 1fr);
+}
+
+.sv-player-controls button {
+  width: 36px;
+  height: 36px;
+}
+
+.sv-player-controls button:nth-child(3) {
+  border-color: rgba(124, 108, 255, 0.3);
+  color: #edeaff;
+  background: rgba(124, 108, 255, 0.2);
+}
+
+.sv-icon-previous {
+  display: grid;
+  transform: rotate(180deg);
+}
+
+.sv-speed-control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--sv-text-muted);
+  font-size: 10px;
+}
+
+.sv-speed-control select {
+  min-width: 52px;
+  padding: 6px 4px;
+  border: 1px solid var(--sv-border);
+  border-radius: 8px;
+  color: var(--sv-text-secondary);
+  background: var(--sv-surface-soft);
+  font: inherit;
+}
+
+.sv-player-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  color: var(--sv-text-muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sv-player-stats span:nth-child(2) {
+  text-align: center;
+}
+
+.sv-player-stats strong {
+  color: var(--sv-text-secondary);
+}
+
+.sv-playback-captions {
+  margin-top: 12px;
+}
+
+.sv-playback-captions > span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--sv-text-muted);
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sv-playback-captions > div {
+  max-height: 82px;
+  overflow-y: auto;
+  padding: 9px;
+  border: 1px solid var(--sv-border);
+  border-radius: 10px;
+  color: var(--sv-text-secondary);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 13px;
+  line-height: 1.8;
+  scrollbar-width: thin;
+}
+
+.sv-playback-captions mark {
+  margin-inline-end: 4px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.sv-playback-captions .sv-caption--current {
+  color: #fff;
+  background: rgba(124, 108, 255, 0.34);
+}
+
+.sv-playback-captions p {
+  margin: 0;
+}
+
+.sv-playback-error {
+  display: grid;
+  gap: 4px;
+  margin-top: 9px;
+  padding: 9px;
+  border: 1px solid rgba(251, 113, 133, 0.24);
+  border-radius: 9px;
+  color: #ffe4e8;
+  background: rgba(251, 113, 133, 0.08);
+  font-size: 11px;
+}
+
+.sv-playback-error button {
+  justify-self: start;
+  margin-top: 3px;
+  padding: 5px 8px;
+  border: 1px solid rgba(251, 113, 133, 0.25);
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.sv-player-shortcuts {
+  margin: 10px 0 0;
+  color: var(--sv-text-muted);
+  font-size: 9px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sv-playback-captions mark,
+  .sv-avatar-renderer * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .sv-avatar-shell,
+  .sv-playback-captions > div,
+  .sv-speed-control select {
+    border-color: currentColor;
+  }
+
+  .sv-playback-captions .sv-caption--current {
+    color: #000;
+    background: #fff;
+  }
+}
+
 @media (max-width: 560px) {
   .sv-widget {
     inset: 8px;
