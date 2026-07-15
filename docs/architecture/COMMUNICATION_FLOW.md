@@ -30,3 +30,17 @@ One-time messages are intended for commands and queries. A long-lived connection
 - Correlation identifier.
 
 Messages originating from content scripts must be treated as untrusted. Authentication secrets must not be exposed to the page context.
+
+## Current local YouTube flow
+
+```text
+YouTube watch URL
+→ AdapterFactory selects YouTubeAdapter
+→ YouTubeCaptionSession observes official caption/player DOM
+→ video play, pause, seek, time and navigation events update session state
+→ captions normalize into ContentPacket values
+→ current packet plus last 10 packets form a local snapshot
+→ React content bootstrap updates the Shadow DOM widget
+```
+
+This flow is fully local. It does not call a backend, external API, speech service, language model, translation system, or avatar renderer.

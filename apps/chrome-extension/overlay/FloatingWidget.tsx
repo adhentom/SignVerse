@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import type { PlatformInfo } from '../shared/platform';
 import type { WebsiteContentState } from '../shared/websiteContent';
+import type { YouTubeLiveSnapshot } from '../shared/youtube';
 import { ContentPreview } from './components/ContentPreview';
 import { ModeCard } from './components/ModeCard';
 import { SignVerseMark } from './components/SignVerseMark';
+import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
 import { useDraggable } from './hooks/useDraggable';
 import type { ModePlaceholder } from './types';
 
@@ -31,9 +33,14 @@ const MODES: ModePlaceholder[] = [
 interface FloatingWidgetProps {
   contentState: WebsiteContentState;
   platform: PlatformInfo;
+  youtubeState: YouTubeLiveSnapshot | null;
 }
 
-export function FloatingWidget({ contentState, platform }: FloatingWidgetProps) {
+export function FloatingWidget({
+  contentState,
+  platform,
+  youtubeState,
+}: FloatingWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { widgetRef, position, isDragging, dragHandleProps } = useDraggable();
 
@@ -80,12 +87,23 @@ export function FloatingWidget({ contentState, platform }: FloatingWidgetProps) 
             <span className="sv-platform-chip">{platform.displayName}</span>
           </div>
 
-          <div className="sv-section-heading">
-            <span>Website content</span>
-            <span className="sv-placeholder-label">Visible text only</span>
-          </div>
-
-          <ContentPreview contentState={contentState} />
+          {platform.id === 'youtube' ? (
+            <>
+              <div className="sv-section-heading">
+                <span>Live captions</span>
+                <span className="sv-placeholder-label">Official YouTube track</span>
+              </div>
+              <YouTubeCaptionPanel snapshot={youtubeState} />
+            </>
+          ) : (
+            <>
+              <div className="sv-section-heading">
+                <span>Website content</span>
+                <span className="sv-placeholder-label">Visible text only</span>
+              </div>
+              <ContentPreview contentState={contentState} />
+            </>
+          )}
 
           <div className="sv-section-heading">
             <span>Modes</span>
