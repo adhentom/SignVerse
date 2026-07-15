@@ -1,6 +1,6 @@
 # SignVerse AI Backend
 
-This package is the Phase 2 FastAPI interpretation service for SignVerse AI. It exposes health and interpretation endpoints using the Chrome extension's `ContentPacket` contract. A configuration-selected provider supplies either development mock data or an OpenAI Responses API interpretation. Speech, translation, avatar, and animation services are not implemented.
+This package is the Phase 2 FastAPI interpretation service for SignVerse AI. It exposes health and interpretation endpoints using the Chrome extension's `ContentPacket` contract. A configuration-selected provider supplies either development mock data or an OpenAI Responses API interpretation with Malayalam translation. Speech processing, avatar, and animation services are not implemented.
 
 ## Requirements
 
@@ -58,7 +58,7 @@ For an unpacked extension, set `SIGNVERSE_CORS_ORIGINS` to a JSON array containi
 | `SIGNVERSE_OPENAI_TIMEOUT_SECONDS` | `8` | OpenAI SDK request timeout |
 | `SIGNVERSE_OPENAI_MAX_OUTPUT_TOKENS` | `1500` | Maximum generated output tokens |
 
-The OpenAI provider uses the Responses API with strict JSON-schema output and `store=false`. SDK retries are disabled so the backend timeout remains below the extension request budget. Provider timeouts, rate limits, API failures, and malformed output return the existing safe empty response rather than leaking provider details to the client.
+The OpenAI provider uses the Responses API with strict JSON-schema output and `store=false`. Its validated response includes a natural Malayalam translation alongside the semantic summary and concept-oriented ISL gloss. SDK retries are disabled so the backend timeout remains below the extension request budget. Provider timeouts, rate limits, API failures, and malformed output return the existing safe empty response rather than leaking provider details to the client.
 
 ## Governed local lexicon
 

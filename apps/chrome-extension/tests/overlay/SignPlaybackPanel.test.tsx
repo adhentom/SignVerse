@@ -23,7 +23,7 @@ describe('SignPlaybackPanel', () => {
       root.render(<SignPlaybackPanel state={{
         status: 'ready',
         response: {
-          summary: '', key_points: [], keywords: [], glossary: [], isl_gloss: [], confidence: 0,
+          summary: '', malayalam_translation: '', key_points: [], keywords: [], glossary: [], isl_gloss: [], confidence: 0,
           playback: {
             items: [
               {

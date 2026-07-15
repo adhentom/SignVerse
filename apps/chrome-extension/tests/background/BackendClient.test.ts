@@ -12,6 +12,7 @@ const PACKET: ContentPacket = {
 
 const RESULT = {
   summary: '',
+  malayalam_translation: '',
   key_points: [],
   keywords: [],
   glossary: [],

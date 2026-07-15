@@ -18,12 +18,19 @@ describe('InterpretationPanel', () => {
     container.remove();
   });
 
-  it('displays accessible collapsible result cards', () => {
+  it('displays accessible collapsible result cards and copies Malayalam translation', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+
     act(() => {
       root.render(<InterpretationPanel onRetry={vi.fn()} state={{
         status: 'ready',
         response: {
           summary: '',
+          malayalam_translation: 'യോഗത്തിലേക്ക് സ്വാഗതം.',
           key_points: [],
           keywords: [],
           glossary: [],
@@ -34,11 +41,20 @@ describe('InterpretationPanel', () => {
     });
 
     expect(container.textContent).toContain('Summary');
+    expect(container.textContent).toContain('Malayalam Translation');
+    expect(container.textContent).toContain('യോഗത്തിലേക്ക് സ്വാഗതം.');
     expect(container.textContent).toContain('Key Points');
     expect(container.textContent).toContain('Keywords');
     expect(container.textContent).toContain('Glossary');
     expect(container.querySelector('button[aria-expanded="true"]')).not.toBeNull();
     expect(container.textContent).toContain('0%');
+
+    const copyButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Copy Malayalam translation"]',
+    );
+    await act(async () => copyButton?.click());
+    expect(writeText).toHaveBeenCalledWith('യോഗത്തിലേക്ക് സ്വാഗതം.');
+    expect(container.textContent).toContain('Copied');
   });
 
   it('announces backend failures and retries accessibly', () => {

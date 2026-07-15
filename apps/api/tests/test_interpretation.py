@@ -18,6 +18,7 @@ async def test_interpret_accepts_extension_content_packet(client: AsyncClient) -
     assert response.status_code == 200
     assert response.json() == {
         "summary": "",
+        "malayalam_translation": "",
         "key_points": [],
         "keywords": [],
         "glossary": [],

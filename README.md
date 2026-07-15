@@ -4,7 +4,8 @@ SignVerse AI is a planned Chrome extension and backend platform for interpreting
 
 This repository contains the approved architecture scaffold, the Chrome extension, and the
 FastAPI backend. The extension sends validated content packets through its background service
-worker to the configured interpretation provider. Speech processing, translation, real sign
+worker to the configured interpretation provider. Malayalam translation is included in the
+interpretation response. Speech processing, other translation targets, real sign
 assets, avatar rendering, and animation generation are not implemented.
 
 ## Planned product flow

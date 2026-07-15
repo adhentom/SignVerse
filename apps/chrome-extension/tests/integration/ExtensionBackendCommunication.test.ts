@@ -8,6 +8,7 @@ describe('Extension to backend communication', () => {
   it('carries a packet through the service worker client and returns the typed response', async () => {
     const backendResponse = {
       summary: '',
+      malayalam_translation: '',
       key_points: [],
       keywords: [],
       glossary: [],

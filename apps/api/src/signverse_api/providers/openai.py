@@ -20,6 +20,7 @@ INTERPRETATION_JSON_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
     "properties": {
         "summary": {"type": "string"},
+        "malayalam_translation": {"type": "string"},
         "key_points": {"type": "array", "items": {"type": "string"}},
         "keywords": {"type": "array", "items": {"type": "string"}},
         "glossary": {
@@ -39,6 +40,7 @@ INTERPRETATION_JSON_SCHEMA: dict[str, Any] = {
     },
     "required": [
         "summary",
+        "malayalam_translation",
         "key_points",
         "keywords",
         "glossary",
@@ -59,6 +61,7 @@ class OpenAIInterpretationPayload(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     summary: str
+    malayalam_translation: str
     key_points: list[str]
     keywords: list[str]
     glossary: list[GlossaryEntry]
@@ -68,6 +71,7 @@ class OpenAIInterpretationPayload(BaseModel):
     def to_api_response(self) -> InterpretationResponse:
         return InterpretationResponse(
             summary=self.summary,
+            malayalam_translation=self.malayalam_translation,
             key_points=self.key_points,
             keywords=self.keywords,
             glossary=[f"{entry.term}: {entry.definition}" for entry in self.glossary],

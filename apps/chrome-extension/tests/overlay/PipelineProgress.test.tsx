@@ -33,7 +33,7 @@ describe('PipelineProgress', () => {
     act(() => root.render(<PipelineProgress state={{
       status: 'ready',
       response: {
-        summary: '', key_points: [], keywords: [], glossary: [], isl_gloss: [], confidence: 0,
+        summary: '', malayalam_translation: '', key_points: [], keywords: [], glossary: [], isl_gloss: [], confidence: 0,
       },
     }} />));
 

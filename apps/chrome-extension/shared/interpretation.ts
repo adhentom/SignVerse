@@ -12,6 +12,7 @@ export interface PlaybackSequence {
 
 export interface InterpretationResponse {
   summary: string;
+  malayalam_translation: string;
   key_points: string[];
   keywords: string[];
   glossary: string[];
@@ -75,6 +76,7 @@ export function isInterpretationResponse(value: unknown): value is Interpretatio
   const candidate = value as Partial<InterpretationResponse>;
   return (
     typeof candidate.summary === 'string' &&
+    typeof candidate.malayalam_translation === 'string' &&
     isStringArray(candidate.key_points) &&
     isStringArray(candidate.keywords) &&
     isStringArray(candidate.glossary) &&

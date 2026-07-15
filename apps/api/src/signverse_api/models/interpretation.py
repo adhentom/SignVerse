@@ -5,6 +5,7 @@ from signverse_api.models.playback import PlaybackSequence
 
 class InterpretationResponse(BaseModel):
     summary: str = ""
+    malayalam_translation: str = ""
     key_points: list[str] = Field(default_factory=list)
     keywords: list[str] = Field(default_factory=list)
     glossary: list[str] = Field(default_factory=list)
