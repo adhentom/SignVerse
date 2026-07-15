@@ -14,7 +14,7 @@ import { adapterFactory } from './adapters/AdapterFactory';
 import { supportsLiveContent } from './adapters/PlatformAdapter';
 import { useInterpretation } from './interpretation/useInterpretation';
 import { useBackendHealth } from './interpretation/useBackendHealth';
-import { websiteContentToPacket } from './interpretation/websiteContentPacket';
+import { startWebsiteExtraction } from './interpretation/startWebsiteExtraction';
 
 declare global {
   interface Window {
@@ -33,29 +33,48 @@ function WidgetContainer() {
 
   useEffect(() => {
     let cancelled = false;
-    const frame = window.requestAnimationFrame(() => {
+    const handleContent = (content: ReturnType<typeof platformAdapter.extractContent>) => {
+      if (!cancelled) setContentState({ status: 'ready', content });
+    };
+    const handleError = (error: unknown) => {
+      if (!cancelled) {
+        setContentState({
+          status: 'error',
+          message: error instanceof Error ? error.message : 'Visible page content could not be read.',
+        });
+        setWebsitePacket(null);
+      }
+    };
+
+    if (platformAdapter.platform.id === 'website') {
+      return startWebsiteExtraction(
+        platformAdapter,
+        ({ content, packet }) => {
+          handleContent(content);
+          setWebsitePacket(packet);
+          if (packet) {
+            console.info('[SignVerse] website_packet_ready', {
+              textLength: packet.text.length,
+              title: packet.title,
+            });
+          }
+        },
+        handleError,
+      );
+    }
+
+    const timer = window.setTimeout(() => {
       try {
         const content = platformAdapter.extractContent();
-        if (!cancelled) {
-          setContentState({ status: 'ready', content });
-          if (platformAdapter.platform.id === 'website') {
-            setWebsitePacket(websiteContentToPacket(content));
-          }
-        }
+        handleContent(content);
       } catch (error) {
-        if (!cancelled) {
-          setContentState({
-            status: 'error',
-            message: error instanceof Error ? error.message : 'Visible page content could not be read.',
-          });
-          setWebsitePacket(null);
-        }
+        handleError(error);
       }
-    });
+    }, 0);
 
     return () => {
       cancelled = true;
-      window.cancelAnimationFrame(frame);
+      window.clearTimeout(timer);
     };
   }, []);
 
