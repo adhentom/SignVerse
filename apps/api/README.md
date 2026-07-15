@@ -60,4 +60,15 @@ For an unpacked extension, set `SIGNVERSE_CORS_ORIGINS` to a JSON array containi
 
 The OpenAI provider uses the Responses API with strict JSON-schema output and `store=false`. SDK retries are disabled so the backend timeout remains below the extension request budget. Provider timeouts, rate limits, API failures, and malformed output return the existing safe empty response rather than leaking provider details to the client.
 
+## Governed local lexicon
+
+The read-only seed lexicon is stored at `resources/lexicon/lexicon.json`. Its entries are
+unreviewed draft candidates with blank provenance and license fields; they are not approved ISL
+signs. The internal JSON provider supports deterministic lookup and inventory operations, and
+the gloss validator reports support, confidence adjustments, and category coverage. Neither is
+connected to the public API or OpenAI provider in this milestone.
+
+See [`LEXICON_SCHEMA.md`](../../docs/linguistics/LEXICON_SCHEMA.md) for its schema and governance
+rules.
+
 See [API.md](docs/API.md) for request and response contracts.
