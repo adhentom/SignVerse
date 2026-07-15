@@ -1,9 +1,14 @@
 import type { PlatformInfo } from '../../shared/platform';
+import type { YouTubePacketMetadata } from '../../shared/youtube';
+import type { LiveContentAdapter } from '../adapters/PlatformAdapter';
 import { SemanticContentAdapter } from '../adapters/SemanticContentAdapter';
+import { YouTubeCaptionSession } from './YouTubeCaptionSession';
+import { isYouTubeHost } from './youtubeUtils';
 
-const YOUTUBE_HOSTS = new Set(['youtube.com', 'youtu.be']);
-
-export class YouTubeAdapter extends SemanticContentAdapter {
+export class YouTubeAdapter
+  extends SemanticContentAdapter
+  implements LiveContentAdapter<YouTubePacketMetadata>
+{
   readonly platform: PlatformInfo = {
     id: 'youtube',
     displayName: 'YouTube',
@@ -12,10 +17,12 @@ export class YouTubeAdapter extends SemanticContentAdapter {
   };
 
   matches(url: URL): boolean {
-    const hostname = url.hostname.toLocaleLowerCase();
-    return (
-      YOUTUBE_HOSTS.has(hostname) ||
-      hostname.endsWith('.youtube.com')
-    );
+    return isYouTubeHost(url.hostname);
+  }
+
+  createLiveSession(
+    context = { document, window },
+  ): YouTubeCaptionSession {
+    return new YouTubeCaptionSession(context.document, context.window);
   }
 }

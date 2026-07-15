@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build && vite build --config vite.content.config.ts",
     "dev": "vite build --watch --mode development",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -15,12 +16,14 @@
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
     "@types/chrome": "^0.2.2",
+    "@types/node": "^24.10.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
-    "vite": "^8.1.4"
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10"
   }
 }

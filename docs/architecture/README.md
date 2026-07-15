@@ -12,6 +12,7 @@ SignVerse AI will use a retrieval-first interpretation pipeline. Website text or
 - A Manifest V3 service worker for permissions, session coordination, authentication state, and backend communication.
 - An isolated interpreter overlay for synchronized playback and accessibility controls.
 - Local asset and preference storage.
+- An optional live-session capability on platform adapters for event-driven content such as YouTube captions.
 
 ### Backend
 
@@ -43,3 +44,7 @@ Input acquisition
 - Provider-specific STT and language-model integrations remain behind internal boundaries.
 - Raw datasets and model artifacts do not belong in Git.
 - Human review by native ISL users and qualified language experts is required for language assets and product evaluation.
+
+## Local content contracts
+
+Platform adapters normalize discrete live content into a shared `ContentPacket` containing platform, title, timestamp, text, and platform metadata. Event-driven adapters expose a disposable live session; the content bootstrap subscribes through the generic adapter capability and passes snapshots to the isolated overlay. Platform DOM selectors, observers, and edge-state logic remain inside the platform adapter.

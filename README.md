@@ -29,4 +29,4 @@ Speech / website text / captions
 
 ## Current status
 
-The Chrome extension foundation, local website content extraction, and extensible platform detection for generic websites, YouTube, and Google Meet are implemented with Manifest V3, TypeScript, Vite, React, and Tailwind CSS. All remaining product capabilities require explicit phase approval.
+The Chrome extension foundation, local website content extraction, extensible platform detection, and official YouTube live-caption extraction are implemented with Manifest V3, TypeScript, Vite, React, and Tailwind CSS. All remaining product capabilities require explicit phase approval.

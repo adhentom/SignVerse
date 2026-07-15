@@ -8,7 +8,9 @@ import type {
   ExtensionResponse,
 } from '../shared/messages';
 import type { WebsiteContentState } from '../shared/websiteContent';
+import type { YouTubeLiveSnapshot } from '../shared/youtube';
 import { adapterFactory } from './adapters/AdapterFactory';
+import { supportsLiveContent } from './adapters/PlatformAdapter';
 
 declare global {
   interface Window {
@@ -22,6 +24,7 @@ const platformAdapter = adapterFactory.create(window.location.href);
 
 function WidgetContainer() {
   const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
+  const [youtubeState, setYouTubeState] = useState<YouTubeLiveSnapshot | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,10 +50,23 @@ function WidgetContainer() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!supportsLiveContent(platformAdapter) || platformAdapter.platform.id !== 'youtube') {
+      setYouTubeState(null);
+      return;
+    }
+
+    const session = platformAdapter.createLiveSession();
+    return session.start((snapshot) => {
+      setYouTubeState(snapshot as YouTubeLiveSnapshot);
+    });
+  }, []);
+
   return (
     <FloatingWidget
       contentState={contentState}
       platform={platformAdapter.platform}
+      youtubeState={youtubeState}
     />
   );
 }

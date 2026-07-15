@@ -5,6 +5,7 @@
   "description": "SignVerse AI monorepo",
   "scripts": {
     "build": "npm run build --workspace @signverse/chrome-extension",
+    "test": "npm run test --workspace @signverse/chrome-extension",
     "typecheck": "npm run typecheck --workspace @signverse/chrome-extension"
   },
   "workspaces": [

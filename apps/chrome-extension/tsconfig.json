@@ -23,6 +23,8 @@
     "overlay",
     "popup",
     "shared",
+    "tests",
+    "vitest.config.ts",
     "vite.config.ts",
     "vite.content.config.ts"
   ]

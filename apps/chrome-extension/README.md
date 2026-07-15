@@ -39,4 +39,18 @@ Website extraction runs locally in the generic-web content adapter. It collects 
 
 Each adapter owns URL matching, platform metadata, and its content-extraction strategy. Specific adapters are registered before the generic fallback. Future Zoom, Microsoft Teams, PDF, or LMS support can be added by implementing the `PlatformAdapter` contract and registering it with the factory.
 
+## YouTube live captions
+
+On `youtube.com/watch` pages, the YouTube adapter creates a local live-content session that:
+
+- reads official `.ytp-caption-segment` elements;
+- detects caption availability and the subtitles-button state;
+- observes caption, player, and metadata changes;
+- listens for play, pause, seek, time, duration, and metadata events;
+- handles advertisements, live streams, and YouTube SPA navigation;
+- emits unified `ContentPacket<YouTubePacketMetadata>` values; and
+- maintains a duplicate-free history of the last 10 captions.
+
+The session is stopped automatically when the content-script React effect unmounts. It performs no network requests and does not persist caption text.
+
 The background service worker handles extension lifecycle events and content-script readiness notifications. It stores no durable in-memory state.
