@@ -21,7 +21,7 @@ SignVerse AI will use a retrieval-first interpretation pipeline. Website text or
 - Workers for speech-to-text, language processing, asset retrieval, media composition, and future avatar inference.
 - PostgreSQL for transactional metadata, object storage and CDN for media, and Redis for ephemeral coordination.
 
-The current backend foundation is a modular FastAPI application under `apps/api`. It exposes `/health` and a mock `/interpret` boundary, validates the extension's `ContentPacket`, and keeps routing, services, models, configuration, and structured logging separate. It does not yet communicate with the extension or implement durable state, streaming, authentication, workers, or provider integrations.
+The current backend foundation is a modular FastAPI application under `apps/api`. It exposes `/health` and a mock `/interpret` boundary, validates the extension's `ContentPacket`, and keeps routing, services, models, configuration, and structured logging separate. The extension communicates with `/interpret` only through its background service worker. Durable state, streaming, authentication, workers, and provider integrations are not implemented.
 
 ### Interpretation pipeline
 
@@ -50,3 +50,5 @@ Input acquisition
 ## Local content contracts
 
 Platform adapters normalize discrete live content into a shared `ContentPacket` containing platform, title, timestamp, text, and platform metadata. Event-driven adapters expose a disposable live session; the content bootstrap subscribes through the generic adapter capability and passes snapshots to the isolated overlay. Platform DOM selectors, observers, and edge-state logic remain inside the platform adapter.
+
+Backend transport uses a separate versioned and correlated runtime-message envelope. The background service worker validates packets before network transport, applies environment-derived host permissions, enforces timeouts, validates backend responses, and returns typed errors without exposing network access to the content script.

@@ -19,3 +19,7 @@
 - Operational telemetry and security audit events.
 
 Retention schedules, lawful basis, regional requirements, vendor subprocessors, and incident procedures remain open decisions.
+
+## Current integration limitation
+
+The first end-to-end integration automatically submits available website text or settled live captions to the explicitly configured mock backend after the extension loads. The mock service does not persist content, but explicit in-widget activation and meeting-participant consent controls are still required before any production or user study release.

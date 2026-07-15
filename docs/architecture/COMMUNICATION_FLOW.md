@@ -45,13 +45,20 @@ YouTube watch URL
 
 This flow is fully local. It does not call a backend, external API, speech service, language model, translation system, or avatar renderer.
 
-## Current backend boundary
+## Current extension-to-backend flow
 
 ```text
-ContentPacket JSON
-→ FastAPI request validation
+Website text or current YouTube/Meet caption
+→ platform adapter creates ContentPacket
+→ versioned content-script message
+→ Manifest V3 background service worker
+→ typed client POST /interpret with timeout
+→ FastAPI ContentPacket validation
 → interpretation service boundary
 → mock InterpretationResponse
+→ service worker response validation
+→ correlated content-script response
+→ floating widget interpretation panel
 ```
 
-The backend boundary is independently runnable but is not connected to the extension. It performs no external calls and stores no packet content. Authentication, session envelopes, retries, streaming, and extension transport remain future approved work.
+Only the background service worker has backend host permission; the content script contains no direct network client. The integration performs no provider calls and stores no packet content. Authentication, user activation/consent controls, retries, streaming, durable sessions, and response schema versioning remain future work.

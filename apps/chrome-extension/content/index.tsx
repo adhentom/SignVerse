@@ -9,8 +9,11 @@ import type {
 } from '../shared/messages';
 import type { WebsiteContentState } from '../shared/websiteContent';
 import type { LiveContentSnapshot } from '../shared/liveContent';
+import type { ContentPacket } from '../shared/contentPacket';
 import { adapterFactory } from './adapters/AdapterFactory';
 import { supportsLiveContent } from './adapters/PlatformAdapter';
+import { useInterpretation } from './interpretation/useInterpretation';
+import { websiteContentToPacket } from './interpretation/websiteContentPacket';
 
 declare global {
   interface Window {
@@ -25,6 +28,7 @@ const platformAdapter = adapterFactory.create(window.location.href);
 function WidgetContainer() {
   const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
   const [liveState, setLiveState] = useState<LiveContentSnapshot | null>(null);
+  const [websitePacket, setWebsitePacket] = useState<ContentPacket | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +37,9 @@ function WidgetContainer() {
         const content = platformAdapter.extractContent();
         if (!cancelled) {
           setContentState({ status: 'ready', content });
+          if (platformAdapter.platform.id === 'website') {
+            setWebsitePacket(websiteContentToPacket(content));
+          }
         }
       } catch (error) {
         if (!cancelled) {
@@ -40,6 +47,7 @@ function WidgetContainer() {
             status: 'error',
             message: error instanceof Error ? error.message : 'Visible page content could not be read.',
           });
+          setWebsitePacket(null);
         }
       }
     });
@@ -49,6 +57,14 @@ function WidgetContainer() {
       window.cancelAnimationFrame(frame);
     };
   }, []);
+
+  const activePacket = platformAdapter.platform.id === 'website'
+    ? websitePacket
+    : liveState?.currentPacket ?? null;
+  const interpretationState = useInterpretation(
+    activePacket,
+    platformAdapter.platform.id === 'website' ? 0 : 350,
+  );
 
   useEffect(() => {
     if (!supportsLiveContent(platformAdapter)) {
@@ -67,6 +83,7 @@ function WidgetContainer() {
       contentState={contentState}
       platform={platformAdapter.platform}
       liveState={liveState}
+      interpretationState={interpretationState}
     />
   );
 }

@@ -34,6 +34,8 @@ pytest
 
 Settings use the `SIGNVERSE_` prefix and can be supplied through environment variables or a local `.env` file. CORS origins must be a JSON array; wildcard origins are intentionally rejected when credentials are enabled.
 
+For an unpacked extension, set `SIGNVERSE_CORS_ORIGINS` to a JSON array containing its `chrome-extension://<extension-id>` origin. Production environments should list only approved extension and web origins.
+
 | Variable | Default | Purpose |
 |---|---|---|
 | `SIGNVERSE_ENVIRONMENT` | `development` | Runtime environment label |
