@@ -3,7 +3,7 @@
   "name": "SignVerse AI",
   "version": "0.1.0",
   "description": "A mock-only Chrome extension foundation for accessible digital content.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab"],
   "action": {
     "default_popup": "popup.html",
     "default_title": "Open SignVerse AI"
@@ -11,5 +11,12 @@
   "background": {
     "service_worker": "background.js",
     "type": "module"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

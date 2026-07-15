@@ -1,3 +1,7 @@
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { FloatingWidget } from '../../overlay/FloatingWidget';
+import widgetStyles from '../../overlay/widget.css?inline';
 import type {
   ContentStatus,
   ExtensionMessage,
@@ -12,6 +16,33 @@ declare global {
 
 const MOCK_TEXT = 'Mock interpretation ready — no AI or external services are connected.';
 let mockEnabled = false;
+
+function mountWidget(): void {
+  const existingHost = document.getElementById('signverse-ai-widget-host');
+  if (existingHost) {
+    return;
+  }
+
+  const host = document.createElement('div');
+  host.id = 'signverse-ai-widget-host';
+  host.setAttribute('data-signverse-root', '');
+
+  const shadowRoot = host.attachShadow({ mode: 'open' });
+  const style = document.createElement('style');
+  style.textContent = widgetStyles;
+
+  const mountPoint = document.createElement('div');
+  mountPoint.id = 'signverse-ai-widget';
+
+  shadowRoot.append(style, mountPoint);
+  document.documentElement.append(host);
+
+  createRoot(mountPoint).render(
+    <StrictMode>
+      <FloatingWidget />
+    </StrictMode>,
+  );
+}
 
 function isExtensionMessage(value: unknown): value is ExtensionMessage {
   if (!value || typeof value !== 'object') {
@@ -37,6 +68,7 @@ function getStatus(): ContentStatus {
 
 if (!window.__SIGNVERSE_CONTENT_INITIALIZED__) {
   window.__SIGNVERSE_CONTENT_INITIALIZED__ = true;
+  mountWidget();
 
   chrome.runtime.onMessage.addListener(
     (message: unknown, _sender, sendResponse: (response: ExtensionResponse) => void) => {

@@ -12,13 +12,10 @@ export default defineConfig({
       input: {
         popup: resolve(__dirname, 'popup.html'),
         background: resolve(__dirname, 'background/index.ts'),
-        content: resolve(__dirname, 'content/generic-web/index.ts'),
       },
       output: {
         entryFileNames: (chunk) =>
-          chunk.name === 'background' || chunk.name === 'content'
-            ? '[name].js'
-            : 'assets/[name]-[hash].js',
+          chunk.name === 'background' ? '[name].js' : 'assets/[name]-[hash].js',
         chunkFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash][extname]',
       },
