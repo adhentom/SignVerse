@@ -1,5 +1,7 @@
 from pydantic import BaseModel, Field
 
+from signverse_api.models.playback import PlaybackSequence
+
 
 class InterpretationResponse(BaseModel):
     summary: str = ""
@@ -8,3 +10,4 @@ class InterpretationResponse(BaseModel):
     glossary: list[str] = Field(default_factory=list)
     isl_gloss: list[str] = Field(default_factory=list)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    playback: PlaybackSequence = Field(default_factory=PlaybackSequence)

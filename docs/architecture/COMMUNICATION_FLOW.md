@@ -56,10 +56,13 @@ Website text or current YouTube/Meet caption
 → FastAPI ContentPacket validation
 → interpretation service boundary
 → configured mock or OpenAI provider
-→ validated InterpretationResponse or safe empty fallback
+→ governed lexicon validation
+→ sign asset registry and PlaybackPlanner
+→ validated InterpretationResponse with playback plan or safe empty fallback
 → service worker response validation
 → correlated content-script response
 → floating widget interpretation panel
+→ Sign Playback plan panel
 ```
 
 Only the background service worker has backend host permission; the content script contains no direct network client. OpenAI credentials remain exclusively in the backend environment. Authentication, user activation/consent controls, streaming, durable sessions, and response schema versioning remain future work.

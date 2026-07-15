@@ -1,0 +1,9 @@
+{
+  "token_id": "healthcare-doctor",
+  "asset_id": "asset-placeholder-doctor",
+  "display_name": "Doctor",
+  "category": "Healthcare",
+  "review_status": "draft",
+  "animation_type": "placeholder",
+  "version": "1.0"
+}

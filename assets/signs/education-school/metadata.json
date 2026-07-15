@@ -1,0 +1,9 @@
+{
+  "token_id": "education-school",
+  "asset_id": "asset-placeholder-school",
+  "display_name": "School",
+  "category": "Education",
+  "review_status": "draft",
+  "animation_type": "placeholder",
+  "version": "1.0"
+}

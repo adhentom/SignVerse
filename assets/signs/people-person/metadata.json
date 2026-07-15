@@ -1,0 +1,9 @@
+{
+  "token_id": "people-person",
+  "asset_id": "asset-placeholder-person",
+  "display_name": "Person",
+  "category": "People",
+  "review_status": "draft",
+  "animation_type": "placeholder",
+  "version": "1.0"
+}

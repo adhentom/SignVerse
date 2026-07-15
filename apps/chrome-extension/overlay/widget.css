@@ -321,6 +321,135 @@
   color: #69758a;
 }
 
+.sv-playback-result {
+  overflow: hidden;
+  border: 1px solid rgba(52, 211, 153, 0.16);
+  border-radius: 14px;
+  background: rgba(16, 185, 129, 0.045);
+}
+
+.sv-playback-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sv-playback-header span,
+.sv-playback-unsupported > span {
+  display: block;
+  color: #76bca5;
+  font-size: 8.5px;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sv-playback-header strong {
+  display: block;
+  margin-top: 3px;
+  color: #d8e9e2;
+  font-size: 11px;
+}
+
+.sv-playback-status {
+  padding: 4px 7px;
+  border: 1px solid rgba(52, 211, 153, 0.15);
+  border-radius: 999px;
+  color: #8dd6ba !important;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.sv-playback-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 10px 12px;
+  list-style: none;
+}
+
+.sv-playback-list li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.sv-playback-order {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 8px;
+  color: #a7f3d0;
+  background: rgba(16, 185, 129, 0.12);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.sv-playback-list strong,
+.sv-playback-list div span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-playback-list strong {
+  color: #cfd8d4;
+  font-size: 10px;
+}
+
+.sv-playback-list div span,
+.sv-playback-confidence,
+.sv-playback-empty,
+.sv-playback-unsupported li,
+.sv-playback-unsupported p {
+  color: #788a84;
+  font-size: 9px;
+}
+
+.sv-playback-confidence {
+  font-variant-numeric: tabular-nums;
+}
+
+.sv-playback-empty,
+.sv-playback-unsupported p {
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.sv-playback-unsupported {
+  padding: 10px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sv-playback-unsupported ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 7px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sv-playback-unsupported li {
+  padding: 3px 6px;
+  border-radius: 6px;
+  color: #f0a9b4;
+  background: rgba(244, 63, 94, 0.08);
+}
+
+.sv-playback-unsupported p {
+  padding: 6px 0 0;
+  color: #75ad9a;
+}
+
 .sv-extracted-content {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.07);

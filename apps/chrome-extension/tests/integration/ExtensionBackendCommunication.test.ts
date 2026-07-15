@@ -13,6 +13,10 @@ describe('Extension to backend communication', () => {
       glossary: [],
       isl_gloss: [],
       confidence: 0,
+      playback: {
+        items: [],
+        unsupported_tokens: [],
+      },
     };
     const request = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify(backendResponse), { status: 200 }),

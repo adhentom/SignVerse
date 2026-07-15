@@ -1,0 +1,9 @@
+{
+  "token_id": "time-today",
+  "asset_id": "asset-placeholder-today",
+  "display_name": "Today",
+  "category": "Time",
+  "review_status": "draft",
+  "animation_type": "placeholder",
+  "version": "1.0"
+}

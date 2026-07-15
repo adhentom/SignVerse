@@ -31,7 +31,12 @@ gloss validation, sign retrieval, and eventual rendering.
 The first provider is a read-only local JSON lexicon with draft candidate entries. A
 deterministic validator reports token support, confidence adjustments, and category coverage.
 Draft entries remain confidence-blocked until provenance, licensing, and native ISL review are
-complete. The lexicon and validator are internal and do not change `/interpret`.
+complete.
+
+The Sign Playback MVP adds a read-only placeholder asset registry and deterministic
+`PlaybackPlanner`. The interpretation service resolves exact gloss labels, validates governed
+tokens, and returns an additive ordered playback plan. The extension displays the plan but does
+not fetch or render media. Asset formats and rendering remain behind the registry boundary.
 
 ### Interpretation pipeline
 

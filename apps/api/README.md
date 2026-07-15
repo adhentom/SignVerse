@@ -66,9 +66,19 @@ The read-only seed lexicon is stored at `resources/lexicon/lexicon.json`. Its en
 unreviewed draft candidates with blank provenance and license fields; they are not approved ISL
 signs. The internal JSON provider supports deterministic lookup and inventory operations, and
 the gloss validator reports support, confidence adjustments, and category coverage. Neither is
-connected to the public API or OpenAI provider in this milestone.
+used to change AI output.
 
 See [`LEXICON_SCHEMA.md`](../../docs/linguistics/LEXICON_SCHEMA.md) for its schema and governance
 rules.
+
+## Sign playback planning
+
+The interpretation service now resolves returned gloss labels through the governed lexicon,
+validates tokens, and creates an ordered placeholder-asset plan. The registry reads metadata
+from the repository-level `assets/signs` directory. All current entries and assets are draft;
+their confidence is therefore blocked to zero. The service performs no media rendering or
+animation generation.
+
+See [`PLAYBACK_ENGINE.md`](../../docs/PLAYBACK_ENGINE.md) for planning and fallback behavior.
 
 See [API.md](docs/API.md) for request and response contracts.

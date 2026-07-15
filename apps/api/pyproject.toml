@@ -29,6 +29,7 @@ packages = ["src/signverse_api"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "resources/lexicon/lexicon.json" = "signverse_api/resources/lexicon/lexicon.json"
+"../../assets/signs" = "signverse_api/assets/signs"
 
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers --cov=signverse_api --cov-report=term-missing --cov-fail-under=90"
