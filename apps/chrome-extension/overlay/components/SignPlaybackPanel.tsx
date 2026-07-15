@@ -65,6 +65,9 @@ function PlaybackController({ sequence }: { sequence: PlaybackSequence }) {
 
   return (
     <div className="sv-player">
+      <p className="sv-player-disclosure">
+        Playback plan preview · placeholder assets only
+      </p>
       <div className="sv-player-stage" aria-live="polite">
         <div className="sv-sign-visual" aria-hidden="true">
           <span><UIIcon name="accessibility" /></span>

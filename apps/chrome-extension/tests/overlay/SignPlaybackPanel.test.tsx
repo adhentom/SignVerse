@@ -40,6 +40,7 @@ describe('SignPlaybackPanel', () => {
     });
 
     expect(container.textContent).toContain('ISL Playback');
+    expect(container.textContent).toContain('placeholder assets only');
     expect(container.textContent).toContain('Current sign');
     expect(container.textContent).toContain('greeting-hello');
     expect(container.textContent).toContain('asset-placeholder-hello');

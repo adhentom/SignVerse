@@ -94,7 +94,7 @@ export function FloatingWidget({
                 <span className="sv-product-tagline">AI accessibility interpreter</span>
               </div>
             </div>
-            <span className="sv-accessibility-mark" title="Accessibility experience">
+            <span aria-hidden="true" className="sv-accessibility-mark">
               <UIIcon name="accessibility" />
             </span>
             <button
@@ -109,7 +109,7 @@ export function FloatingWidget({
           </header>
 
           <div className="sv-sidebar-scroll">
-            <section aria-label="Current SignVerse status" className="sv-command-bar">
+            <section aria-label="Current SignVerse status" aria-live="polite" className="sv-command-bar">
               <div className={`sv-connection sv-connection--${connection.tone}`}>
                 <span className="sv-connection-dot" />
                 <div>
@@ -147,7 +147,7 @@ export function FloatingWidget({
             <footer className="sv-sidebar-footer">
               <UIIcon name="status" />
               <span>{platform.statusLabel}</span>
-              <small>The extension stores no interpretation results.</small>
+              <small>Results stay ephemeral and are not stored by the extension.</small>
             </footer>
           </div>
         </aside>

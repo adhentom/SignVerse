@@ -148,7 +148,7 @@
 .sv-product-tagline {
   margin-top: 1px;
   color: var(--sv-text-muted);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .sv-accessibility-mark,
@@ -249,7 +249,7 @@
 .sv-overline {
   display: block;
   color: var(--sv-text-muted);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 760;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -261,7 +261,7 @@
   overflow: hidden;
   margin-top: 2px;
   color: var(--sv-text-secondary);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 680;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -346,7 +346,7 @@
   min-height: 27px;
   gap: 9px;
   color: #687286;
-  font-size: 9.5px;
+  font-size: 11px;
   transition: color 180ms ease;
 }
 
@@ -431,7 +431,7 @@
   overflow: hidden;
   max-width: 150px;
   color: var(--sv-text-muted);
-  font-size: 9px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -504,7 +504,7 @@
   border-radius: 999px;
   color: #8e99ab;
   background: rgba(255, 255, 255, 0.045);
-  font-size: 8.5px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -558,7 +558,7 @@
   position: relative;
   padding-left: 16px;
   color: var(--sv-text-secondary);
-  font-size: 10.5px;
+  font-size: 11px;
   line-height: 1.55;
 }
 
@@ -585,7 +585,7 @@
   border-radius: 999px;
   color: #c5bdff;
   background: rgba(124, 108, 255, 0.08);
-  font-size: 9.5px;
+  font-size: 11px;
 }
 
 .sv-glossary-list li {
@@ -593,7 +593,7 @@
   border-radius: 9px;
   color: #aab4c4;
   background: rgba(255, 255, 255, 0.03);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -639,7 +639,7 @@
   display: block;
   margin-top: 3px;
   color: var(--sv-text-muted);
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
@@ -710,7 +710,7 @@
 
 .sv-error-label {
   color: #fda4af;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 780;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -725,7 +725,7 @@
 .sv-error-card p {
   margin: 5px 0 0;
   color: #c9a2aa;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -733,7 +733,7 @@
   display: block;
   margin-top: 4px;
   color: #a9858d;
-  font-size: 8.5px;
+  font-size: 11px;
   line-height: 1.4;
 }
 
@@ -748,7 +748,7 @@
   color: #ffe4e8;
   background: rgba(251, 113, 133, 0.11);
   cursor: pointer;
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -778,6 +778,17 @@
 
 .sv-player {
   padding-top: 12px;
+}
+
+.sv-player-disclosure {
+  margin: 0 0 10px;
+  padding: 7px 9px;
+  border: 1px solid rgba(245, 187, 86, 0.16);
+  border-radius: 9px;
+  color: #d8bd89;
+  background: rgba(245, 187, 86, 0.06);
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .sv-player-stage {
@@ -840,7 +851,7 @@
 .sv-unsupported > span {
   display: block;
   color: var(--sv-text-muted);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 760;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -861,7 +872,7 @@
   overflow: hidden;
   margin-top: 4px;
   color: var(--sv-text-muted);
-  font-size: 8.5px;
+  font-size: 11px;
   line-height: 1.4;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -922,20 +933,20 @@
 
 .sv-player-count strong {
   color: var(--sv-text-secondary);
-  font-size: 10px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 
 .sv-player-count span {
   color: var(--sv-text-muted);
-  font-size: 8.5px;
+  font-size: 11px;
 }
 
 .sv-player-timeline > div {
   display: flex;
   justify-content: space-between;
   color: var(--sv-text-muted);
-  font-size: 8px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -994,7 +1005,7 @@
   border-radius: 9px;
   color: #8792a5;
   background: rgba(255, 255, 255, 0.025);
-  font-size: 8.5px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1007,7 +1018,7 @@
   border-radius: 5px;
   color: #8f83e0;
   background: rgba(124, 108, 255, 0.1);
-  font-size: 7px;
+  font-size: 10px;
 }
 
 .sv-token-queue .sv-token--current {
@@ -1020,7 +1031,7 @@
 .sv-unsupported p {
   margin: 7px 0 0;
   color: var(--sv-text-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sv-unsupported ul {
@@ -1033,7 +1044,7 @@
   border-radius: 7px;
   color: #f3a6b2;
   background: rgba(251, 113, 133, 0.09);
-  font-size: 8.5px;
+  font-size: 11px;
 }
 
 .sv-extracted-content,
@@ -1057,7 +1068,7 @@
   display: block;
   overflow: hidden;
   color: var(--sv-text-muted);
-  font-size: 8px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1096,7 +1107,7 @@
 .sv-caption-history-heading {
   margin: 0 0 7px;
   color: var(--sv-text-muted);
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 730;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1120,7 +1131,7 @@
 .sv-heading-list li > span,
 .sv-caption-history time {
   color: #8f83e0;
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .sv-heading-list p,
@@ -1131,7 +1142,7 @@
 .sv-caption-empty {
   margin: 0;
   color: #99a3b4;
-  font-size: 9.5px;
+  font-size: 11px;
   line-height: 1.5;
 }
 
@@ -1166,26 +1177,26 @@
   padding: 8px 11px;
   border-bottom: 1px solid var(--sv-border);
   color: var(--sv-text-muted);
-  font-size: 8px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
 .sv-youtube-mode-row strong {
   color: var(--sv-primary-bright);
-  font-size: 8px;
+  font-size: 10px;
 }
 
 .sv-youtube-meta {
   gap: 6px;
   color: var(--sv-text-muted);
-  font-size: 8px;
+  font-size: 11px;
 }
 
 .sv-live-badge,
 .sv-paused-badge {
   padding: 2px 5px;
   border-radius: 999px;
-  font-size: 7px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
@@ -1204,7 +1215,7 @@
   padding: 8px 11px;
   border-bottom: 1px solid var(--sv-border);
   color: #83c6ae;
-  font-size: 8.5px;
+  font-size: 11px;
 }
 
 .sv-youtube-message--attention {
@@ -1220,7 +1231,7 @@
 
 .sv-current-caption p {
   color: var(--sv-text-secondary);
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .sv-caption-history-heading {
@@ -1236,7 +1247,7 @@
 .sv-caption-speaker {
   display: block;
   color: #c8c1f7;
-  font-size: 8.5px;
+  font-size: 11px;
 }
 
 .sv-sidebar-footer {
@@ -1248,7 +1259,7 @@
   padding: 11px 12px;
   border-top: 1px solid var(--sv-border);
   color: var(--sv-text-muted);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .sv-sidebar-footer .sv-ui-icon {
@@ -1259,7 +1270,7 @@
 
 .sv-sidebar-footer small {
   grid-column: 2;
-  font-size: 8px;
+  font-size: 11px;
 }
 
 .sv-fab {
