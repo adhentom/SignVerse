@@ -12,7 +12,7 @@ export default defineConfig({
     emptyOutDir: false,
     outDir: 'dist',
     lib: {
-      entry: resolve(__dirname, 'content/generic-web/index.tsx'),
+      entry: resolve(__dirname, 'content/index.tsx'),
       formats: ['iife'],
       name: 'SignVerseContent',
       fileName: () => 'content.js',

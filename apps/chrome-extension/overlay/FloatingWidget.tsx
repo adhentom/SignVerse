@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import type { PlatformInfo } from '../shared/platform';
 import type { WebsiteContentState } from '../shared/websiteContent';
 import { ContentPreview } from './components/ContentPreview';
 import { ModeCard } from './components/ModeCard';
@@ -8,16 +9,19 @@ import type { ModePlaceholder } from './types';
 
 const MODES: ModePlaceholder[] = [
   {
+    platformId: 'website',
     label: 'Website Mode',
     description: 'Interpret page content',
     icon: 'website',
   },
   {
+    platformId: 'youtube',
     label: 'YouTube Mode',
     description: 'Follow video captions',
     icon: 'youtube',
   },
   {
+    platformId: 'google-meet',
     label: 'Google Meet Mode',
     description: 'Support live conversations',
     icon: 'meet',
@@ -26,9 +30,10 @@ const MODES: ModePlaceholder[] = [
 
 interface FloatingWidgetProps {
   contentState: WebsiteContentState;
+  platform: PlatformInfo;
 }
 
-export function FloatingWidget({ contentState }: FloatingWidgetProps) {
+export function FloatingWidget({ contentState, platform }: FloatingWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { widgetRef, position, isDragging, dragHandleProps } = useDraggable();
 
@@ -70,8 +75,9 @@ export function FloatingWidget({ contentState }: FloatingWidgetProps) {
             </span>
             <div>
               <span className="sv-eyebrow">Status</span>
-              <strong>Interpreter Ready</strong>
+              <strong>{platform.statusLabel}</strong>
             </div>
+            <span className="sv-platform-chip">{platform.displayName}</span>
           </div>
 
           <div className="sv-section-heading">
@@ -88,7 +94,11 @@ export function FloatingWidget({ contentState }: FloatingWidgetProps) {
 
           <div className="sv-mode-list">
             {MODES.map((mode) => (
-              <ModeCard key={mode.label} mode={mode} />
+              <ModeCard
+                isActive={mode.platformId === platform.id}
+                key={mode.label}
+                mode={mode}
+              />
             ))}
           </div>
 

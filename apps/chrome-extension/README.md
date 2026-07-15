@@ -29,4 +29,14 @@ The accessibility widget is draggable, collapsible, responsive, and honors reduc
 
 Website extraction runs locally in the generic-web content adapter. It collects the page title plus visible semantic headings and paragraphs while excluding hidden content, scripts, styles, the SignVerse widget, and common advertisement containers. Extracted content is not stored or sent to an external service.
 
+## Platform adapters
+
+`AdapterFactory` detects the current URL and selects an ordered platform adapter:
+
+- Generic websites — `Website Reading`
+- YouTube and its subdomains — `YouTube Interpretation`
+- Google Meet — `Google Meet Live`
+
+Each adapter owns URL matching, platform metadata, and its content-extraction strategy. Specific adapters are registered before the generic fallback. Future Zoom, Microsoft Teams, PDF, or LMS support can be added by implementing the `PlatformAdapter` contract and registering it with the factory.
+
 The background service worker handles extension lifecycle events and content-script readiness notifications. It stores no durable in-memory state.

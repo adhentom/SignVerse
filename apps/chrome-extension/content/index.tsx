@@ -1,14 +1,14 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { FloatingWidget } from '../../overlay/FloatingWidget';
-import widgetStyles from '../../overlay/widget.css?inline';
+import { FloatingWidget } from '../overlay/FloatingWidget';
+import widgetStyles from '../overlay/widget.css?inline';
 import type {
   ContentStatus,
   ExtensionMessage,
   ExtensionResponse,
-} from '../../shared/messages';
-import type { WebsiteContentState } from '../../shared/websiteContent';
-import { extractWebsiteContent } from './extraction/extractWebsiteContent';
+} from '../shared/messages';
+import type { WebsiteContentState } from '../shared/websiteContent';
+import { adapterFactory } from './adapters/AdapterFactory';
 
 declare global {
   interface Window {
@@ -18,6 +18,7 @@ declare global {
 
 const MOCK_TEXT = 'Mock interpretation ready — no AI or external services are connected.';
 let mockEnabled = false;
+const platformAdapter = adapterFactory.create(window.location.href);
 
 function WidgetContainer() {
   const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
@@ -26,7 +27,7 @@ function WidgetContainer() {
     let cancelled = false;
     const frame = window.requestAnimationFrame(() => {
       try {
-        const content = extractWebsiteContent();
+        const content = platformAdapter.extractContent();
         if (!cancelled) {
           setContentState({ status: 'ready', content });
         }
@@ -46,7 +47,12 @@ function WidgetContainer() {
     };
   }, []);
 
-  return <FloatingWidget contentState={contentState} />;
+  return (
+    <FloatingWidget
+      contentState={contentState}
+      platform={platformAdapter.platform}
+    />
+  );
 }
 
 function mountWidget(): void {
