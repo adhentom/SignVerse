@@ -7,7 +7,11 @@ export type LiveContentStatus =
   | 'captions-disabled'
   | 'advertisement'
   | 'playing'
-  | 'paused';
+  | 'paused'
+  | 'not-in-session'
+  | 'connected'
+  | 'interrupted'
+  | 'reconnecting';
 
 export interface LiveContentSnapshot<TMetadata extends object = Record<string, unknown>> {
   status: LiveContentStatus;

@@ -8,7 +8,7 @@ import type {
   ExtensionResponse,
 } from '../shared/messages';
 import type { WebsiteContentState } from '../shared/websiteContent';
-import type { YouTubeLiveSnapshot } from '../shared/youtube';
+import type { LiveContentSnapshot } from '../shared/liveContent';
 import { adapterFactory } from './adapters/AdapterFactory';
 import { supportsLiveContent } from './adapters/PlatformAdapter';
 
@@ -24,7 +24,7 @@ const platformAdapter = adapterFactory.create(window.location.href);
 
 function WidgetContainer() {
   const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
-  const [youtubeState, setYouTubeState] = useState<YouTubeLiveSnapshot | null>(null);
+  const [liveState, setLiveState] = useState<LiveContentSnapshot | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,14 +51,14 @@ function WidgetContainer() {
   }, []);
 
   useEffect(() => {
-    if (!supportsLiveContent(platformAdapter) || platformAdapter.platform.id !== 'youtube') {
-      setYouTubeState(null);
+    if (!supportsLiveContent(platformAdapter)) {
+      setLiveState(null);
       return;
     }
 
     const session = platformAdapter.createLiveSession();
     return session.start((snapshot) => {
-      setYouTubeState(snapshot as YouTubeLiveSnapshot);
+      setLiveState(snapshot);
     });
   }, []);
 
@@ -66,7 +66,7 @@ function WidgetContainer() {
     <FloatingWidget
       contentState={contentState}
       platform={platformAdapter.platform}
-      youtubeState={youtubeState}
+      liveState={liveState}
     />
   );
 }

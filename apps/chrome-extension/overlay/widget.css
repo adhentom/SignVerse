@@ -513,6 +513,13 @@
   line-height: 1.45;
 }
 
+.sv-caption-speaker {
+  display: block;
+  color: #c7b9f7;
+  font-size: 9px;
+  font-weight: 650;
+}
+
 .sv-caption-empty {
   margin: 9px 0 0;
   text-align: center;
