@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import type { WebsiteContentState } from '../shared/websiteContent';
+import { ContentPreview } from './components/ContentPreview';
 import { ModeCard } from './components/ModeCard';
 import { SignVerseMark } from './components/SignVerseMark';
 import { useDraggable } from './hooks/useDraggable';
@@ -22,7 +24,11 @@ const MODES: ModePlaceholder[] = [
   },
 ];
 
-export function FloatingWidget() {
+interface FloatingWidgetProps {
+  contentState: WebsiteContentState;
+}
+
+export function FloatingWidget({ contentState }: FloatingWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { widgetRef, position, isDragging, dragHandleProps } = useDraggable();
 
@@ -69,6 +75,13 @@ export function FloatingWidget() {
           </div>
 
           <div className="sv-section-heading">
+            <span>Website content</span>
+            <span className="sv-placeholder-label">Visible text only</span>
+          </div>
+
+          <ContentPreview contentState={contentState} />
+
+          <div className="sv-section-heading">
             <span>Modes</span>
             <span className="sv-placeholder-label">Placeholders</span>
           </div>
@@ -83,7 +96,7 @@ export function FloatingWidget() {
             <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
               <path d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M3 7h10v7H3V7Z" stroke="currentColor" strokeWidth="1.3" />
             </svg>
-            Local preview only · No audio or page data collected
+            Processed locally · Nothing is sent or stored
           </p>
         </div>
       </section>

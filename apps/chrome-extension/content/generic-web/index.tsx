@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { FloatingWidget } from '../../overlay/FloatingWidget';
 import widgetStyles from '../../overlay/widget.css?inline';
@@ -7,6 +7,8 @@ import type {
   ExtensionMessage,
   ExtensionResponse,
 } from '../../shared/messages';
+import type { WebsiteContentState } from '../../shared/websiteContent';
+import { extractWebsiteContent } from './extraction/extractWebsiteContent';
 
 declare global {
   interface Window {
@@ -16,6 +18,36 @@ declare global {
 
 const MOCK_TEXT = 'Mock interpretation ready — no AI or external services are connected.';
 let mockEnabled = false;
+
+function WidgetContainer() {
+  const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
+
+  useEffect(() => {
+    let cancelled = false;
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const content = extractWebsiteContent();
+        if (!cancelled) {
+          setContentState({ status: 'ready', content });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setContentState({
+            status: 'error',
+            message: error instanceof Error ? error.message : 'Visible page content could not be read.',
+          });
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  return <FloatingWidget contentState={contentState} />;
+}
 
 function mountWidget(): void {
   const existingHost = document.getElementById('signverse-ai-widget-host');
@@ -39,7 +71,7 @@ function mountWidget(): void {
 
   createRoot(mountPoint).render(
     <StrictMode>
-      <FloatingWidget />
+      <WidgetContainer />
     </StrictMode>,
   );
 }

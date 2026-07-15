@@ -2,7 +2,7 @@
 
 This package contains the Phase 1 Chrome extension foundation. It uses Manifest V3, TypeScript, Vite, React, and Tailwind CSS.
 
-The current implementation is intentionally mock-only. It does not include backend communication, AI, speech processing, language models, ISL generation, or external API calls.
+The current implementation is intentionally local-only. It does not include backend communication, AI, speech processing, language models, ISL generation, or external API calls.
 
 ## Commands
 
@@ -25,6 +25,8 @@ The unpacked extension is produced in `apps/chrome-extension/dist`.
 
 ## Floating widget
 
-The mock-only accessibility widget is draggable, collapsible, responsive, and honors reduced-motion preferences. It displays interpreter readiness and placeholder cards for Website, YouTube, and Google Meet modes. It does not collect page data or connect to external services.
+The accessibility widget is draggable, collapsible, responsive, and honors reduced-motion preferences. It displays interpreter readiness, structured visible webpage text, and placeholder cards for Website, YouTube, and Google Meet modes.
+
+Website extraction runs locally in the generic-web content adapter. It collects the page title plus visible semantic headings and paragraphs while excluding hidden content, scripts, styles, the SignVerse widget, and common advertisement containers. Extracted content is not stored or sent to an external service.
 
 The background service worker handles extension lifecycle events and content-script readiness notifications. It stores no durable in-memory state.
