@@ -17,7 +17,7 @@ export function createManifest(backendUrl?: string) {
     name: 'SignVerse AI',
     version: '0.1.0',
     description: 'Accessible website and live-caption interpretation through SignVerse AI.',
-    permissions: ['activeTab'],
+    permissions: ['activeTab', 'storage'],
     host_permissions: getBackendHostPermissions(backendUrl),
     action: {
       default_popup: 'popup.html',
@@ -27,6 +27,12 @@ export function createManifest(backendUrl?: string) {
       service_worker: 'background.js',
       type: 'module',
     },
+    web_accessible_resources: [
+      {
+        resources: ['avatar/*'],
+        matches: ['http://*/*', 'https://*/*'],
+      },
+    ],
     content_scripts: [
       {
         matches: ['http://*/*', 'https://*/*'],

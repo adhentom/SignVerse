@@ -94,9 +94,11 @@ Meet caption selectors are isolated from the session so DOM changes can be accom
 
 The background service worker owns backend configuration, timeout handling, network failures, response validation, and the `POST /interpret` call. It stores no durable state.
 
-## Sign Playback MVP
+## Avatar playback
 
-The widget displays the backend's governed placeholder plan: token order, asset identifiers,
-nominal duration, confidence, and unsupported tokens. Local Play, Pause, Next, timeline, and
-progress controls demonstrate plan scheduling without downloading, executing, or animating sign
-assets.
+The widget consumes the backend's governed playback order through a local scheduler and a
+swappable renderer interface. It provides Lottie playback, an SVG-sequence adapter, a GLB adapter
+boundary, cached loading and preloading, complete transport and speed controls, synchronized
+Malayalam captions, accessible keyboard operation, and explicit asset fallbacks. Current motion
+is a neutral draft demonstration and is not an approved ISL sign. See
+[`docs/AVATAR_RENDERER.md`](../../docs/AVATAR_RENDERER.md).

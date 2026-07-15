@@ -76,8 +76,9 @@ Those strategies require separate linguistic approval.
 ## Extension presentation
 
 The widget's Sign Playback panel displays loading state, token order, asset ID, nominal duration,
-confidence, and unsupported tokens. It renders the plan as accessible text only. The extension
-does not fetch or execute registry assets in this milestone.
+confidence, and unsupported tokens. The extension now consumes the plan through the separate
+avatar-renderer runtime documented in [`AVATAR_RENDERER.md`](AVATAR_RENDERER.md). Planning
+remains format-agnostic and unchanged.
 
 The `/interpret` response adds a `playback` object while preserving all existing fields. The
 extension accepts responses without that field during rolling development and displays an empty

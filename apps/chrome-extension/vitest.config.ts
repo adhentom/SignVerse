@@ -9,5 +9,6 @@ export default defineConfig({
       },
     },
     restoreMocks: true,
+    setupFiles: ['./tests/setup.ts'],
   },
 });

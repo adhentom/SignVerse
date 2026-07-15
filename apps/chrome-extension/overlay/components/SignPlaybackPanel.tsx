@@ -1,147 +1,204 @@
 import { useEffect, useMemo, useState } from 'react';
+import { signAssetRegistry } from '../../playback/AssetRegistry';
+import { AVATAR_PROFILES, type AvatarProfileId } from '../../playback/avatarProfiles';
+import { usePlaybackController } from '../../playback/usePlaybackController';
 import type { InterpretationState, PlaybackSequence } from '../../shared/interpretation';
+import { AvatarRenderer } from './AvatarRenderer';
 import { CollapsibleCard } from './CollapsibleCard';
+import { MalayalamCaptionTrack } from './MalayalamCaptionTrack';
 import { UIIcon } from './UIIcon';
+import { useAvatarPreference } from '../hooks/useAvatarPreference';
 
 const EMPTY_SEQUENCE: PlaybackSequence = { items: [], unsupported_tokens: [] };
 
-function getIndexAtTime(sequence: PlaybackSequence, elapsed: number): number {
-  let boundary = 0;
-  for (let index = 0; index < sequence.items.length; index += 1) {
-    boundary += sequence.items[index].duration;
-    if (elapsed < boundary) return index;
-  }
-  return Math.max(0, sequence.items.length - 1);
+function formatTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`;
 }
 
-function PlaybackController({ sequence }: { sequence: PlaybackSequence }) {
-  const [elapsed, setElapsed] = useState(0);
-  const [playing, setPlaying] = useState(false);
-  const sequenceKey = sequence.items.map((item) => `${item.asset_id}:${item.duration}`).join('|');
-  const totalDuration = useMemo(
-    () => sequence.items.reduce((total, item) => total + item.duration, 0),
-    [sequenceKey],
+function resolveAsset(item: PlaybackSequence['items'][number] | undefined) {
+  if (!item) return undefined;
+  const asset = signAssetRegistry.lookup(item.asset_id);
+  return asset?.token_id === item.token_id && Math.abs(asset.duration - item.duration) < 0.01
+    ? asset
+    : undefined;
+}
+
+function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence; caption: string }) {
+  const controller = usePlaybackController(sequence);
+  const { scheduled, snapshot, totalDuration } = controller;
+  const current = scheduled?.item;
+  const currentAsset = resolveAsset(current);
+  const nextItem = sequence.items[(scheduled?.index ?? -1) + 1];
+  const nextAsset = resolveAsset(nextItem);
+  const missingAssets = useMemo(
+    () => sequence.items
+      .filter((item) => !resolveAsset(item))
+      .map((item) => item.token_id),
+    [sequence],
   );
-  const currentIndex = getIndexAtTime(sequence, elapsed);
-  const current = sequence.items[currentIndex];
-  const remaining = current ? Math.max(0, sequence.items.length - currentIndex - 1) : 0;
-  const progress = totalDuration > 0 ? Math.min(100, (elapsed / totalDuration) * 100) : 0;
+  const unsupported = [...new Set([...sequence.unsupported_tokens, ...missingAssets])];
+  const remaining = current ? Math.max(0, sequence.items.length - (scheduled?.index ?? 0) - 1) : 0;
+  const completion = totalDuration > 0 ? Math.min(100, (snapshot.elapsed / totalDuration) * 100) : 0;
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [rendererAttempt, setRendererAttempt] = useState(0);
+  const { profile, select: selectAvatar } = useAvatarPreference();
+  const [position, setPosition] = useState({ x: 24, y: 80 });
 
   useEffect(() => {
-    setElapsed(0);
-    setPlaying(false);
-  }, [sequenceKey]);
+    if (typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
-  useEffect(() => {
-    if (!playing || totalDuration === 0) return;
-    const timer = window.setInterval(() => {
-      setElapsed((currentElapsed) => {
-        return Math.min(totalDuration, currentElapsed + 0.1);
-      });
-    }, 100);
-    return () => window.clearInterval(timer);
-  }, [playing, totalDuration]);
-
-  useEffect(() => {
-    if (playing && elapsed >= totalDuration) setPlaying(false);
-  }, [elapsed, playing, totalDuration]);
-
-  function play() {
-    if (elapsed >= totalDuration) setElapsed(0);
-    setPlaying(sequence.items.length > 0);
+  function handleKeyboard(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+    if (event.key === ' ') {
+      event.preventDefault();
+      snapshot.state === 'Playing' ? controller.pause() : controller.play();
+    } else if (event.key === 'ArrowRight') controller.seek(snapshot.elapsed + 0.5);
+    else if (event.key === 'ArrowLeft') controller.seek(snapshot.elapsed - 0.5);
+    else if (event.key === 'Home') controller.restart();
   }
 
-  function next() {
-    if (!current || currentIndex >= sequence.items.length - 1) {
-      setElapsed(totalDuration);
-      setPlaying(false);
-      return;
-    }
-    const nextStart = sequence.items
-      .slice(0, currentIndex + 1)
-      .reduce((total, item) => total + item.duration, 0);
-    setElapsed(nextStart);
+  function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
+    const origin = { pointerX: event.clientX, pointerY: event.clientY, ...position };
+    const move = (next: PointerEvent) => setPosition({
+      x: Math.max(0, Math.min(window.innerWidth - 220, origin.x + next.clientX - origin.pointerX)),
+      y: Math.max(0, Math.min(window.innerHeight - 180, origin.y + next.clientY - origin.pointerY)),
+    });
+    const stop = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', stop);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', stop, { once: true });
   }
 
   return (
-    <div className="sv-player">
+    <div
+      aria-label="ISL avatar playback controller"
+      className="sv-player"
+      onKeyDown={handleKeyboard}
+      tabIndex={0}
+    >
       <p className="sv-player-disclosure">
-        Playback plan preview · placeholder assets only
+        Animated avatar demo · sign assets remain draft pending native ISL review
       </p>
-      <div className="sv-player-stage" aria-live="polite">
-        <div className="sv-sign-visual" aria-hidden="true">
-          <span><UIIcon name="accessibility" /></span>
-          <i className={playing ? 'sv-sign-pulse sv-sign-pulse--active' : 'sv-sign-pulse'} />
-        </div>
-        <div className="sv-current-sign">
+
+      <div className="sv-player-stage sv-interpreter-overlay" style={{ left: position.x, top: position.y }}>
+        <button aria-label="Drag interpreter" className="sv-avatar-drag-handle" onPointerDown={startDrag} type="button">SignVerse Interpreter · drag</button>
+        <AvatarRenderer
+          asset={currentAsset}
+          nextAsset={nextAsset}
+          onError={controller.fail}
+          playing={snapshot.state === 'Playing'}
+          profile={profile}
+          progress={scheduled?.localProgress ?? 0}
+          reducedMotion={reducedMotion}
+          retryKey={rendererAttempt}
+          speed={snapshot.speed}
+        />
+        <div className="sv-current-sign" aria-live="polite">
           <span>Current sign</span>
           <strong>{current?.token_id ?? 'No sign scheduled'}</strong>
-          <small>{current ? `${current.asset_id} · ${Math.round(current.confidence * 100)}% confidence` : 'Waiting for a supported token'}</small>
+          <small>{currentAsset
+            ? `${currentAsset.format} · ${Math.round((current?.confidence ?? 0) * 100)}% confidence`
+            : current ? 'Animation asset unavailable' : 'Waiting for a supported token'}</small>
         </div>
       </div>
+
+      <label className="sv-avatar-select">
+        <span>Interpreter avatar</span>
+        <select aria-label="Interpreter avatar" onChange={(event) => selectAvatar(event.currentTarget.value as AvatarProfileId)} value={profile.id}>
+          {AVATAR_PROFILES.map((avatar) => <option key={avatar.id} value={avatar.id}>{avatar.label}</option>)}
+        </select>
+      </label>
+
+      {snapshot.state === 'Error' && (
+        <div className="sv-playback-error" role="alert">
+          <strong>Animation unavailable</strong>
+          <span>{snapshot.error}</span>
+          <button onClick={() => {
+            setRendererAttempt((attempt) => attempt + 1);
+            controller.restart();
+          }} type="button">Retry playback</button>
+        </div>
+      )}
 
       <div className="sv-player-controls" aria-label="Playback controls">
-        <button aria-label="Play sign sequence" disabled={!current || playing} onClick={play} type="button">
-          <UIIcon name="play" />
+        <button aria-label="Previous sign" disabled={!current || scheduled?.index === 0} onClick={controller.previous} type="button">
+          <span className="sv-icon-previous"><UIIcon name="next" /></span>
         </button>
-        <button aria-label="Pause sign sequence" disabled={!playing} onClick={() => setPlaying(false)} type="button">
-          <UIIcon name="pause" />
+        <button aria-label="Restart sign sequence" disabled={!current} onClick={controller.restart} type="button">
+          <UIIcon name="refresh" />
         </button>
-        <button
-          aria-label="Next sign"
-          disabled={!current || currentIndex >= sequence.items.length - 1}
-          onClick={next}
-          type="button"
-        >
+        {snapshot.state === 'Playing' ? (
+          <button aria-label="Pause sign sequence" onClick={controller.pause} type="button"><UIIcon name="pause" /></button>
+        ) : (
+          <button aria-label={snapshot.state === 'Paused' ? 'Resume sign sequence' : 'Play sign sequence'} disabled={!current} onClick={controller.play} type="button"><UIIcon name="play" /></button>
+        )}
+        <button aria-label="Next sign" disabled={!current || scheduled?.index === sequence.items.length - 1} onClick={controller.next} type="button">
           <UIIcon name="next" />
         </button>
-        <div className="sv-player-count">
-          <strong>{current ? `${currentIndex + 1}/${sequence.items.length}` : '0/0'}</strong>
-          <span>{remaining} remaining</span>
-        </div>
+        <label className="sv-speed-control">
+          <span>Speed</span>
+          <select aria-label="Playback speed" onChange={(event) => controller.setSpeed(Number(event.currentTarget.value))} value={snapshot.speed}>
+            <option value="0.5">0.5×</option>
+            <option value="0.75">0.75×</option>
+            <option value="1">1×</option>
+            <option value="1.25">1.25×</option>
+            <option value="1.5">1.5×</option>
+          </select>
+        </label>
       </div>
 
+      <div className="sv-player-stats">
+        <span>{formatTime(snapshot.elapsed)} / {formatTime(totalDuration)}</span>
+        <span>{remaining} remaining</span>
+        <strong>{Math.round(completion)}%</strong>
+      </div>
       <div className="sv-player-timeline">
-        <div>
-          <span>{elapsed.toFixed(1)}s</span>
-          <span>{totalDuration.toFixed(1)}s</span>
-        </div>
         <input
           aria-label="Playback timeline"
           disabled={totalDuration === 0}
           max={totalDuration || 1}
           min="0"
-          onChange={(event) => setElapsed(Number(event.currentTarget.value))}
-          step="0.1"
+          onChange={(event) => controller.seek(Number(event.currentTarget.value))}
+          step="0.05"
           type="range"
-          value={elapsed}
+          value={snapshot.elapsed}
         />
-        <progress aria-label={`${Math.round(progress)} percent played`} max="100" value={progress} />
+        <progress aria-label={`${Math.round(completion)} percent played`} max="100" value={completion} />
       </div>
+
+      <MalayalamCaptionTrack
+        caption={caption}
+        currentIndex={scheduled?.index ?? 0}
+        signCount={sequence.items.length}
+      />
 
       <div className="sv-token-queue">
         <span>Playback order</span>
         {sequence.items.length > 0 ? (
-          <ol>
-            {sequence.items.map((item, index) => (
-              <li
-                aria-current={index === currentIndex ? 'step' : undefined}
-                className={index === currentIndex ? 'sv-token--current' : ''}
-                key={`${item.asset_id}-${index}`}
-              >
-                <span>{index + 1}</span>{item.token_id}
-              </li>
-            ))}
-          </ol>
+          <ol>{sequence.items.map((item, index) => (
+            <li aria-current={index === scheduled?.index ? 'step' : undefined} className={index === scheduled?.index ? 'sv-token--current' : ''} key={`${item.asset_id}-${index}`}>
+              <span>{index + 1}</span>{item.token_id}
+            </li>
+          ))}</ol>
         ) : <p>No supported signs are available in this plan.</p>}
       </div>
 
       <div className="sv-unsupported">
         <span>Unsupported concepts</span>
-        {sequence.unsupported_tokens.length > 0 ? (
-          <ul>{sequence.unsupported_tokens.map((token) => <li key={token}>{token}</li>)}</ul>
-        ) : <p>None detected</p>}
+        {unsupported.length > 0
+          ? <ul>{unsupported.map((token) => <li key={token}>{token}</li>)}</ul>
+          : <p>None detected</p>}
       </div>
+      <p className="sv-player-shortcuts">Keyboard: Space play/pause · ←/→ seek · Home restart</p>
     </div>
   );
 }
@@ -159,15 +216,11 @@ export function SignPlaybackPanel({ state }: { state: InterpretationState }) {
 
   const sequence = state.status === 'ready' ? state.response.playback ?? EMPTY_SEQUENCE : EMPTY_SEQUENCE;
   const glossCount = state.status === 'ready' ? state.response.isl_gloss.length : 0;
+  const caption = state.status === 'ready' ? state.response.malayalam_translation : '';
 
   return (
-    <CollapsibleCard
-      badge={`${sequence.items.length || glossCount} signs`}
-      defaultExpanded
-      icon="translate"
-      title="ISL Playback"
-    >
-      <PlaybackController sequence={sequence} />
+    <CollapsibleCard badge={`${sequence.items.length || glossCount} signs`} defaultExpanded icon="translate" title="ISL Playback">
+      <PlaybackController caption={caption} sequence={sequence} />
     </CollapsibleCard>
   );
 }

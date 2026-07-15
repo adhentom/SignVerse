@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, __dirname, 'VITE_SIGNVERSE_');
 
   return {
-    publicDir: false,
+    publicDir: 'public',
     plugins: [
       react(),
       tailwindcss(),
