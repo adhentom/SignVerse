@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InterpretationPanel } from '../../overlay/components/InterpretationPanel';
 
 describe('InterpretationPanel', () => {
@@ -18,9 +18,9 @@ describe('InterpretationPanel', () => {
     container.remove();
   });
 
-  it('displays every field in the mock backend response', () => {
+  it('displays accessible collapsible result cards', () => {
     act(() => {
-      root.render(<InterpretationPanel state={{
+      root.render(<InterpretationPanel onRetry={vi.fn()} state={{
         status: 'ready',
         response: {
           summary: '',
@@ -34,16 +34,17 @@ describe('InterpretationPanel', () => {
     });
 
     expect(container.textContent).toContain('Summary');
-    expect(container.textContent).toContain('Key points');
+    expect(container.textContent).toContain('Key Points');
     expect(container.textContent).toContain('Keywords');
     expect(container.textContent).toContain('Glossary');
-    expect(container.textContent).toContain('ISL Gloss');
+    expect(container.querySelector('button[aria-expanded="true"]')).not.toBeNull();
     expect(container.textContent).toContain('0%');
   });
 
-  it('announces backend failures accessibly', () => {
+  it('announces backend failures and retries accessibly', () => {
+    const retry = vi.fn();
     act(() => {
-      root.render(<InterpretationPanel state={{
+      root.render(<InterpretationPanel onRetry={retry} state={{
         status: 'error',
         code: 'backend-unavailable',
         message: 'The SignVerse backend is currently unavailable.',
@@ -52,5 +53,8 @@ describe('InterpretationPanel', () => {
 
     expect(container.querySelector('[role="alert"]')).not.toBeNull();
     expect(container.textContent).toContain('backend is currently unavailable');
+    const button = container.querySelector('button');
+    act(() => button?.click());
+    expect(retry).toHaveBeenCalledOnce();
   });
 });

@@ -1,173 +1,168 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { GoogleMeetLiveSnapshot } from '../shared/googleMeet';
+import type { InterpretationState } from '../shared/interpretation';
+import type { LiveContentSnapshot } from '../shared/liveContent';
 import type { PlatformInfo } from '../shared/platform';
 import type { WebsiteContentState } from '../shared/websiteContent';
 import type { YouTubeLiveSnapshot } from '../shared/youtube';
-import type { GoogleMeetLiveSnapshot } from '../shared/googleMeet';
-import type { LiveContentSnapshot } from '../shared/liveContent';
-import type { InterpretationState } from '../shared/interpretation';
+import { CollapsibleCard } from './components/CollapsibleCard';
 import { ContentPreview } from './components/ContentPreview';
 import { GoogleMeetCaptionPanel } from './components/GoogleMeetCaptionPanel';
 import { InterpretationPanel } from './components/InterpretationPanel';
-import { ModeCard } from './components/ModeCard';
+import { PipelineProgress } from './components/PipelineProgress';
 import { SignPlaybackPanel } from './components/SignPlaybackPanel';
 import { SignVerseMark } from './components/SignVerseMark';
+import { UIIcon } from './components/UIIcon';
 import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
-import { useDraggable } from './hooks/useDraggable';
-import type { ModePlaceholder } from './types';
-
-const MODES: ModePlaceholder[] = [
-  {
-    platformId: 'website',
-    label: 'Website Mode',
-    description: 'Interpret page content',
-    icon: 'website',
-  },
-  {
-    platformId: 'youtube',
-    label: 'YouTube Mode',
-    description: 'Follow video captions',
-    icon: 'youtube',
-  },
-  {
-    platformId: 'google-meet',
-    label: 'Google Meet Mode',
-    description: 'Support live conversations',
-    icon: 'meet',
-  },
-];
 
 interface FloatingWidgetProps {
   contentState: WebsiteContentState;
-  platform: PlatformInfo;
-  liveState: LiveContentSnapshot | null;
   interpretationState: InterpretationState;
+  liveState: LiveContentSnapshot | null;
+  onRetry: () => void;
+  platform: PlatformInfo;
+}
+
+function connectionCopy(state: InterpretationState): { label: string; tone: string } {
+  if (state.status === 'ready') return { label: 'Connected', tone: 'online' };
+  if (state.status === 'loading') return { label: 'Processing', tone: 'processing' };
+  if (state.status === 'error') {
+    return {
+      label: state.code === 'connection-failure' ? 'Offline' : 'Unavailable',
+      tone: 'offline',
+    };
+  }
+  return { label: 'Standing by', tone: 'idle' };
+}
+
+function SourcePanel({
+  contentState,
+  liveState,
+  platform,
+}: Pick<FloatingWidgetProps, 'contentState' | 'liveState' | 'platform'>) {
+  if (platform.id === 'youtube') {
+    return <YouTubeCaptionPanel snapshot={liveState as YouTubeLiveSnapshot | null} />;
+  }
+  if (platform.id === 'google-meet') {
+    return <GoogleMeetCaptionPanel snapshot={liveState as GoogleMeetLiveSnapshot | null} />;
+  }
+  return <ContentPreview contentState={contentState} />;
 }
 
 export function FloatingWidget({
   contentState,
-  platform,
-  liveState,
   interpretationState,
+  liveState,
+  onRetry,
+  platform,
 }: FloatingWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const { widgetRef, position, isDragging, dragHandleProps } = useDraggable();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const fabRef = useRef<HTMLButtonElement>(null);
+  const shouldMoveFocus = useRef(false);
+  const connection = connectionCopy(interpretationState);
+
+  useEffect(() => {
+    if (!shouldMoveFocus.current) return;
+    const frame = window.requestAnimationFrame(() => {
+      (isExpanded ? closeButtonRef.current : fabRef.current)?.focus();
+      shouldMoveFocus.current = false;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isExpanded]);
+
+  function setExpanded(next: boolean) {
+    shouldMoveFocus.current = true;
+    setIsExpanded(next);
+  }
 
   return (
-    <div
-      className={`sv-widget ${isExpanded ? 'sv-widget--expanded' : 'sv-widget--collapsed'} ${isDragging ? 'sv-widget--dragging' : ''}`}
-      ref={widgetRef}
-      style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
-    >
-      <section
-        aria-label="SignVerse AI accessibility interpreter"
-        aria-hidden={!isExpanded}
-        className="sv-panel"
-      >
-        <header className="sv-header" {...dragHandleProps}>
-          <div className="sv-brand">
-            <SignVerseMark />
-            <div>
-              <h2>SignVerse AI</h2>
-              <p>Accessibility interpreter</p>
+    <div className={`sv-widget ${isExpanded ? 'sv-widget--expanded' : 'sv-widget--collapsed'}`}>
+      {isExpanded ? (
+        <aside
+          aria-label="SignVerse AI accessibility sidebar"
+          className="sv-sidebar"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') setExpanded(false);
+          }}
+        >
+          <header className="sv-sidebar-header">
+            <div className="sv-brand-lockup">
+              <SignVerseMark />
+              <div>
+                <span className="sv-product-name">SignVerse</span>
+                <span className="sv-product-tagline">AI accessibility interpreter</span>
+              </div>
             </div>
-          </div>
-          <button
-            aria-label="Minimize SignVerse AI"
-            className="sv-icon-button"
-            onClick={() => setIsExpanded(false)}
-            type="button"
-          >
-            <svg aria-hidden="true" fill="none" viewBox="0 0 20 20">
-              <path d="M5 10h10" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
-            </svg>
-          </button>
-        </header>
-
-        <div className="sv-content">
-          <div aria-live="polite" className="sv-status">
-            <span className="sv-status-indicator">
-              <span />
+            <span className="sv-accessibility-mark" title="Accessibility experience">
+              <UIIcon name="accessibility" />
             </span>
-            <div>
-              <span className="sv-eyebrow">Status</span>
-              <strong>{platform.statusLabel}</strong>
-            </div>
-            <span className="sv-platform-chip">{platform.displayName}</span>
-          </div>
+            <button
+              aria-label="Close SignVerse sidebar"
+              className="sv-close-button"
+              onClick={() => setExpanded(false)}
+              ref={closeButtonRef}
+              type="button"
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </header>
 
-          {platform.id === 'youtube' ? (
-            <>
-              <div className="sv-section-heading">
-                <span>Live captions</span>
-                <span className="sv-placeholder-label">Official YouTube track</span>
+          <div className="sv-sidebar-scroll">
+            <section aria-label="Current SignVerse status" className="sv-command-bar">
+              <div className={`sv-connection sv-connection--${connection.tone}`}>
+                <span className="sv-connection-dot" />
+                <div>
+                  <span>Connection</span>
+                  <strong>{connection.label}</strong>
+                </div>
               </div>
-              <YouTubeCaptionPanel snapshot={liveState as YouTubeLiveSnapshot | null} />
-            </>
-          ) : platform.id === 'google-meet' ? (
-            <>
-              <div className="sv-section-heading">
-                <span>Live captions</span>
-                <span className="sv-placeholder-label">Google Meet stream</span>
+              <div className="sv-platform-status">
+                <span className="sv-platform-icon"><UIIcon name="globe" /></span>
+                <div>
+                  <span>Current platform</span>
+                  <strong>{platform.displayName}</strong>
+                </div>
               </div>
-              <GoogleMeetCaptionPanel snapshot={liveState as GoogleMeetLiveSnapshot | null} />
-            </>
-          ) : (
-            <>
-              <div className="sv-section-heading">
-                <span>Website content</span>
-                <span className="sv-placeholder-label">Visible text only</span>
+            </section>
+
+            <PipelineProgress state={interpretationState} />
+
+            <section aria-labelledby="sv-results-heading" className="sv-results-section">
+              <div className="sv-section-title">
+                <div>
+                  <span className="sv-overline">Interpretation</span>
+                  <h2 id="sv-results-heading">Accessible output</h2>
+                </div>
+                <span>{platform.modeLabel}</span>
               </div>
-              <ContentPreview contentState={contentState} />
-            </>
-          )}
+              <InterpretationPanel onRetry={onRetry} state={interpretationState} />
+              <SignPlaybackPanel state={interpretationState} />
+            </section>
 
-          <div className="sv-section-heading">
-            <span>Interpretation</span>
-            <span className="sv-placeholder-label">Backend response</span>
+            <CollapsibleCard icon="globe" title="Source content">
+              <SourcePanel contentState={contentState} liveState={liveState} platform={platform} />
+            </CollapsibleCard>
+
+            <footer className="sv-sidebar-footer">
+              <UIIcon name="status" />
+              <span>{platform.statusLabel}</span>
+              <small>The extension stores no interpretation results.</small>
+            </footer>
           </div>
-          <InterpretationPanel state={interpretationState} />
-
-          <div className="sv-section-heading">
-            <span>Sign Playback</span>
-            <span className="sv-placeholder-label">Placeholder plan</span>
-          </div>
-          <SignPlaybackPanel state={interpretationState} />
-
-          <div className="sv-section-heading">
-            <span>Modes</span>
-            <span className="sv-placeholder-label">Placeholders</span>
-          </div>
-
-          <div className="sv-mode-list">
-            {MODES.map((mode) => (
-              <ModeCard
-                isActive={mode.platformId === platform.id}
-                key={mode.label}
-                mode={mode}
-              />
-            ))}
-          </div>
-
-          <p className="sv-privacy-note">
-            <svg aria-hidden="true" fill="none" viewBox="0 0 16 16">
-              <path d="M4.5 7V5.5a3.5 3.5 0 1 1 7 0V7M3 7h10v7H3V7Z" stroke="currentColor" strokeWidth="1.3" />
-            </svg>
-            Sent only to the configured backend · The extension stores no results
-          </p>
-        </div>
-      </section>
-
-      <button
-        aria-label="Expand SignVerse AI"
-        aria-hidden={isExpanded}
-        className="sv-fab"
-        onClick={() => setIsExpanded(true)}
-        tabIndex={isExpanded ? -1 : 0}
-        type="button"
-      >
-        <SignVerseMark compact />
-        <span className="sv-fab-pulse" />
-      </button>
+        </aside>
+      ) : (
+        <button
+          aria-label="Open SignVerse accessibility sidebar"
+          className="sv-fab"
+          onClick={() => setExpanded(true)}
+          ref={fabRef}
+          type="button"
+        >
+          <SignVerseMark compact />
+          <span className={`sv-fab-status sv-fab-status--${connection.tone}`} />
+        </button>
+      )}
     </div>
   );
 }
