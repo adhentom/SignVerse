@@ -31,7 +31,7 @@ Accepts the Chrome extension's unified `ContentPacket`. The timestamp remains a 
 }
 ```
 
-The current service returns a deliberately empty mock result:
+The public response contract remains:
 
 ```json
 {
@@ -44,4 +44,8 @@ The current service returns a deliberately empty mock result:
 }
 ```
 
-Malformed or incomplete packets return FastAPI's standard `422 Unprocessable Entity` response. No request content is persisted or sent to another service.
+Malformed or incomplete packets return FastAPI's standard `422 Unprocessable Entity` response. The backend does not persist request content. When the OpenAI provider is selected, packet content is sent to the OpenAI Responses API with response storage disabled.
+
+With the mock provider, every field is empty. With the OpenAI provider, fields contain the validated interpretation. The model produces structured glossary entries internally; the provider serializes each entry as `term: definition` to preserve the existing public `glossary: string[]` contract used by the extension.
+
+If the selected interpretation provider times out, is rate limited, fails, or returns invalid output, the endpoint returns the safe empty response using the same schema. Provider error details are logged by category without logging packet content.
