@@ -393,6 +393,22 @@
   font-weight: 650;
 }
 
+.sv-platform-chip {
+  overflow: hidden;
+  margin-left: auto !important;
+  padding: 4px 7px;
+  border: 1px solid rgba(52, 211, 153, 0.14);
+  border-radius: 999px;
+  color: #8dc9b5;
+  background: rgba(52, 211, 153, 0.07);
+  font-size: 8px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .sv-section-heading {
   display: flex;
   align-items: center;
@@ -431,6 +447,22 @@
 .sv-mode-card:hover {
   border-color: rgba(167, 139, 250, 0.2);
   background: rgba(139, 92, 246, 0.055);
+}
+
+.sv-mode-card--active {
+  border-color: rgba(52, 211, 153, 0.18);
+  background: rgba(16, 185, 129, 0.055);
+}
+
+.sv-mode-card--active .sv-mode-icon {
+  color: #6ee7b7;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.sv-mode-card--active .sv-mode-badge {
+  border-color: rgba(52, 211, 153, 0.14);
+  color: #86d9bd;
+  background: rgba(16, 185, 129, 0.08);
 }
 
 .sv-mode-icon {

@@ -2,12 +2,16 @@ import type { ModePlaceholder } from '../types';
 import { ModeIcon } from './ModeIcon';
 
 interface ModeCardProps {
+  isActive: boolean;
   mode: ModePlaceholder;
 }
 
-export function ModeCard({ mode }: ModeCardProps) {
+export function ModeCard({ isActive, mode }: ModeCardProps) {
   return (
-    <div aria-label={`${mode.label}, placeholder`} className="sv-mode-card">
+    <div
+      aria-label={`${mode.label}, ${isActive ? 'detected platform' : 'placeholder'}`}
+      className={`sv-mode-card ${isActive ? 'sv-mode-card--active' : ''}`}
+    >
       <span className="sv-mode-icon">
         <ModeIcon icon={mode.icon} />
       </span>
@@ -15,7 +19,7 @@ export function ModeCard({ mode }: ModeCardProps) {
         <span className="sv-mode-label">{mode.label}</span>
         <span className="sv-mode-description">{mode.description}</span>
       </span>
-      <span className="sv-mode-badge">Soon</span>
+      <span className="sv-mode-badge">{isActive ? 'Active' : 'Soon'}</span>
     </div>
   );
 }
