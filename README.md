@@ -2,7 +2,7 @@
 
 SignVerse AI is a planned Chrome extension and backend platform for interpreting digital content into Indian Sign Language (ISL) through an AI-assisted virtual interpreter.
 
-This repository contains the approved architecture scaffold and the Phase 1 Chrome extension foundation. The extension processes visible website text locally and intentionally contains no backend, AI, speech processing, ISL generation, or external API integration.
+This repository contains the approved architecture scaffold, the Phase 1 Chrome extension, and the Phase 2 backend foundation. The extension still processes content locally; backend communication and AI, speech, translation, avatar, and ISL integrations are not implemented.
 
 ## Planned product flow
 
@@ -29,4 +29,6 @@ Speech / website text / captions
 
 ## Current status
 
-The Chrome extension foundation, local website content extraction, extensible platform detection, and live-caption extraction for YouTube and Google Meet are implemented with Manifest V3, TypeScript, Vite, React, and Tailwind CSS. All remaining product capabilities require explicit phase approval.
+The Chrome extension foundation, local website content extraction, extensible platform detection, and live-caption extraction for YouTube and Google Meet are implemented. A standalone FastAPI service now validates the shared `ContentPacket` request and returns a stable mock interpretation response. No extension-to-backend transport or interpretation provider is connected.
+
+Backend setup and API documentation are available in [`apps/api/README.md`](apps/api/README.md).
