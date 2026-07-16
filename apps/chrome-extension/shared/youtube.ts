@@ -5,6 +5,7 @@ export type YouTubePlaybackState = 'playing' | 'paused' | 'seeking' | 'advertise
 export interface YouTubePacketMetadata {
   [key: string]: unknown;
   channel: string;
+  language: string;
   videoId: string;
   captionsEnabled: boolean;
   isAdvertisement: boolean;

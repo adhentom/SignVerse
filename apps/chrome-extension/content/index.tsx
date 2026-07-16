@@ -12,7 +12,7 @@ import type { LiveContentSnapshot } from '../shared/liveContent';
 import type { ContentPacket } from '../shared/contentPacket';
 import { adapterFactory } from './adapters/AdapterFactory';
 import { supportsLiveContent } from './adapters/PlatformAdapter';
-import { useInterpretation } from './interpretation/useInterpretation';
+import { useStreamingInterpretation } from './interpretation/useStreamingInterpretation';
 import { useBackendHealth } from './interpretation/useBackendHealth';
 import { startWebsiteExtraction } from './interpretation/startWebsiteExtraction';
 import { createDemoLiveSnapshot, DEMO_INTERPRETATION, DEMO_WEBSITE_CONTENT } from './demo/demoFixtures';
@@ -84,7 +84,7 @@ function WidgetContainer() {
   const activePacket = platformAdapter.platform.id === 'website'
     ? websitePacket
     : liveState?.currentPacket ?? null;
-  const { retry, state: interpretationState } = useInterpretation(
+  const { retry, state: interpretationState } = useStreamingInterpretation(
     demoMode.loaded && !demoMode.enabled ? activePacket : null,
     platformAdapter.platform.id === 'website' ? 0 : 350,
   );

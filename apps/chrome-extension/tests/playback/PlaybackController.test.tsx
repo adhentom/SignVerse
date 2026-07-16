@@ -24,6 +24,11 @@ function Harness() {
   );
 }
 
+function QueueHarness({ items }: { items: typeof sequence.items }) {
+  const playback = usePlaybackController({ items, unsupported_tokens: [] });
+  return <><output>{playback.snapshot.state}:{playback.scheduled?.item.token_id}</output><button onClick={playback.play}>Queue play</button></>;
+}
+
 describe('playback controller', () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -59,5 +64,16 @@ describe('playback controller', () => {
 
     act(() => button('Next').click());
     expect(container.textContent).toContain('Paused:two:1.0');
+  });
+
+  it('continues when streaming appends a playback item', () => {
+    const first = sequence.items.slice(0, 1);
+    act(() => root.render(<QueueHarness items={first} />));
+    act(() => container.querySelector<HTMLButtonElement>('button')?.click());
+    act(() => vi.advanceTimersByTime(1_100));
+    expect(container.textContent).toContain('Finished:one');
+
+    act(() => root.render(<QueueHarness items={sequence.items} />));
+    expect(container.textContent).toContain('Playing:two');
   });
 });

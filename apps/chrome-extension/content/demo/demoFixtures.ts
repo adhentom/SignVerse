@@ -40,7 +40,7 @@ export function createDemoLiveSnapshot(platform: PlatformInfo): LiveContentSnaps
   if (platform.id !== 'youtube' && platform.id !== 'google-meet') return null;
   const text = CAPTIONS[platform.id];
   const metadata = platform.id === 'youtube'
-    ? { channel: 'SignVerse Demo', videoId: 'offline-demo', captionsEnabled: true, isAdvertisement: false, isLive: false, playbackState: 'playing', demo: true }
+    ? { channel: 'SignVerse Demo', language: 'en-IN', videoId: 'offline-demo', captionsEnabled: true, isAdvertisement: false, isLive: false, playbackState: 'playing', demo: true }
     : { meetingId: 'offline-demo', language: 'en-IN', captionsEnabled: true, participantCount: 3, connectionState: 'connected', demo: true };
   const packet = {
     platform: platform.id,

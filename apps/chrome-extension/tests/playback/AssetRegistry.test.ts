@@ -12,9 +12,12 @@ describe('AssetRegistry', () => {
       duration: 1.2,
       version: '1.0',
       review_status: 'draft',
+      transition: 'cross-fade',
+      fallback: 'fingerspell',
     });
     expect(asset?.license).toContain('linguistic review pending');
     expect(asset?.license).toContain('CC BY 4.0');
+    expect(asset?.handshape).toContain('pending');
     expect(registry.lookup('missing')).toBeUndefined();
   });
 });

@@ -67,6 +67,7 @@ describe('YouTubeAdapter', () => {
     expect(isYouTubeWatchPage(new URL('https://www.youtube.com/watch?v=abc'))).toBe(true);
     expect(isYouTubeWatchPage(new URL('https://www.youtube.com/'))).toBe(false);
     expect(isYouTubeWatchPage(new URL('https://www.youtube.com/watch'))).toBe(false);
+    expect(isYouTubeWatchPage(new URL('https://www.youtube.com/shorts/abc'))).toBe(true);
     expect(formatPlaybackTimestamp(65, false)).toBe('01:05');
     expect(formatPlaybackTimestamp(3661, true)).toBe('LIVE · 01:01:01');
   });
@@ -118,6 +119,7 @@ describe('YouTubeCaptionSession', () => {
       text: 'First official caption',
       metadata: {
         channel: 'Test Channel',
+        language: 'und',
         videoId: 'video-1',
         captionsEnabled: true,
         isAdvertisement: false,
