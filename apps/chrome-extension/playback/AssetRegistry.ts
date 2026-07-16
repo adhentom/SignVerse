@@ -1,4 +1,5 @@
 import type { SignAsset } from './types';
+import type { AnimationRegistry } from './contracts';
 
 const HUMANOID_SOURCE = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/2bac6f8c57bf471df0d2a1e8a8ec023c7801dddf/Models/RiggedFigure/glTF-Binary/RiggedFigure.glb';
 
@@ -51,7 +52,7 @@ ASSETS.push(...[
   fallback: 'neutral-explanation' as const,
 })));
 
-export class AssetRegistry {
+export class AssetRegistry implements AnimationRegistry {
   private readonly byId = new Map(ASSETS.map((asset) => [asset.asset_id, asset]));
 
   lookup(assetId: string): SignAsset | undefined {

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ContentPacket } from '../../shared/contentPacket';
 import type { InterpretationErrorCode, InterpretationResponse, InterpretationState } from '../../shared/interpretation';
-import { requestInterpretation } from './requestInterpretation';
+import { StreamingPortClient } from './StreamingPortClient';
 import { segmentText } from './sentenceSegmentation';
+import { appendPlayback } from '../../playback/queue';
 
 interface RequestError { code?: InterpretationErrorCode; message?: string }
 
@@ -29,84 +30,96 @@ export function mergeInterpretations(
     glossary: [...new Set([...current.glossary, ...next.glossary])].slice(-20),
     isl_gloss: [...current.isl_gloss, ...next.isl_gloss].slice(-200),
     confidence: next.confidence,
-    playback: {
-      items: [...(current.playback?.items ?? []), ...(next.playback?.items ?? [])].slice(-200),
-      unsupported_tokens: [...new Set([
-        ...(current.playback?.unsupported_tokens ?? []),
-        ...(next.playback?.unsupported_tokens ?? []),
-      ])],
-    },
+    playback: appendPlayback(
+      current.playback ?? { items: [], unsupported_tokens: [] },
+      next.playback ?? { items: [], unsupported_tokens: [] },
+    ),
   };
 }
 
-export function useStreamingInterpretation(packet: ContentPacket | null, debounceMs = 350) {
-  const [queue, setQueue] = useState<ContentPacket[]>([]);
-  const [response, setResponse] = useState<InterpretationResponse | null>(null);
-  const [error, setError] = useState<RequestError | null>(null);
+export function useStreamingInterpretation(
+  packet: ContentPacket | null,
+  debounceMs = 350,
+  enabled = true,
+) {
+  const client = useRef<StreamingPortClient | undefined>(undefined);
   const seen = useRef(new Set<string>());
   const source = useRef('');
-  const generation = useRef(0);
+  const [pending, setPending] = useState(0);
+  const [response, setResponse] = useState<InterpretationResponse | null>(null);
+  const [error, setError] = useState<RequestError | null>(null);
 
   useEffect(() => {
-    if (!packet) return;
-    const packetMetadata = packet.metadata as Record<string, unknown>;
-    if (packetMetadata.playbackState === 'seeking') {
-      generation.current += 1;
-      setQueue([]);
+    if (!enabled) return;
+    let stream: StreamingPortClient;
+    try {
+      stream = new StreamingPortClient();
+    } catch (streamError) {
+      setError({
+        code: 'extension-context-invalidated',
+        message: streamError instanceof Error ? streamError.message : 'The streaming connection could not start.',
+      });
+      return;
+    }
+    client.current = stream;
+    stream.subscribe((message) => {
+      if (message.type === 'interpretation') {
+        setResponse((current) => mergeInterpretations(current, message.data));
+        setPending((current) => Math.max(0, current - 1));
+        setError(null);
+      } else if (message.type === 'error') {
+        setPending((current) => Math.max(0, current - 1));
+        setError({ code: message.code as InterpretationErrorCode, message: message.message });
+      }
+    });
+    return () => {
+      stream.close();
+      if (client.current === stream) client.current = undefined;
+    };
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled || !packet || !client.current) return;
+    const metadata = packet.metadata as Record<string, unknown>;
+    if (metadata.playbackState === 'seeking') {
+      client.current.reset();
+      setPending(0);
       return;
     }
     const nextSource = sourceIdentity(packet);
     if (source.current !== nextSource) {
       source.current = nextSource;
       seen.current.clear();
-      setQueue([]);
+      client.current.reset();
+      setPending(0);
       setResponse(null);
-      generation.current += 1;
     }
     const timer = window.setTimeout(() => {
       const additions = segmentText(packet.text)
         .filter((text) => !seen.current.has(segmentIdentity(packet, text)))
         .map((text) => ({ ...packet, text }));
       additions.forEach((item) => seen.current.add(segmentIdentity(item)));
-      if (additions.length > 0) setQueue((current) => [...current, ...additions]);
+      additions.forEach((item) => client.current?.send(item));
+      if (additions.length > 0) setPending((current) => current + additions.length);
     }, debounceMs);
     return () => window.clearTimeout(timer);
-  }, [packet ? JSON.stringify(packet) : '', debounceMs]);
-
-  useEffect(() => {
-    const next = queue[0];
-    if (!next) return;
-    const requestGeneration = generation.current;
-    setError(null);
-    void requestInterpretation(next)
-      .then((result) => {
-        if (requestGeneration === generation.current) {
-          setResponse((current) => mergeInterpretations(current, result));
-        }
-      })
-      .catch((requestError: RequestError) => {
-        if (requestGeneration === generation.current) setError(requestError);
-      })
-      .finally(() => {
-        if (requestGeneration === generation.current) setQueue((current) => current.slice(1));
-      });
-  }, [queue[0] ? `${sourceIdentity(queue[0])}:${queue[0].speaker ?? ''}:${queue[0].text}` : '']);
+  }, [enabled, packet ? JSON.stringify(packet) : '', debounceMs]);
 
   const retry = useCallback(() => {
     setError(null);
-    if (packet) {
-      seen.current.delete(segmentIdentity(packet));
-      setQueue((current) => [...current, packet]);
+    if (packet && client.current) {
+      client.current.send(packet);
+      setPending((current) => current + 1);
     }
   }, [packet ? JSON.stringify(packet) : '']);
 
   let state: InterpretationState = { status: 'idle' };
   if (response) state = { status: 'ready', response };
-  else if (queue.length > 0) state = { status: 'loading' };
+  else if (pending > 0) state = { status: 'loading' };
   else if (error) state = {
     status: 'error',
     code: error.code ?? 'connection-failure',
     message: error.message ?? 'Streaming interpretation could not continue.',
   };
-  return { pending: queue.length, retry, state };
+  return { pending, retry, state };
 }

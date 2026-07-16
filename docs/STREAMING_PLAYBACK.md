@@ -7,6 +7,9 @@ items to the active sequence. If the existing sequence is an exact prefix, the s
 elapsed time and resumes automatically when new items arrive after a temporary `Finished` state.
 A source change replaces the sequence and returns playback to `Idle`.
 
+The queue exposes pure `appendPlayback()` and `removeCompleted()` operations. It caps retained
+items at 200 to support long sessions without unbounded memory growth.
+
 The controller supports play, pause, resume, restart, previous, next, seek, speed, and replay.
 Asset loading remains cached and the next animation is preloaded. Renderer changes are cancellable
 and format-neutral.

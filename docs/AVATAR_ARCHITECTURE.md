@@ -9,10 +9,10 @@ clips. Six profiles are registered as data:
 - Adult Male
 - Teen Girl
 - Teen Boy
-- Assistant
+- Neutral Assistant
 - Robot
 
-The selected stable ID is stored in `chrome.storage.local`. Adding a future avatar requires one
+The selected stable ID and per-avatar scale are stored in `chrome.storage.local`. Adding a future avatar requires one
 registry entry and compatible model asset; interpretation and playback planning do not change.
 
 ## Floating interpreter
@@ -35,6 +35,12 @@ next scheduled clip.
 
 Current models and motion are demonstrations only. They do not include validated ISL handshape,
 finger articulation, orientation, or non-manual facial markers.
+
+The dataset boundary defines independently testable `GlossLibrary`, `AnimationRegistry`,
+`MotionDatabase`, and `SignerProfile` contracts. An `AvatarRigController` reserves explicit hooks
+for articulated finger joints, arm targets and constraints, wrist/shoulder motion, head target,
+eye gaze and blink, facial expressions, mouth cues, and breathing. These hooks contain no
+procedural sign motion and remain dormant until reviewed animation or rig data is available.
 
 ## Future reviewed avatars
 

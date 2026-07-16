@@ -45,7 +45,7 @@ YouTube watch URL
 
 This flow is fully local. It does not call a backend, external API, speech service, language model, translation system, or avatar renderer.
 
-## Current extension-to-backend flow
+## Backwards-compatible REST flow
 
 ```text
 Website text or current YouTube/Meet caption
@@ -69,8 +69,8 @@ Only the background service worker has backend host permission; the content scri
 
 ### Incremental processing
 
-The extension now segments page regions and stable captions into sentence-sized packets before
-using this flow. Packets are sent sequentially through the existing one-time message contract;
-validated responses append to the active Malayalam, gloss, and playback queues. This provides
-incremental interpretation without introducing a long-lived service-worker connection. Durable
-server streaming and resumable sessions remain future work.
+The extension segments page regions and stable captions into sentence-sized packets. A long-lived
+content-script port keeps the Manifest V3 worker available while it owns one `/stream` WebSocket.
+The worker buffers unacknowledged sequence numbers and replays them after reconnect. Validated
+responses append to the active Malayalam, gloss, and playback queues. Durable server-side session
+storage remains future work.

@@ -3,24 +3,25 @@
 ## Scope
 
 SignVerse processes content incrementally without changing the existing Manifest V3, background
-worker, ContentPacket, or FastAPI `/interpret` contract. Streaming is a client-side queue of small,
-ordered packets rather than a WebSocket protocol.
+worker, ContentPacket, or FastAPI `/interpret` contract. A new additive `/stream` WebSocket reuses
+the same packet, interpretation service, validation, gloss, and playback planner.
 
 ```text
 DOM text or official caption update
 → adapter snapshot
 → sentence/paragraph segmentation
 → semantic duplicate suppression
-→ ordered ContentPacket queue
-→ background worker
-→ POST /interpret
+→ persistent content-script port
+→ background-owned WebSocket
+→ FastAPI /stream
 → validated interpretation and playback plan
 → append to active output and playback queue
 ```
 
-Only one interpretation request is active per page session. This preserves ordering and prevents
-provider bursts. A source identity is derived from the page URL, YouTube video ID, or Meet meeting
-ID. Navigation clears pending work and ignores late responses from the previous source.
+One persistent connection processes packets sequentially per page session. Sequence numbers
+preserve ordering and prevent provider bursts. The background worker retains unacknowledged
+packets and replays them after bounded exponential reconnect. A source identity is derived from
+the page URL, YouTube video ID, or Meet meeting ID; navigation sends reset and clears pending work.
 
 ## Website mode
 
