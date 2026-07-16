@@ -15,6 +15,8 @@ import { supportsLiveContent } from './adapters/PlatformAdapter';
 import { useInterpretation } from './interpretation/useInterpretation';
 import { useBackendHealth } from './interpretation/useBackendHealth';
 import { startWebsiteExtraction } from './interpretation/startWebsiteExtraction';
+import { createDemoLiveSnapshot, DEMO_INTERPRETATION, DEMO_WEBSITE_CONTENT } from './demo/demoFixtures';
+import { useDemoMode } from './demo/demoMode';
 
 declare global {
   interface Window {
@@ -30,6 +32,7 @@ function WidgetContainer() {
   const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
   const [liveState, setLiveState] = useState<LiveContentSnapshot | null>(null);
   const [websitePacket, setWebsitePacket] = useState<ContentPacket | null>(null);
+  const demoMode = useDemoMode();
 
   useEffect(() => {
     let cancelled = false;
@@ -82,10 +85,22 @@ function WidgetContainer() {
     ? websitePacket
     : liveState?.currentPacket ?? null;
   const { retry, state: interpretationState } = useInterpretation(
-    activePacket,
+    demoMode.loaded && !demoMode.enabled ? activePacket : null,
     platformAdapter.platform.id === 'website' ? 0 : 350,
   );
-  const { retry: retryHealth, state: backendHealthState } = useBackendHealth();
+  const { retry: retryHealth, state: backendHealthState } = useBackendHealth(
+    demoMode.loaded && !demoMode.enabled,
+  );
+
+  const effectiveInterpretationState = demoMode.enabled
+    ? { status: 'ready' as const, response: DEMO_INTERPRETATION }
+    : interpretationState;
+  const effectiveContentState = demoMode.enabled && contentState.status !== 'ready'
+    ? DEMO_WEBSITE_CONTENT
+    : contentState;
+  const effectiveLiveState = demoMode.enabled && !liveState
+    ? createDemoLiveSnapshot(platformAdapter.platform)
+    : liveState;
 
   useEffect(() => {
     if (!supportsLiveContent(platformAdapter)) {
@@ -101,12 +116,14 @@ function WidgetContainer() {
 
   return (
     <FloatingWidget
-      contentState={contentState}
+      contentState={effectiveContentState}
+      demoMode={demoMode.enabled}
       platform={platformAdapter.platform}
-      liveState={liveState}
-      interpretationState={interpretationState}
+      liveState={effectiveLiveState}
+      interpretationState={effectiveInterpretationState}
       backendHealthState={backendHealthState}
       onRetry={() => {
+        if (demoMode.enabled) return;
         console.info('[SignVerse] retry_requested');
         if (
           backendHealthState.status === 'error' &&
@@ -118,6 +135,7 @@ function WidgetContainer() {
         retryHealth();
         retry();
       }}
+      onDemoModeChange={demoMode.setEnabled}
     />
   );
 }

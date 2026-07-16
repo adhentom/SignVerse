@@ -25,6 +25,22 @@ const ASSETS: SignAsset[] = [
   review_status: 'draft',
 }));
 
+ASSETS.push(...[
+  ['asset-demo-welcome', 'demo-welcome', 'Welcome'],
+  ['asset-demo-accessibility', 'demo-accessibility', 'Accessibility'],
+  ['asset-demo-thank-you', 'demo-thank-you', 'Thank you'],
+].map(([asset_id, token_id, display_name]) => ({
+  asset_id,
+  token_id,
+  display_name,
+  format: 'lottie' as const,
+  source: 'avatar/signverse-avatar.json',
+  duration: 1.2,
+  license: 'SignVerse demonstration asset; not a validated ISL animation',
+  version: '1.0',
+  review_status: 'draft' as const,
+})));
+
 export class AssetRegistry {
   private readonly byId = new Map(ASSETS.map((asset) => [asset.asset_id, asset]));
 

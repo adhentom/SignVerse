@@ -8,12 +8,16 @@ interface RequestError {
   message?: string;
 }
 
-export function useBackendHealth(): { retry: () => void; state: BackendHealthState } {
+export function useBackendHealth(enabled = true): { retry: () => void; state: BackendHealthState } {
   const [state, setState] = useState<BackendHealthState>({ status: 'checking' });
   const [attempt, setAttempt] = useState(0);
   const retry = useCallback(() => setAttempt((current) => current + 1), []);
 
   useEffect(() => {
+    if (!enabled) {
+      setState({ status: 'checking' });
+      return;
+    }
     let cancelled = false;
     setState({ status: 'checking' });
     void requestBackendHealth()
@@ -32,7 +36,7 @@ export function useBackendHealth(): { retry: () => void; state: BackendHealthSta
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [attempt, enabled]);
 
   return { retry, state };
 }
