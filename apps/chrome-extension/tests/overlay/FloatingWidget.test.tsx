@@ -40,8 +40,10 @@ describe('FloatingWidget', () => {
               paragraphs: [],
             },
           }}
+          demoMode={false}
           interpretationState={{ status: 'idle' }}
           liveState={null}
+          onDemoModeChange={vi.fn()}
           onRetry={vi.fn()}
           platform={{
             id: 'website',
@@ -77,8 +79,10 @@ describe('FloatingWidget', () => {
             message: 'Refresh required.',
           }}
           contentState={{ status: 'loading' }}
+          demoMode={false}
           interpretationState={{ status: 'idle' }}
           liveState={null}
+          onDemoModeChange={vi.fn()}
           onRetry={retry}
           platform={{
             id: 'website',
@@ -96,5 +100,30 @@ describe('FloatingWidget', () => {
     );
     act(() => refresh?.click());
     expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it('exposes an accessible toggle and visible badge in Demo Mode', () => {
+    const onDemoModeChange = vi.fn();
+    act(() => {
+      root.render(
+        <FloatingWidget
+          backendHealthState={{ status: 'checking' }}
+          contentState={{ status: 'loading' }}
+          demoMode
+          interpretationState={{ status: 'idle' }}
+          liveState={null}
+          onDemoModeChange={onDemoModeChange}
+          onRetry={vi.fn()}
+          platform={{ id: 'website', displayName: 'Generic website', modeLabel: 'Website Mode', statusLabel: 'Website Reading' }}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain('Demo ready');
+    expect(container.textContent).toContain('Demo Mode');
+    const toggle = container.querySelector<HTMLInputElement>('input[role="switch"]');
+    expect(toggle?.checked).toBe(true);
+    act(() => toggle?.click());
+    expect(onDemoModeChange).toHaveBeenCalledWith(false);
   });
 });

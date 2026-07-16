@@ -19,8 +19,10 @@ import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
 interface FloatingWidgetProps {
   backendHealthState: BackendHealthState;
   contentState: WebsiteContentState;
+  demoMode: boolean;
   interpretationState: InterpretationState;
   liveState: LiveContentSnapshot | null;
+  onDemoModeChange: (enabled: boolean) => void;
   onRetry: () => void;
   platform: PlatformInfo;
 }
@@ -65,8 +67,10 @@ function SourcePanel({
 export function FloatingWidget({
   backendHealthState,
   contentState,
+  demoMode,
   interpretationState,
   liveState,
+  onDemoModeChange,
   onRetry,
   platform,
 }: FloatingWidgetProps) {
@@ -74,7 +78,9 @@ export function FloatingWidget({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const shouldMoveFocus = useRef(false);
-  const connection = connectionCopy(backendHealthState, interpretationState);
+  const connection = demoMode
+    ? { label: 'Demo ready', tone: 'online' }
+    : connectionCopy(backendHealthState, interpretationState);
 
   useEffect(() => {
     if (!shouldMoveFocus.current) return;
@@ -111,6 +117,7 @@ export function FloatingWidget({
             <span aria-hidden="true" className="sv-accessibility-mark">
               <UIIcon name="accessibility" />
             </span>
+            {demoMode && <span className="sv-demo-badge">Demo Mode</span>}
             <button
               aria-label="Close SignVerse sidebar"
               className="sv-close-button"
@@ -149,6 +156,19 @@ export function FloatingWidget({
                   <strong>{platform.displayName}</strong>
                 </div>
               </div>
+              <label className="sv-demo-toggle">
+                <span>
+                  <strong>Demo Mode</strong>
+                  <small>Use offline sample content</small>
+                </span>
+                <input
+                  aria-label="Enable Demo Mode"
+                  checked={demoMode}
+                  onChange={(event) => onDemoModeChange(event.currentTarget.checked)}
+                  role="switch"
+                  type="checkbox"
+                />
+              </label>
             </section>
 
             <PipelineProgress state={interpretationState} />
