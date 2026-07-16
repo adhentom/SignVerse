@@ -39,7 +39,6 @@ export function startWebsiteExtraction(
         packetReady: Boolean(packet),
       });
       onResult({ content, packet });
-      if (packet) observer?.disconnect();
     } catch (error) {
       console.warn('[SignVerse] website_extraction_failed', error);
       onError(error);

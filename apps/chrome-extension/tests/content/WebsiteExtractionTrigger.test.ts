@@ -47,6 +47,10 @@ describe('website extraction trigger', () => {
       title: 'Long article',
       text: expect.stringContaining('A readable article paragraph.'),
     });
+    document.body.append(document.createElement('section'));
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(extractContent).toHaveBeenCalledTimes(3);
     stop();
   });
 });

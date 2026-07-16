@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PlaybackSequence } from '../shared/interpretation';
 import { AnimationScheduler } from './AnimationScheduler';
 import { transitionRendererState } from './stateMachine';
 import type { PlaybackSnapshot, RendererState } from './types';
 
 export function usePlaybackController(sequence: PlaybackSequence) {
-  const sequenceKey = sequence.items.map((item) => `${item.asset_id}:${item.duration}`).join('|');
+  const sequenceKey = sequence.items.map((item) => `${item.token_id}:${item.asset_id}:${item.duration}`).join('|');
   const scheduler = useMemo(() => new AnimationScheduler(sequence), [sequenceKey]);
   const [snapshot, setSnapshot] = useState<PlaybackSnapshot>({
     state: 'Idle', elapsed: 0, currentIndex: 0, speed: 1,
   });
+  const previousItems = useRef<PlaybackSequence['items']>([]);
 
   const update = useCallback((changes: Partial<PlaybackSnapshot>) => {
     setSnapshot((current) => {
@@ -28,7 +29,20 @@ export function usePlaybackController(sequence: PlaybackSequence) {
   }, [scheduler]);
 
   useEffect(() => {
-    setSnapshot({ state: 'Idle', elapsed: 0, currentIndex: 0, speed: 1 });
+    const previous = previousItems.current;
+    const appended = previous.length > 0 && previous.every((item, index) => (
+      item.token_id === sequence.items[index]?.token_id &&
+      item.asset_id === sequence.items[index]?.asset_id
+    ));
+    previousItems.current = sequence.items;
+    setSnapshot((current) => appended
+      ? { ...current, state: current.state === 'Finished' ? 'Playing' : current.state }
+      : {
+          state: sequence.items.length > 0 ? 'Playing' : 'Idle',
+          elapsed: 0,
+          currentIndex: 0,
+          speed: current.speed,
+        });
   }, [sequenceKey]);
 
   useEffect(() => {

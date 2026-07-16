@@ -13,6 +13,11 @@ export interface SignAsset {
   license: string;
   version: string;
   review_status: 'draft' | 'approved';
+  transition: 'cut' | 'cross-fade' | 'reviewed';
+  handshape: string;
+  orientation: string;
+  facial_expression: string;
+  fallback: 'fingerspell' | 'neutral-explanation';
 }
 
 export interface LoadedAsset {

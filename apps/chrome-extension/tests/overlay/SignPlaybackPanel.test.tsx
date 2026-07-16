@@ -46,6 +46,9 @@ describe('SignPlaybackPanel', () => {
     expect(container.textContent).toContain('greeting-hello');
     expect(container.textContent).toContain('glb');
     expect(container.querySelector('select[aria-label="Interpreter avatar"]')).not.toBeNull();
+    expect(container.querySelector('select[aria-label="Floating interpreter avatar"]')).not.toBeNull();
+    expect(container.querySelector('button[aria-label="Dock interpreter left"]')).not.toBeNull();
+    expect(container.querySelector('input[aria-label="Floating interpreter opacity"]')).not.toBeNull();
     expect(container.querySelector('[aria-label="Move interpreter; use arrow keys or drag"]')).not.toBeNull();
     expect(container.textContent).toContain('75%');
     expect(container.textContent).toContain('object-water');

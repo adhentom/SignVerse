@@ -16,6 +16,8 @@ import { SignVerseMark } from './components/SignVerseMark';
 import { UIIcon } from './components/UIIcon';
 import { YouTubeCaptionPanel } from './components/YouTubeCaptionPanel';
 
+const SIDEBAR_STORAGE_KEY = 'signverse.sidebarExpanded';
+
 interface FloatingWidgetProps {
   backendHealthState: BackendHealthState;
   contentState: WebsiteContentState;
@@ -83,6 +85,19 @@ export function FloatingWidget({
     : connectionCopy(backendHealthState, interpretationState);
 
   useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+    let active = true;
+    void chrome.storage.local.get(SIDEBAR_STORAGE_KEY)
+      .then((stored) => {
+        if (active && typeof stored[SIDEBAR_STORAGE_KEY] === 'boolean') {
+          setIsExpanded(stored[SIDEBAR_STORAGE_KEY]);
+        }
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
     if (!shouldMoveFocus.current) return;
     const frame = window.requestAnimationFrame(() => {
       (isExpanded ? closeButtonRef.current : fabRef.current)?.focus();
@@ -94,6 +109,9 @@ export function FloatingWidget({
   function setExpanded(next: boolean) {
     shouldMoveFocus.current = true;
     setIsExpanded(next);
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      void chrome.storage.local.set({ [SIDEBAR_STORAGE_KEY]: next }).catch(() => undefined);
+    }
   }
 
   return (
@@ -182,7 +200,10 @@ export function FloatingWidget({
                 <span>{platform.modeLabel}</span>
               </div>
               <InterpretationPanel onRetry={onRetry} state={interpretationState} />
-              <SignPlaybackPanel state={interpretationState} />
+              <SignPlaybackPanel
+                paused={liveState?.status === 'paused' || liveState?.status === 'advertisement' || liveState?.status === 'reconnecting'}
+                state={interpretationState}
+              />
             </section>
 
             <CollapsibleCard icon="globe" title="Source content">

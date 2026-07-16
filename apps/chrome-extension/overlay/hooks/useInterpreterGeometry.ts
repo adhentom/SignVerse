@@ -105,8 +105,13 @@ export function useInterpreterGeometry() {
     const stop = () => {
       removeListeners();
       setGeometry((current) => {
-        persist(current);
-        return current;
+        const right = window.innerWidth - current.width;
+        const next = {
+          ...current,
+          x: current.x < 32 ? 0 : right - current.x < 32 ? right : current.x,
+        };
+        persist(next);
+        return next;
       });
     };
     cleanupDrag.current = removeListeners;
@@ -135,5 +140,24 @@ export function useInterpreterGeometry() {
     });
   }
 
-  return { geometry, moveWithKeyboard, stageRef, startDrag };
+  function dock(side: 'left' | 'right') {
+    setGeometry((current) => {
+      const next = clampGeometry({
+        ...current,
+        x: side === 'left' ? 0 : window.innerWidth - current.width,
+      });
+      persist(next);
+      return next;
+    });
+  }
+
+  function expand() {
+    setGeometry((current) => {
+      const next = clampGeometry({ ...current, width: 420, height: 560 });
+      persist(next);
+      return next;
+    });
+  }
+
+  return { dock, expand, geometry, moveWithKeyboard, stageRef, startDrag };
 }

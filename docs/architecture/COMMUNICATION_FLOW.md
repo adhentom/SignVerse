@@ -65,4 +65,12 @@ Website text or current YouTube/Meet caption
 → Sign Playback plan panel
 ```
 
-Only the background service worker has backend host permission; the content script contains no direct network client. OpenAI credentials remain exclusively in the backend environment. Authentication, user activation/consent controls, streaming, durable sessions, and response schema versioning remain future work.
+Only the background service worker has backend host permission; the content script contains no direct network client. OpenAI credentials remain exclusively in the backend environment. Authentication, user activation/consent controls, server-pushed streaming, durable sessions, and response schema versioning remain future work.
+
+### Incremental processing
+
+The extension now segments page regions and stable captions into sentence-sized packets before
+using this flow. Packets are sent sequentially through the existing one-time message contract;
+validated responses append to the active Malayalam, gloss, and playback queues. This provides
+incremental interpretation without introducing a long-lived service-worker connection. Durable
+server streaming and resumable sessions remain future work.

@@ -11,6 +11,7 @@ import { useAvatarPreference } from '../hooks/useAvatarPreference';
 import { useInterpreterGeometry } from '../hooks/useInterpreterGeometry';
 
 const EMPTY_SEQUENCE: PlaybackSequence = { items: [], unsupported_tokens: [] };
+const INTERPRETER_PREFERENCES_KEY = 'signverse.interpreterPreferences';
 
 function formatTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -25,7 +26,7 @@ function resolveAsset(item: PlaybackSequence['items'][number] | undefined) {
     : undefined;
 }
 
-function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence; caption: string }) {
+function PlaybackController({ sequence, caption, paused }: { sequence: PlaybackSequence; caption: string; paused: boolean }) {
   const controller = usePlaybackController(sequence);
   const { scheduled, snapshot, totalDuration } = controller;
   const current = scheduled?.item;
@@ -44,7 +45,40 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
   const [reducedMotion, setReducedMotion] = useState(false);
   const [rendererAttempt, setRendererAttempt] = useState(0);
   const { profile, select: selectAvatar } = useAvatarPreference();
-  const { geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
+  const { dock, expand, geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
+  const [interpreterVisible, setInterpreterVisible] = useState(true);
+  const [interpreterMinimized, setInterpreterMinimized] = useState(false);
+  const [opacity, setOpacity] = useState(1);
+  const [alwaysOnTop, setAlwaysOnTop] = useState(true);
+
+  useEffect(() => {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+    let active = true;
+    void chrome.storage.local.get(INTERPRETER_PREFERENCES_KEY)
+      .then((stored) => {
+        const value = stored[INTERPRETER_PREFERENCES_KEY] as Record<string, unknown> | undefined;
+        if (!active || !value) return;
+        if (typeof value.opacity === 'number') setOpacity(Math.min(1, Math.max(0.4, value.opacity)));
+        if (typeof value.minimized === 'boolean') setInterpreterMinimized(value.minimized);
+        if (typeof value.alwaysOnTop === 'boolean') setAlwaysOnTop(value.alwaysOnTop);
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  function savePreferences(next: { opacity?: number; minimized?: boolean; alwaysOnTop?: boolean }) {
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      void chrome.storage.local.set({
+        [INTERPRETER_PREFERENCES_KEY]: {
+          opacity, minimized: interpreterMinimized, alwaysOnTop, ...next,
+        },
+      }).catch(() => undefined);
+    }
+  }
+
+  useEffect(() => {
+    if (paused && snapshot.state === 'Playing') controller.pause();
+  }, [paused, snapshot.state]);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;
@@ -76,10 +110,15 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
         Animated avatar demo · sign assets remain draft pending native ISL review
       </p>
 
-      <div
-        className="sv-player-stage sv-interpreter-overlay"
+      {!interpreterVisible && (
+        <button className="sv-restore-interpreter" onClick={() => setInterpreterVisible(true)} type="button">
+          Restore floating interpreter
+        </button>
+      )}
+      {interpreterVisible && <div
+        className={`sv-player-stage sv-interpreter-overlay ${interpreterMinimized ? 'sv-interpreter-overlay--minimized' : ''}`}
         ref={stageRef}
-        style={{ left: geometry.x, top: geometry.y, width: geometry.width, height: geometry.height }}
+        style={{ left: geometry.x, opacity, top: geometry.y, width: geometry.width, height: interpreterMinimized ? 56 : geometry.height, zIndex: alwaysOnTop ? 2147483646 : 2147483000 }}
       >
         <button
           aria-label="Move interpreter; use arrow keys or drag"
@@ -88,6 +127,15 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
           onPointerDown={startDrag}
           type="button"
         >SignVerse Interpreter · drag</button>
+        <div className="sv-floating-controls" aria-label="Floating interpreter controls">
+          <span aria-label="Connected" className="sv-floating-connection" />
+          <button aria-label="Dock interpreter left" onClick={() => dock('left')} type="button">⇤</button>
+          <button aria-label="Dock interpreter right" onClick={() => dock('right')} type="button">⇥</button>
+          <button aria-label="Expand interpreter" onClick={expand} type="button">↗</button>
+          <button aria-label={interpreterMinimized ? 'Restore interpreter' : 'Minimize interpreter'} onClick={() => setInterpreterMinimized((value) => { savePreferences({ minimized: !value }); return !value; })} type="button">—</button>
+          <button aria-label="Close floating interpreter" onClick={() => setInterpreterVisible(false)} type="button">×</button>
+        </div>
+        {!interpreterMinimized && <>
         <AvatarRenderer
           asset={currentAsset}
           nextAsset={nextAsset}
@@ -105,8 +153,21 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
           <small>{currentAsset
             ? `${currentAsset.format} · ${Math.round((current?.confidence ?? 0) * 100)}% confidence`
             : current ? 'Animation asset unavailable' : 'Waiting for a supported token'}</small>
+          <p lang="ml">{caption.split('\n').at(-1) || 'മലയാള പരിഭാഷ ലഭ്യമല്ല.'}</p>
         </div>
-      </div>
+        <div className="sv-floating-playback">
+          <button aria-label={snapshot.state === 'Playing' ? 'Pause floating interpreter' : 'Play floating interpreter'} onClick={snapshot.state === 'Playing' ? controller.pause : controller.play} type="button">
+            <UIIcon name={snapshot.state === 'Playing' ? 'pause' : 'play'} />
+          </button>
+          <progress aria-label={`${Math.round(completion)} percent played`} max="100" value={completion} />
+          <select aria-label="Floating interpreter avatar" onChange={(event) => selectAvatar(event.currentTarget.value as AvatarProfileId)} value={profile.id}>
+            {AVATAR_PROFILES.map((avatar) => <option key={avatar.id} value={avatar.id}>{avatar.label}</option>)}
+          </select>
+          <label><span>Opacity</span><input aria-label="Floating interpreter opacity" max="1" min="0.4" onChange={(event) => { const next = Number(event.currentTarget.value); setOpacity(next); savePreferences({ opacity: next }); }} step="0.1" type="range" value={opacity} /></label>
+          <label><span>Always on top</span><input aria-label="Always keep interpreter on top" checked={alwaysOnTop} onChange={(event) => { setAlwaysOnTop(event.currentTarget.checked); savePreferences({ alwaysOnTop: event.currentTarget.checked }); }} type="checkbox" /></label>
+        </div>
+        </>}
+      </div>}
 
       <label className="sv-avatar-select">
         <span>Interpreter avatar</span>
@@ -200,7 +261,7 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
   );
 }
 
-export function SignPlaybackPanel({ state }: { state: InterpretationState }) {
+export function SignPlaybackPanel({ state, paused = false }: { state: InterpretationState; paused?: boolean }) {
   if (state.status === 'loading') {
     return (
       <section aria-busy="true" aria-live="polite" className="sv-card sv-player-skeleton">
@@ -217,7 +278,7 @@ export function SignPlaybackPanel({ state }: { state: InterpretationState }) {
 
   return (
     <CollapsibleCard badge={`${sequence.items.length || glossCount} signs`} defaultExpanded icon="translate" title="ISL Playback">
-      <PlaybackController caption={caption} sequence={sequence} />
+      <PlaybackController caption={caption} paused={paused} sequence={sequence} />
     </CollapsibleCard>
   );
 }

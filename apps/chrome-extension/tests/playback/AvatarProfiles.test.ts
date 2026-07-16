@@ -7,5 +7,8 @@ describe('avatar profiles', () => {
       'adult-female', 'adult-male', 'young-girl', 'young-boy', 'neutral', 'robot',
     ]);
     expect(new Set(AVATAR_PROFILES.map((profile) => profile.id)).size).toBe(6);
+    expect(AVATAR_PROFILES.map((profile) => profile.label)).toEqual([
+      'Adult female', 'Adult male', 'Teen girl', 'Teen boy', 'Assistant', 'Robot',
+    ]);
   });
 });

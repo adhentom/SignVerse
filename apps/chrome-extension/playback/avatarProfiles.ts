@@ -10,9 +10,9 @@ export interface AvatarProfile {
 export const AVATAR_PROFILES: readonly AvatarProfile[] = [
   { id: 'adult-female', label: 'Adult female', color: 0x8b5cf6, scale: 1 },
   { id: 'adult-male', label: 'Adult male', color: 0x2563eb, scale: 1.04 },
-  { id: 'young-girl', label: 'Young girl', color: 0xec4899, scale: 0.88 },
-  { id: 'young-boy', label: 'Young boy', color: 0x22c55e, scale: 0.9 },
-  { id: 'neutral', label: 'Neutral assistant', color: 0x7c6cff, scale: 1 },
+  { id: 'young-girl', label: 'Teen girl', color: 0xec4899, scale: 0.88 },
+  { id: 'young-boy', label: 'Teen boy', color: 0x22c55e, scale: 0.9 },
+  { id: 'neutral', label: 'Assistant', color: 0x7c6cff, scale: 1 },
   { id: 'robot', label: 'Robot', color: 0x06b6d4, scale: 1 },
 ];
 

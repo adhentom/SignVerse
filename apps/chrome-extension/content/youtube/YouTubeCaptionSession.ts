@@ -28,6 +28,7 @@ const VIDEO_EVENTS = [
 function emptyMetadata(): YouTubePacketMetadata {
   return {
     channel: 'Unknown channel',
+    language: 'und',
     videoId: '',
     captionsEnabled: false,
     isAdvertisement: false,
@@ -203,6 +204,8 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
     const timestamp = formatPlaybackTimestamp(video?.currentTime ?? 0, isLive);
     const metadata: YouTubePacketMetadata = {
       channel,
+      language: this.document.querySelector(YOUTUBE_SELECTORS.captionSegments)?.getAttribute('lang') ||
+        this.document.documentElement.lang || 'und',
       videoId,
       captionsEnabled,
       isAdvertisement,

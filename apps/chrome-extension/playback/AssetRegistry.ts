@@ -23,6 +23,11 @@ const ASSETS: SignAsset[] = [
   license: 'CC BY 4.0 — © 2017 Cesium; demonstration motion, linguistic review pending',
   version: '1.0',
   review_status: 'draft',
+  transition: 'cross-fade',
+  handshape: 'pending native ISL review',
+  orientation: 'pending native ISL review',
+  facial_expression: 'pending native ISL review',
+  fallback: 'fingerspell',
 }));
 
 ASSETS.push(...[
@@ -39,6 +44,11 @@ ASSETS.push(...[
   license: 'SignVerse demonstration asset; not a validated ISL animation',
   version: '1.0',
   review_status: 'draft' as const,
+  transition: 'cross-fade' as const,
+  handshape: 'demonstration only',
+  orientation: 'demonstration only',
+  facial_expression: 'demonstration only',
+  fallback: 'neutral-explanation' as const,
 })));
 
 export class AssetRegistry {

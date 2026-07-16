@@ -30,6 +30,11 @@ The build derives `host_permissions` from that URL, so each environment grants n
 7. The service worker validates and returns the interpretation response to the content script.
 8. The widget renders connectivity, interpretation, and sign-playback planning states.
 
+Content is segmented before transport. Website paragraphs and stable live-caption sentences enter
+an ordered request queue, and each validated response appends to the active Malayalam, gloss, and
+playback output. Navigation cancels pending source work, while timestamp-only caption updates are
+ignored. See [`docs/REALTIME_PIPELINE.md`](../../docs/REALTIME_PIPELINE.md).
+
 Backend requests are made by the Manifest V3 service worker, so inspect its DevTools console and
 Network panel from `chrome://extensions` rather than the webpage Network panel. Logs prefixed with
 `[SignVerse]` identify service-worker startup, the resolved backend URL, request lifecycle, and

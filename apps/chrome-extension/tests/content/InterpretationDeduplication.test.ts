@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contentPacketIdentity } from '../../content/interpretation/useInterpretation';
+import { segmentIdentity } from '../../content/interpretation/useStreamingInterpretation';
 
 describe('interpretation request identity', () => {
   it('ignores timestamp-only caption updates', () => {
@@ -11,8 +11,8 @@ describe('interpretation request identity', () => {
       metadata: { videoId: 'video-1', playbackState: 'playing' },
     };
 
-    expect(contentPacketIdentity({ ...packet, timestamp: '00:02' }))
-      .toBe(contentPacketIdentity(packet));
+    expect(segmentIdentity({ ...packet, timestamp: '00:02' }))
+      .toBe(segmentIdentity(packet));
   });
 
   it('changes when caption text, speaker, or source changes', () => {
@@ -25,11 +25,11 @@ describe('interpretation request identity', () => {
       metadata: { meetingId: 'meeting-1' },
     };
 
-    expect(contentPacketIdentity({ ...packet, text: 'Thank you' }))
-      .not.toBe(contentPacketIdentity(packet));
-    expect(contentPacketIdentity({ ...packet, speaker: 'Ravi' }))
-      .not.toBe(contentPacketIdentity(packet));
-    expect(contentPacketIdentity({ ...packet, metadata: { meetingId: 'meeting-2' } }))
-      .not.toBe(contentPacketIdentity(packet));
+    expect(segmentIdentity({ ...packet, text: 'Thank you' }))
+      .not.toBe(segmentIdentity(packet));
+    expect(segmentIdentity({ ...packet, speaker: 'Ravi' }))
+      .not.toBe(segmentIdentity(packet));
+    expect(segmentIdentity({ ...packet, metadata: { meetingId: 'meeting-2' } }))
+      .not.toBe(segmentIdentity(packet));
   });
 });

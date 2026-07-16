@@ -12,14 +12,18 @@ export function isYouTubeHost(hostname: string): boolean {
 export function isYouTubeWatchPage(url: URL): boolean {
   return (
     isYouTubeHost(url.hostname) &&
-    url.pathname === '/watch' &&
-    Boolean(url.searchParams.get('v'))
+    ((url.pathname === '/watch' && Boolean(url.searchParams.get('v'))) ||
+      /^\/shorts\/[^/]+/u.test(url.pathname))
   );
 }
 
 export function getYouTubeVideoId(url: URL): string {
   if (url.hostname.toLocaleLowerCase() === 'youtu.be') {
     return url.pathname.split('/').filter(Boolean)[0] ?? '';
+  }
+
+  if (url.pathname.startsWith('/shorts/')) {
+    return url.pathname.split('/').filter(Boolean)[1] ?? '';
   }
 
   return url.searchParams.get('v') ?? '';

@@ -1571,6 +1571,76 @@
   letter-spacing: 0.04em;
 }
 
+.sv-floating-controls {
+  position: absolute;
+  z-index: 4;
+  top: 3px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.sv-floating-controls button,
+.sv-floating-playback button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: #e8e5ff;
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.sv-floating-connection {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sv-green);
+  box-shadow: 0 0 8px rgba(67, 214, 162, 0.7);
+}
+
+.sv-floating-playback {
+  position: absolute;
+  z-index: 3;
+  right: 8px;
+  bottom: 8px;
+  left: 8px;
+  display: grid;
+  grid-template-columns: 24px minmax(40px, 1fr) minmax(90px, auto);
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 9px;
+  background: rgba(5, 8, 14, 0.9);
+}
+
+.sv-floating-playback label {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 6px;
+  color: var(--sv-text-muted);
+  font-size: 9px;
+}
+
+.sv-floating-playback input { flex: 1; }
+.sv-floating-playback progress { width: 100%; }
+.sv-floating-playback select { min-width: 0; font-size: 9px; }
+.sv-interpreter-overlay--minimized { min-height: 56px; resize: none; }
+.sv-interpreter-overlay--minimized .sv-avatar-drag-handle { height: 56px; }
+.sv-restore-interpreter {
+  padding: 8px 10px;
+  border: 1px solid var(--sv-border);
+  border-radius: 9px;
+  color: var(--sv-text-secondary);
+  background: var(--sv-surface-raised);
+  cursor: pointer;
+}
+
 .sv-avatar-select {
   display: grid;
   grid-template-columns: 1fr auto;

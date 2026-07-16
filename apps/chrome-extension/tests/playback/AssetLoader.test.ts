@@ -12,6 +12,11 @@ const asset: SignAsset = {
   license: 'test',
   version: '1',
   review_status: 'draft',
+  transition: 'cross-fade',
+  handshape: 'pending',
+  orientation: 'pending',
+  facial_expression: 'pending',
+  fallback: 'fingerspell',
 };
 
 describe('AssetLoader', () => {
