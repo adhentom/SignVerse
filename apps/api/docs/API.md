@@ -63,3 +63,21 @@ empty string in the mock and safe-fallback responses. It remains separate from `
 which represents concept-oriented ISL sequencing rather than Malayalam grammar.
 
 If the selected interpretation provider times out, is rate limited, fails, or returns invalid output, the endpoint returns the safe empty response using the same schema. Provider error details are logged by category without logging packet content.
+
+## `WebSocket /stream`
+
+The extension background worker opens one persistent connection and sends ordered messages:
+
+```json
+{
+  "type": "content",
+  "sequence": 1,
+  "session_id": "...",
+  "packet": { "platform": "youtube", "title": "...", "timestamp": "00:01", "text": "...", "metadata": {} }
+}
+```
+
+The server replies with the same sequence and session identifiers plus the existing validated
+`InterpretationResponse` under `data`. A `reset` message cancels the client-side session boundary
+on navigation. Messages are processed sequentially per connection. Development accepts unpacked
+`chrome-extension://` origins; staging and production require an exact configured origin.

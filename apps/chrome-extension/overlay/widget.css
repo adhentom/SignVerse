@@ -1630,8 +1630,7 @@
 .sv-floating-playback input { flex: 1; }
 .sv-floating-playback progress { width: 100%; }
 .sv-floating-playback select { min-width: 0; font-size: 9px; }
-.sv-interpreter-overlay--minimized { min-height: 56px; resize: none; }
-.sv-interpreter-overlay--minimized .sv-avatar-drag-handle { height: 56px; }
+.sv-interpreter-overlay--minimized { min-height: 220px; resize: none; }
 .sv-restore-interpreter {
   padding: 8px 10px;
   border: 1px solid var(--sv-border);

@@ -44,7 +44,7 @@ function PlaybackController({ sequence, caption, paused }: { sequence: PlaybackS
   const completion = totalDuration > 0 ? Math.min(100, (snapshot.elapsed / totalDuration) * 100) : 0;
   const [reducedMotion, setReducedMotion] = useState(false);
   const [rendererAttempt, setRendererAttempt] = useState(0);
-  const { profile, select: selectAvatar } = useAvatarPreference();
+  const { profile, scale: avatarScale, select: selectAvatar, setScale: setAvatarScale } = useAvatarPreference();
   const { dock, expand, geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
   const [interpreterVisible, setInterpreterVisible] = useState(true);
   const [interpreterMinimized, setInterpreterMinimized] = useState(false);
@@ -118,7 +118,7 @@ function PlaybackController({ sequence, caption, paused }: { sequence: PlaybackS
       {interpreterVisible && <div
         className={`sv-player-stage sv-interpreter-overlay ${interpreterMinimized ? 'sv-interpreter-overlay--minimized' : ''}`}
         ref={stageRef}
-        style={{ left: geometry.x, opacity, top: geometry.y, width: geometry.width, height: interpreterMinimized ? 56 : geometry.height, zIndex: alwaysOnTop ? 2147483646 : 2147483000 }}
+        style={{ left: geometry.x, opacity, top: geometry.y, width: geometry.width, height: interpreterMinimized ? 220 : geometry.height, zIndex: alwaysOnTop ? 2147483646 : 2147483000 }}
       >
         <button
           aria-label="Move interpreter; use arrow keys or drag"
@@ -135,7 +135,6 @@ function PlaybackController({ sequence, caption, paused }: { sequence: PlaybackS
           <button aria-label={interpreterMinimized ? 'Restore interpreter' : 'Minimize interpreter'} onClick={() => setInterpreterMinimized((value) => { savePreferences({ minimized: !value }); return !value; })} type="button">—</button>
           <button aria-label="Close floating interpreter" onClick={() => setInterpreterVisible(false)} type="button">×</button>
         </div>
-        {!interpreterMinimized && <>
         <AvatarRenderer
           asset={currentAsset}
           nextAsset={nextAsset}
@@ -155,7 +154,7 @@ function PlaybackController({ sequence, caption, paused }: { sequence: PlaybackS
             : current ? 'Animation asset unavailable' : 'Waiting for a supported token'}</small>
           <p lang="ml">{caption.split('\n').at(-1) || 'മലയാള പരിഭാഷ ലഭ്യമല്ല.'}</p>
         </div>
-        <div className="sv-floating-playback">
+        {!interpreterMinimized && <div className="sv-floating-playback">
           <button aria-label={snapshot.state === 'Playing' ? 'Pause floating interpreter' : 'Play floating interpreter'} onClick={snapshot.state === 'Playing' ? controller.pause : controller.play} type="button">
             <UIIcon name={snapshot.state === 'Playing' ? 'pause' : 'play'} />
           </button>
@@ -165,8 +164,8 @@ function PlaybackController({ sequence, caption, paused }: { sequence: PlaybackS
           </select>
           <label><span>Opacity</span><input aria-label="Floating interpreter opacity" max="1" min="0.4" onChange={(event) => { const next = Number(event.currentTarget.value); setOpacity(next); savePreferences({ opacity: next }); }} step="0.1" type="range" value={opacity} /></label>
           <label><span>Always on top</span><input aria-label="Always keep interpreter on top" checked={alwaysOnTop} onChange={(event) => { setAlwaysOnTop(event.currentTarget.checked); savePreferences({ alwaysOnTop: event.currentTarget.checked }); }} type="checkbox" /></label>
-        </div>
-        </>}
+          <label><span>Avatar scale</span><input aria-label="Floating interpreter avatar scale" max="1.3" min="0.7" onChange={(event) => setAvatarScale(Number(event.currentTarget.value))} step="0.05" type="range" value={avatarScale} /></label>
+        </div>}
       </div>}
 
       <label className="sv-avatar-select">

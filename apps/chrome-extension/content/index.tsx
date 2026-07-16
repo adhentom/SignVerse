@@ -87,6 +87,7 @@ function WidgetContainer() {
   const { retry, state: interpretationState } = useStreamingInterpretation(
     demoMode.loaded && !demoMode.enabled ? activePacket : null,
     platformAdapter.platform.id === 'website' ? 0 : 350,
+    demoMode.loaded && !demoMode.enabled,
   );
   const { retry: retryHealth, state: backendHealthState } = useBackendHealth(
     demoMode.loaded && !demoMode.enabled,

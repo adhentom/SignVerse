@@ -4,6 +4,8 @@ import {
   createBackendHealthMessageHandler,
   createInterpretationMessageHandler,
 } from './interpretationMessageHandler';
+import { StreamingBridge } from './StreamingBridge';
+import { STREAM_PORT_NAME } from '../shared/streaming';
 
 const backendConfig = getBackendConfig();
 const backendClient = new BackendClient(backendConfig);
@@ -21,6 +23,10 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
 chrome.runtime.onMessage.addListener(createInterpretationMessageHandler(backendClient));
 chrome.runtime.onMessage.addListener(createBackendHealthMessageHandler(backendClient));
+
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name === STREAM_PORT_NAME) new StreamingBridge(backendConfig, port).start();
+});
 
 chrome.runtime.onMessage.addListener((message: unknown, sender) => {
   if (

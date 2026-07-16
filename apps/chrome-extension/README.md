@@ -24,10 +24,10 @@ The build derives `host_permissions` from that URL, so each environment grants n
 1. Chrome injects the packaged generic-web content script into HTTP and HTTPS pages.
 2. The content script mounts the floating React widget inside an isolated Shadow DOM.
 3. The content script requests backend health from the background service worker when production mode starts and on widget retries. The worker makes no unsolicited startup request.
-4. The content script normalizes website text or the current YouTube/Meet caption into a `ContentPacket`.
-5. The content script sends a versioned, correlated interpretation request to the background service worker.
-6. The service worker validates the packet and calls `POST /interpret` through the typed backend client.
-7. The service worker validates and returns the interpretation response to the content script.
+4. The content script normalizes website text or the current YouTube/Meet caption into sentence-sized `ContentPacket` values.
+5. A long-lived runtime port sends ordered packets to the background service worker.
+6. The service worker validates packets and owns one reconnecting WebSocket to `/stream`.
+7. The worker validates streamed responses and returns them to the content script in sequence.
 8. The widget renders connectivity, interpretation, and sign-playback planning states.
 
 Content is segmented before transport. Website paragraphs and stable live-caption sentences enter
@@ -97,7 +97,7 @@ On active `meet.google.com` session routes, the Google Meet adapter creates a lo
 
 Meet caption selectors are isolated from the session so DOM changes can be accommodated without changing packet or UI contracts. Caption content remains ephemeral in the extension and is sent to the configured backend for interpretation.
 
-The background service worker owns backend configuration, timeout handling, network failures, response validation, and the `POST /interpret` call. It stores no durable state.
+The background service worker owns backend configuration, WebSocket reconnection, unacknowledged-packet replay, response validation, and the backwards-compatible REST client. It stores no durable content.
 
 ## Avatar playback
 
