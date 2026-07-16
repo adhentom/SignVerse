@@ -31,7 +31,7 @@ export function useDemoMode() {
 
   function update(next: boolean) {
     setEnabled(next);
-    void saveDemoMode(next);
+    void saveDemoMode(next).catch(() => undefined);
   }
 
   return { enabled, loaded, setEnabled: update };

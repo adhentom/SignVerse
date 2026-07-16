@@ -2,7 +2,7 @@
 
 This package contains the SignVerse Chrome extension. It uses Manifest V3, TypeScript, Vite, React, and Tailwind CSS.
 
-The current implementation sends extracted content to the configured SignVerse FastAPI backend through the Manifest V3 background service worker. The backend may use its mock or OpenAI interpretation provider and returns Malayalam translation alongside the ISL interpretation. No speech processing, avatar, or animation is connected.
+The current implementation sends extracted content to the configured SignVerse FastAPI backend through the Manifest V3 background service worker. The backend may use its mock or OpenAI interpretation provider and returns Malayalam translation alongside the ISL interpretation. A local renderer plays draft demonstration motion; no current animation is validated ISL.
 
 ## Commands
 
@@ -23,7 +23,7 @@ The build derives `host_permissions` from that URL, so each environment grants n
 
 1. Chrome injects the packaged generic-web content script into HTTP and HTTPS pages.
 2. The content script mounts the floating React widget inside an isolated Shadow DOM.
-3. The content script requests backend health from the background service worker; the worker calls `GET /health` at startup and on widget retries.
+3. The content script requests backend health from the background service worker when production mode starts and on widget retries. The worker makes no unsolicited startup request.
 4. The content script normalizes website text or the current YouTube/Meet caption into a `ContentPacket`.
 5. The content script sends a versioned, correlated interpretation request to the background service worker.
 6. The service worker validates the packet and calls `POST /interpret` through the typed backend client.

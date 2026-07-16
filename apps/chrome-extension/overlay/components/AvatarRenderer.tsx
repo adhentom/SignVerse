@@ -69,13 +69,21 @@ export const AvatarRenderer = memo(function AvatarRenderer({
         const nextRenderer = createRenderer(asset.format, profile);
         renderer.current = nextRenderer;
         await mountWithTimeout(nextRenderer.mount(target.current, loaded, reducedMotion));
-        if (!active) return;
+        if (!active) {
+          nextRenderer.destroy();
+          return;
+        }
         nextRenderer.seek(reducedMotion ? 1 : progress);
         setState(playing && !reducedMotion ? 'Playing' : 'Paused');
       })
       .catch((error: unknown) => {
-        if (!active) return;
+        if (!active) {
+          renderer.current?.destroy();
+          return;
+        }
         const message = error instanceof Error ? error.message : 'The sign animation failed.';
+        renderer.current?.destroy();
+        renderer.current = undefined;
         setState('Error');
         onError(message);
       });

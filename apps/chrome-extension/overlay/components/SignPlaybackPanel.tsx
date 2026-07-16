@@ -8,6 +8,7 @@ import { CollapsibleCard } from './CollapsibleCard';
 import { MalayalamCaptionTrack } from './MalayalamCaptionTrack';
 import { UIIcon } from './UIIcon';
 import { useAvatarPreference } from '../hooks/useAvatarPreference';
+import { useInterpreterGeometry } from '../hooks/useInterpreterGeometry';
 
 const EMPTY_SEQUENCE: PlaybackSequence = { items: [], unsupported_tokens: [] };
 
@@ -43,7 +44,7 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
   const [reducedMotion, setReducedMotion] = useState(false);
   const [rendererAttempt, setRendererAttempt] = useState(0);
   const { profile, select: selectAvatar } = useAvatarPreference();
-  const [position, setPosition] = useState({ x: 24, y: 80 });
+  const { geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;
@@ -64,20 +65,6 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
     else if (event.key === 'Home') controller.restart();
   }
 
-  function startDrag(event: React.PointerEvent<HTMLButtonElement>) {
-    const origin = { pointerX: event.clientX, pointerY: event.clientY, ...position };
-    const move = (next: PointerEvent) => setPosition({
-      x: Math.max(0, Math.min(window.innerWidth - 220, origin.x + next.clientX - origin.pointerX)),
-      y: Math.max(0, Math.min(window.innerHeight - 180, origin.y + next.clientY - origin.pointerY)),
-    });
-    const stop = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', stop);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', stop, { once: true });
-  }
-
   return (
     <div
       aria-label="ISL avatar playback controller"
@@ -89,8 +76,18 @@ function PlaybackController({ sequence, caption }: { sequence: PlaybackSequence;
         Animated avatar demo · sign assets remain draft pending native ISL review
       </p>
 
-      <div className="sv-player-stage sv-interpreter-overlay" style={{ left: position.x, top: position.y }}>
-        <button aria-label="Drag interpreter" className="sv-avatar-drag-handle" onPointerDown={startDrag} type="button">SignVerse Interpreter · drag</button>
+      <div
+        className="sv-player-stage sv-interpreter-overlay"
+        ref={stageRef}
+        style={{ left: geometry.x, top: geometry.y, width: geometry.width, height: geometry.height }}
+      >
+        <button
+          aria-label="Move interpreter; use arrow keys or drag"
+          className="sv-avatar-drag-handle"
+          onKeyDown={moveWithKeyboard}
+          onPointerDown={startDrag}
+          type="button"
+        >SignVerse Interpreter · drag</button>
         <AvatarRenderer
           asset={currentAsset}
           nextAsset={nextAsset}

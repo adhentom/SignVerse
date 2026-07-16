@@ -1,6 +1,6 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignPlaybackPanel } from '../../overlay/components/SignPlaybackPanel';
 
 describe('SignPlaybackPanel', () => {
@@ -16,6 +16,7 @@ describe('SignPlaybackPanel', () => {
   afterEach(() => {
     act(() => root.unmount());
     container.remove();
+    vi.unstubAllGlobals();
   });
 
   it('displays ordered playback items, confidence, and unsupported tokens', () => {
@@ -45,7 +46,7 @@ describe('SignPlaybackPanel', () => {
     expect(container.textContent).toContain('greeting-hello');
     expect(container.textContent).toContain('glb');
     expect(container.querySelector('select[aria-label="Interpreter avatar"]')).not.toBeNull();
-    expect(container.querySelector('[aria-label="Drag interpreter"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Move interpreter; use arrow keys or drag"]')).not.toBeNull();
     expect(container.textContent).toContain('75%');
     expect(container.textContent).toContain('object-water');
     expect(container.querySelector('input[aria-label="Playback timeline"]')).not.toBeNull();
@@ -61,5 +62,32 @@ describe('SignPlaybackPanel', () => {
 
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
     expect(container.textContent).toContain('Preparing ISL playback');
+  });
+
+  it('supports keyboard movement and persists interpreter geometry', () => {
+    const set = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('chrome', {
+      runtime: { getURL: (path: string) => path },
+      storage: { local: { get: vi.fn().mockResolvedValue({}), set } },
+    });
+    act(() => {
+      root.render(<SignPlaybackPanel state={{
+        status: 'ready',
+        response: {
+          summary: '', malayalam_translation: '', key_points: [], keywords: [], glossary: [], isl_gloss: [], confidence: 0,
+          playback: { items: [], unsupported_tokens: [] },
+        },
+      }} />);
+    });
+
+    const handle = container.querySelector<HTMLButtonElement>(
+      '[aria-label="Move interpreter; use arrow keys or drag"]',
+    );
+    act(() => handle?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' })));
+
+    expect(container.querySelector<HTMLElement>('.sv-interpreter-overlay')?.style.left).toBe('34px');
+    expect(set).toHaveBeenCalledWith(expect.objectContaining({
+      'signverse.interpreterGeometry': expect.objectContaining({ x: 34 }),
+    }));
   });
 });
