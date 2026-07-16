@@ -13,13 +13,6 @@ console.info('[SignVerse] background_service_worker_started', {
   timeoutMs: backendConfig.timeoutMs,
 });
 
-void backendClient.health()
-  .then((health) => console.info('[SignVerse] startup_health_check_succeeded', health))
-  .catch((error: unknown) => {
-    const reason = error instanceof Error ? error.message : 'Unknown health error';
-    console.warn(`[SignVerse] startup_health_check_failed: ${reason}`);
-  });
-
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   if (reason === 'install') {
     console.info('SignVerse AI extension foundation installed.');

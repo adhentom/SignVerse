@@ -26,12 +26,14 @@ export class GlbAdapter implements Renderer {
   private frame = 0;
   private speed = 1;
   private playing = false;
+  private active = false;
   private readonly clock = new Clock();
 
   constructor(private readonly profile: AvatarProfile, private readonly vrm = false) {}
 
   async mount(target: HTMLElement, asset: LoadedAsset, reducedMotion: boolean): Promise<void> {
     this.destroy();
+    this.active = true;
     if (!(asset.data instanceof ArrayBuffer)) throw new Error('The 3D avatar asset is corrupted.');
 
     const scene = new Scene();
@@ -52,6 +54,7 @@ export class GlbAdapter implements Renderer {
     const loader = new GLTFLoader();
     if (this.vrm) loader.register((parser) => new VRMLoaderPlugin(parser));
     const gltf = await loader.parseAsync(asset.data, '');
+    if (!this.active) return;
     const model = gltf.userData.vrm?.scene ?? gltf.scene;
     model.scale.setScalar(this.profile.scale);
     model.position.y = -1.05;
@@ -72,6 +75,7 @@ export class GlbAdapter implements Renderer {
     }
 
     const render = () => {
+      if (!this.active) return;
       this.frame = requestAnimationFrame(render);
       const delta = Math.min(this.clock.getDelta(), 0.05);
       if (this.playing && !reducedMotion) this.mixer?.update(delta * this.speed);
@@ -84,7 +88,7 @@ export class GlbAdapter implements Renderer {
   play(speed: number): void {
     this.speed = speed;
     this.playing = true;
-    this.action?.reset().fadeIn(0.18).play();
+    this.action?.fadeIn(0.18).play();
   }
 
   pause(): void {
@@ -97,6 +101,7 @@ export class GlbAdapter implements Renderer {
   }
 
   destroy(): void {
+    this.active = false;
     cancelAnimationFrame(this.frame);
     this.action?.fadeOut(0.15);
     this.mixer?.stopAllAction();

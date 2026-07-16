@@ -35,8 +35,9 @@ complete.
 
 The Sign Playback MVP adds a read-only placeholder asset registry and deterministic
 `PlaybackPlanner`. The interpretation service resolves exact gloss labels, validates governed
-tokens, and returns an additive ordered playback plan. The extension displays the plan but does
-not fetch or render media. Asset formats and rendering remain behind the registry boundary.
+tokens, and returns an additive ordered playback plan. The extension resolves that plan through
+a cached, format-neutral renderer for local Lottie and remote GLB demonstration assets. These
+assets exercise scheduling and rendering only; none is validated ISL.
 
 ### Interpretation pipeline
 

@@ -8,13 +8,25 @@ interface RequestError {
   message?: string;
 }
 
+export function contentPacketIdentity(packet: ContentPacket | null): string {
+  if (!packet) return '';
+  const metadata = packet.metadata as Record<string, unknown>;
+  return JSON.stringify({
+    platform: packet.platform,
+    title: packet.title,
+    speaker: packet.speaker,
+    text: packet.text,
+    sourceId: metadata.videoId ?? metadata.meetingId ?? metadata.pageUrl,
+  });
+}
+
 export function useInterpretation(
   packet: ContentPacket | null,
   debounceMs = 0,
 ): { retry: () => void; state: InterpretationState } {
   const [state, setState] = useState<InterpretationState>({ status: 'idle' });
   const [attempt, setAttempt] = useState(0);
-  const packetKey = packet ? JSON.stringify(packet) : '';
+  const packetKey = contentPacketIdentity(packet);
   const retry = useCallback(() => setAttempt((current) => current + 1), []);
 
   useEffect(() => {

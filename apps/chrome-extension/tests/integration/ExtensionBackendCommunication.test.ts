@@ -10,7 +10,7 @@ import {
 } from '../../shared/backendMessages';
 
 describe('Extension to backend communication', () => {
-  it('carries a startup health check through the service worker client', async () => {
+  it('carries an on-demand health check through the service worker client', async () => {
     const backendHealth = {
       status: 'ok',
       service: 'signverse-api',
