@@ -1,1 +1,210 @@
-# SignVerse
+# SignVerse AI
+
+SignVerse AI is an accessibility-focused Chrome extension and FastAPI service that interprets
+website reading context, YouTube captions or user-authorized tab audio, and Google Meet live
+captions into structured Malayalam and Indian Sign Language (ISL) output.
+
+> **Release status:** `v0.1.0` is a research and developer preview. The semantic pipeline,
+> extension, backend, governed gloss contracts, and branded avatar renderer are implemented.
+> No third-party sign recordings or derived animation clips are distributed in this public
+> repository. Real sign playback requires separately authorized, reviewed assets.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A["Website selection or readable block"] --> C["ContentPacket"]
+    B["YouTube / Google Meet captions or tab audio"] --> C
+    C --> D["MV3 background service worker"]
+    D <--> E["FastAPI /stream WebSocket"]
+    D -. "bounded fallback" .-> F["POST /interpret"]
+    E --> G["Semantic understanding"]
+    F --> G
+    G --> H["Malayalam realization"]
+    G --> I["Governed ISL gloss"]
+    I --> J["Lexicon validation and asset planning"]
+    J --> K["Playback queue"]
+    K --> L["Branded SVG interpreter"]
+    H --> M["Accessible sidebar"]
+    L --> N["Floating interpreter"]
+```
+
+The content script never contacts the API directly. Backend traffic is owned by the Manifest V3
+background service worker, which maintains the streaming connection and validates messages.
+
+## Features
+
+- Manifest V3 Chrome extension built with React, TypeScript, Vite, and Tailwind CSS.
+- Cursor- and selection-aware website reading context instead of whole-page extraction.
+- Live YouTube caption handling plus opt-in tab-audio transcription.
+- Google Meet live-caption extraction with speaker-aware updates.
+- Persistent WebSocket streaming with ordered delivery and bounded REST fallback.
+- Semantic-first interpretation using either deterministic mock output or OpenAI Responses API.
+- Natural Malayalam output kept separate from governed ISL gloss generation.
+- Governed lexicon, explicit unsupported-token handling, playback planning, and renderer contracts.
+- Branded, draggable, resizable SVG interpreter with persisted geometry and avatar preference.
+- Keyboard navigation, ARIA live feedback, high-contrast support, and reduced-motion behavior.
+
+## Interface previews
+
+The public repository includes the original SignVerse interpreter artwork used by the renderer.
+Runtime screenshots will be added after the native-ISL and privacy review gate.
+
+<p align="center">
+  <img src="assets/avatar/source/signverse-interpreter-master.png" width="240" alt="SignVerse branded animated interpreter artwork">
+</p>
+
+<!-- Demo GIF placeholder: docs/images/signverse-website-demo.gif -->
+<!-- Demo GIF placeholder: docs/images/signverse-youtube-demo.gif -->
+<!-- Demo GIF placeholder: docs/images/signverse-meet-demo.gif -->
+
+## Requirements
+
+- Chrome or Chromium with Manifest V3 extension support
+- Node.js 22 or newer and npm
+- Python 3.12 or newer
+- An OpenAI API key only when using the OpenAI or tab-audio transcription paths
+
+## Installation
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/adhentom/SignVerse.git
+cd SignVerse
+npm ci
+
+cd apps/api
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[dev]'
+cd ../..
+```
+
+### 2. Configure the backend
+
+```bash
+cp apps/api/.env.example apps/api/.env
+```
+
+The mock interpretation provider is the safe default. To use OpenAI, edit the ignored `.env`:
+
+```text
+SIGNVERSE_INTERPRETATION_PROVIDER=openai
+OPENAI_API_KEY=<your-local-key>
+```
+
+### 3. Configure and build the extension
+
+```bash
+cp apps/chrome-extension/.env.example apps/chrome-extension/.env.local
+npm run build
+```
+
+Set `VITE_SIGNVERSE_BACKEND_URL` to the backend origin before building. Vite uses it to generate
+the minimum required Chrome host permission.
+
+### 4. Load the extension
+
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Choose **Load unpacked**.
+4. Select `apps/chrome-extension/dist`.
+5. Copy the extension ID into `SIGNVERSE_CORS_ORIGINS` in `apps/api/.env`.
+6. Start the API and reload the extension.
+
+## Usage
+
+Start the backend from `apps/api`:
+
+```bash
+source .venv/bin/activate
+uvicorn signverse_api.main:app --reload
+```
+
+Open a supported webpage and use the extension action to show SignVerse. On websites, select text
+or click near a readable paragraph. On YouTube or Google Meet, enable official captions. YouTube
+tab-audio transcription is opt-in from the popup and requires an OpenAI key.
+
+Useful endpoints:
+
+- `GET /health`
+- `POST /interpret`
+- `WS /stream`
+- `POST /transcribe` when transcription is configured
+- `/docs` in development when API documentation is enabled
+
+## Development
+
+```bash
+# Extension
+npm run typecheck
+npm test
+npm run build
+
+# Backend
+cd apps/api
+ruff check .
+ruff format --check .
+mypy
+pytest
+
+# Dataset and animation tooling
+cd ../..
+PYTHONPATH=scripts python -m pytest tools/tests
+```
+
+## Project structure
+
+```text
+apps/
+  api/                    FastAPI interpretation and streaming service
+  chrome-extension/       Manifest V3 extension, adapters, widget, and renderer
+assets/avatar/            Original SignVerse artwork and vector rig assets
+assets/signs/             Project-authored placeholders and local registry boundary
+config/                   Permission-gated dataset source configuration
+docs/                     Architecture, accessibility, API, governance, and evaluation docs
+scripts/                  Dataset import and video-to-landmark conversion tools
+tools/                    Optional animation-pipeline dependencies and tests
+benchmarks/               Interpretation-quality benchmark definitions
+```
+
+## Sign datasets and media
+
+Third-party dictionary media, signer recordings, and landmark-derived animation clips are not
+distributed. A download URL is not a redistribution license. Authorized users can place datasets
+under ignored local import directories and run the configuration-driven tools after recording
+permission, provenance, attribution, and native ISL review.
+
+See [Licensing and access](docs/datasets/LICENSING_AND_ACCESS.md),
+[Import pipeline](docs/datasets/IMPORT_PIPELINE.md), and
+[Third-party notices](THIRD_PARTY_NOTICES.md).
+
+## Roadmap
+
+- Complete native ISL review and Deaf-community comprehension testing.
+- Publish only explicitly redistributable, reviewer-approved sign assets.
+- Expand regional and phrase-level lexicon coverage with versioned provenance.
+- Add end-to-end browser tests for supported YouTube and Google Meet variants.
+- Harden authenticated, rate-limited production deployment and observability.
+- Package signed Chrome Web Store releases after privacy and accessibility review.
+
+## Acknowledgements
+
+- Indian Sign Language Research and Training Centre (ISLRTC) for public ISL resources and
+  ecosystem leadership; no ISLRTC media is redistributed here.
+- OpenAI Responses and transcription APIs for the optional hosted AI provider.
+- FastAPI, React, Vite, Tailwind CSS, MediaPipe, Three.js, and other open-source dependencies.
+- Deaf and hard-of-hearing reviewers whose participation is required before production claims.
+
+## Contributing and security
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and
+[SECURITY.md](SECURITY.md) before opening a contribution or security report.
+
+## License
+
+Project code and original SignVerse artwork are licensed under the [MIT License](LICENSE).
+Third-party datasets and derived artifacts are excluded unless their own compatible terms and
+provenance are documented.

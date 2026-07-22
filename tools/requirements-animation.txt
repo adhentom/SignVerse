@@ -1,0 +1,5 @@
+# Offline conversion of the repository's existing validated sign videos.
+mediapipe==0.10.21
+numpy==1.26.4
+opencv-contrib-python==4.11.0.86
+pytest>=8.3,<9

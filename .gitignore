@@ -1,0 +1,62 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+*.swp
+*.swo
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.asset-quarantine/
+
+# Credentials and signing material must never enter source control.
+credentials.json
+client_secret*.json
+*service-account*.json
+*service_account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+
+# Machine-local agent, browser, and generated analysis state.
+.codex/
+.playwright-cli/
+output/
+graphify-out/
+apps/chrome-extension/graphify-out/
+
+# Security assessment working papers are not published to the public repository.
+findings/
+hardening/
+
+# Source dataset videos require explicit redistribution approval. Generated,
+# non-video animation clips and governed metadata remain versioned.
+assets/signs/**/*.mp4
+assets/signs/**/*.webm
+assets/signs/*/AnimationClip.json
+assets/signs/dataset-*/
+assets/signs/index.json
+apps/chrome-extension/public/signs/*.mp4
+apps/chrome-extension/public/signs/*.webm
+apps/chrome-extension/public/animations/*.json
+!apps/chrome-extension/public/animations/.gitkeep
+
+# Permission-gated dataset imports and derived vocabularies are local artifacts.
+data/imports/
+resources/datasets/*.csv
+!resources/datasets/*.example.csv
+apps/api/resources/lexicon/lexicon.generated.json
+apps/api/resources/lexicon/unified_vocabulary.json

@@ -1,0 +1,35 @@
+{
+  "id": "signverse-professional-interpreter-v1",
+  "name": "SignVerse Professional Interpreter",
+  "version": "1.0.0",
+  "status": "illustration-master-approved",
+  "runtime_status": "awaiting-layered-rig-integration",
+  "identity": {
+    "skin_tone": "warm-brown",
+    "hair": "dark-side-parted-short-bob",
+    "clothing": "violet-short-sleeve-tunic",
+    "neckline": "white-v-neck",
+    "badge": "teal-checkmark",
+    "trousers": "dark-indigo"
+  },
+  "sources": {
+    "full_body_png": "source/signverse-interpreter-master.png",
+    "full_body_svg": "vector/signverse-interpreter-master.svg",
+    "parts_png": "source/signverse-interpreter-parts.png",
+    "parts_svg": "vector/signverse-interpreter-parts.svg",
+    "layered_parts": "vector/parts/*.svg"
+  },
+  "provenance": {
+    "type": "original-project-artwork",
+    "concept_generation": "OpenAI built-in image generation",
+    "background_extraction": "OpenAI imagegen chroma-key removal helper",
+    "vectorization": "VTracer 0.6.15",
+    "third_party_character_assets": false
+  },
+  "constraints": {
+    "runtime_renderer": "existing SignVerse SVG avatar renderer",
+    "animation_contract": "joint-local rotations",
+    "dataset_signer_usage": "landmark-reference-only",
+    "primary_interpreter": "SignVerse branded character only"
+  }
+}

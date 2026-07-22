@@ -1,0 +1,26 @@
+{
+  "name": "signverse-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SignVerse AI monorepo",
+  "license": "MIT",
+  "author": "Adhen Tom",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adhentom/SignVerse.git"
+  },
+  "homepage": "https://github.com/adhentom/SignVerse#readme",
+  "bugs": "https://github.com/adhentom/SignVerse/issues",
+  "scripts": {
+    "build": "npm run build --workspace @signverse/chrome-extension",
+    "test": "npm run test --workspace @signverse/chrome-extension",
+    "typecheck": "npm run typecheck --workspace @signverse/chrome-extension",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  }
+}

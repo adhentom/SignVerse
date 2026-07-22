@@ -1,0 +1,76 @@
+# Chrome Extension Communication Flow
+
+## Planned flow
+
+```text
+Page text or caption event
+→ site-specific content adapter
+→ validated extension message
+→ Manifest V3 service worker
+→ authenticated HTTPS or WebSocket backend session
+→ incremental gloss and playback-manifest events
+→ service worker
+→ interpreter overlay
+→ local cache lookup
+→ CDN asset fetch when missing
+→ synchronized playback
+```
+
+One-time messages are intended for commands and queries. A long-lived connection is intended for active interpretation sessions. Durable session recovery belongs in browser storage and the backend because the extension service worker may be suspended.
+
+## Planned message envelope
+
+- Schema version.
+- Session and segment identifiers.
+- Source type and timestamp.
+- Language hint.
+- Event type and payload.
+- Sequence number.
+- Confidence value where applicable.
+- Correlation identifier.
+
+Messages originating from content scripts must be treated as untrusted. Authentication secrets must not be exposed to the page context.
+
+## Current local YouTube flow
+
+```text
+YouTube watch URL
+→ AdapterFactory selects YouTubeAdapter
+→ YouTubeCaptionSession observes official caption/player DOM
+→ video play, pause, seek, time and navigation events update session state
+→ captions normalize into ContentPacket values
+→ current packet plus last 10 packets form a local snapshot
+→ React content bootstrap updates the Shadow DOM widget
+```
+
+This flow is fully local. It does not call a backend, external API, speech service, language model, translation system, or avatar renderer.
+
+## Backwards-compatible REST flow
+
+```text
+Website text or current YouTube/Meet caption
+→ platform adapter creates ContentPacket
+→ versioned content-script message
+→ Manifest V3 background service worker
+→ typed client POST /interpret with timeout
+→ FastAPI ContentPacket validation
+→ interpretation service boundary
+→ configured mock or OpenAI provider
+→ governed lexicon validation
+→ sign asset registry and PlaybackPlanner
+→ validated InterpretationResponse with playback plan or safe empty fallback
+→ service worker response validation
+→ correlated content-script response
+→ floating widget interpretation panel
+→ Sign Playback plan panel
+```
+
+Only the background service worker has backend host permission; the content script contains no direct network client. OpenAI credentials remain exclusively in the backend environment. Authentication, user activation/consent controls, server-pushed streaming, durable sessions, and response schema versioning remain future work.
+
+### Incremental processing
+
+The extension segments page regions and stable captions into sentence-sized packets. A long-lived
+content-script port keeps the Manifest V3 worker available while it owns one `/stream` WebSocket.
+The worker buffers unacknowledged sequence numbers and replays them after reconnect. Validated
+responses append to the active Malayalam, gloss, and playback queues. Durable server-side session
+storage remains future work.

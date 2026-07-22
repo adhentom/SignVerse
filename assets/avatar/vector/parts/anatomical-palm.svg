@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-9 -31 74 82">
+  <defs>
+    <linearGradient id="skin" x1="0" y1="0" x2="0.85" y2="1">
+      <stop stop-color="#e2a084"/>
+      <stop offset="0.55" stop-color="#d1886c"/>
+      <stop offset="1" stop-color="#bd7059"/>
+    </linearGradient>
+    <linearGradient id="thenar" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#e6a98d" stop-opacity="0.72"/>
+      <stop offset="1" stop-color="#b96854" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Narrow wrist, thenar web, and four-knuckle palm form one human silhouette. -->
+  <path
+    d="M-8-10C-2-14 5-14 11-12C18-18 27-22 36-23C41-23 45-20 45-16C45-13 43-10 41-8C46-8 49-5 49-1C49 3 46 6 43 7C47 9 48 13 46 17C44 20 40 22 35 23C27 27 16 27 7 23C1 20-4 16-7 10C-10 4-11-5-8-10Z"
+    fill="url(#skin)"
+    stroke="#8d5546"
+    stroke-width="1.05"
+    stroke-linejoin="round"
+  />
+
+  <!-- Thenar eminence gives the thumb base its human volume. -->
+  <path
+    d="M3 18C6 9 13 4 21 5C29 6 36 12 35 20C30 24 20 26 12 24C7 23 4 21 3 18Z"
+    fill="url(#thenar)"
+  />
+
+  <!-- Subtle palm and knuckle creases remain readable without looking diagrammatic. -->
+  <path
+    d="M7 18C13 12 20 10 28 12C33 13 38 16 40 20M10-10C18-16 29-19 40-17M12 22C20 24 27 23 33 20"
+    fill="none"
+    stroke="#865044"
+    stroke-width="1.05"
+    stroke-linecap="round"
+    opacity="0.34"
+  />
+
+  <path
+    d="M-4-8C1-11 6-11 10-9M-3 10C1 15 6 18 11 19"
+    fill="none"
+    stroke="#f1b69c"
+    stroke-width="1.15"
+    stroke-linecap="round"
+    opacity="0.35"
+  />
+</svg>

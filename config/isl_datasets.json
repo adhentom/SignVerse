@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "sources": [
+    {
+      "id": "signverse-governed-assets",
+      "type": "folder",
+      "path": "assets/signs",
+      "enabled": true,
+      "license_status": "conditional",
+      "license": "per-asset metadata",
+      "source_url": "",
+      "attribution": "per-asset metadata",
+      "review_status": "governed",
+      "media_glob": "*/*.mp4"
+    },
+    {
+      "id": "islrtc-drive-catalog",
+      "type": "csv",
+      "path": "data/imports/islrtc/ISL_Dictionary_words.csv",
+      "enabled": false,
+      "license_status": "conditional",
+      "license": "ISLRTC FAQ: non-resale/non-profiteering technology use with attribution; redistribution permission pending",
+      "source_url": "https://islrtc.nic.in/faq/",
+      "attribution": "Indian Sign Language Research and Training Centre, DEPwD, MSJ&E, Government of India",
+      "review_status": "catalog-only",
+      "record_kind": "catalog",
+      "columns": {
+        "identifier": "Sr.No.",
+        "label": "Folder Name",
+        "source_url": "Link"
+      }
+    },
+    {
+      "id": "islrtc-authorized-export",
+      "type": "folder",
+      "path": "data/imports/islrtc",
+      "enabled": false,
+      "license_status": "pending",
+      "license": "permission reference required before promotion",
+      "source_url": "https://drive.google.com/drive/folders/1U-Pr4r1-cupgNOOq9NH_uTsQnPSVEKco",
+      "attribution": "Indian Sign Language Research and Training Centre, DEPwD, MSJ&E, Government of India",
+      "review_status": "candidate",
+      "media_glob": "**/*.mp4"
+    }
+  ]
+}

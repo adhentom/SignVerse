@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 274 397" role="img" aria-label="SignVerse male interpreter torso artwork">
+  <defs>
+    <linearGradient id="jacket" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4978d1"/><stop offset=".55" stop-color="#315cad"/><stop offset="1" stop-color="#203b78"/></linearGradient>
+    <linearGradient id="shadow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1d376d"/><stop offset="1" stop-color="#13264e"/></linearGradient>
+  </defs>
+  <path d="M42 34 91 9h92l49 25c19 49 28 118 27 207 0 57-7 107-21 148H36C22 348 15 298 15 241c-1-89 8-158 27-207Z" fill="url(#jacket)" stroke="#172e61" stroke-width="4"/>
+  <path d="m91 9 46 50 46-50 20 11-39 83h-54L71 20Z" fill="#f4f7ff" stroke="#d4dced" stroke-width="2"/>
+  <path d="m112 103 25-42 25 42-9 77h-32Z" fill="#20284e"/>
+  <path d="M42 35c-19 76-26 158-20 245 3 42 9 79 17 109h34c-10-88-7-191 10-311Z" fill="url(#shadow)" opacity=".72"/>
+  <path d="M232 35c19 76 26 158 20 245-3 42-9 79-17 109h-34c10-88 7-191-10-311Z" fill="url(#shadow)" opacity=".72"/>
+  <path d="M75 251c41 14 83 14 124 0" fill="none" stroke="#7197e3" stroke-width="4" opacity=".48"/>
+  <circle cx="137" cy="177" r="17" fill="#23c9ad" stroke="#f0fffb" stroke-width="3"/>
+  <path d="m129 177 6 6 11-14" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+</svg>
