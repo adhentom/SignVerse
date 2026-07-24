@@ -12,7 +12,7 @@ describe('avatar profiles', () => {
     ]);
     expect(new Set(AVATAR_PROFILES.map((profile) => profile.id)).size).toBe(2);
     expect(AVATAR_PROFILES.map((profile) => profile.label)).toEqual([
-      'Female interpreter', 'Male interpreter',
+      'Girl avatar', 'Boy avatar',
     ]);
     expect(DEFAULT_AVATAR.id).toBe('adult-female');
     expect(AVATAR_PROFILES.every((profile) => profile.rigId === 'signverse-hierarchical-svg-v2'))

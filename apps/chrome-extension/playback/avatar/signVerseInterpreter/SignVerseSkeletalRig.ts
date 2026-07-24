@@ -16,10 +16,10 @@ interface BoneDefinition {
 }
 
 const FINGER_REST = {
-  index: [-9, 18, 12],
-  middle: [-3, 22, 15],
-  ring: [4, 27, 19],
-  little: [10, 32, 23],
+  index: [-3, 8, 4],
+  middle: [-1, 7, 4],
+  ring: [2, 9, 5],
+  little: [5, 12, 7],
 } as const;
 
 const FINGER_BONES = Object.fromEntries(
@@ -44,10 +44,10 @@ const THUMB_BONES = Object.fromEntries(
     const pip = `${side}-thumb-pip` as AvatarPart;
     const dip = `${side}-thumb-dip` as AvatarPart;
     return [
-      [cmc, { parent: `${side}-hand`, restRotation: 31, minimum: -65, maximum: 105 }],
-      [mcp, { parent: cmc, restRotation: 24, minimum: -20, maximum: 85 }],
-      [pip, { parent: mcp, restRotation: 12, minimum: -12, maximum: 90 }],
-      [dip, { parent: pip, restRotation: 8, minimum: -15, maximum: 75 }],
+      [cmc, { parent: `${side}-hand`, restRotation: 25, minimum: -65, maximum: 105 }],
+      [mcp, { parent: cmc, restRotation: 12, minimum: -20, maximum: 85 }],
+      [pip, { parent: mcp, restRotation: 5, minimum: -12, maximum: 90 }],
+      [dip, { parent: pip, restRotation: 3, minimum: -15, maximum: 75 }],
     ];
   }),
 ) as Partial<Record<AvatarPart, BoneDefinition>>;
@@ -86,6 +86,11 @@ const FACIAL_PARTS = new Set<AvatarPart>([
   'mouth', 'jaw', 'nose',
 ]);
 
+const HAND_PARTS = ['left-hand', 'right-hand'] as const;
+// A three-quarter inward turn keeps the resting hands natural without hiding
+// the palm or collapsing the articulated fingers into a blade-like silhouette.
+const NEUTRAL_HAND_PROJECTION = 0.78;
+
 const clamp = (value: number, minimum: number, maximum: number) => (
   Math.max(minimum, Math.min(maximum, value))
 );
@@ -100,6 +105,7 @@ function elementFor(root: SVGSVGElement, part: AvatarPart): SVGGElement | null {
 
 export class SignVerseSkeletalRig {
   private readonly rotations = new Map<AvatarPart, number>();
+  private readonly handProjections = new Map<(typeof HAND_PARTS)[number], number>();
 
   constructor(private readonly root: SVGSVGElement) {
     for (const part of JOINT_PARTS) {
@@ -112,6 +118,10 @@ export class SignVerseSkeletalRig {
       this.rotations.set(part, definition.restRotation);
       this.applyJoint(part, definition.restRotation);
     }
+    HAND_PARTS.forEach((part) => {
+      this.handProjections.set(part, NEUTRAL_HAND_PROJECTION);
+      this.applyHandProjection(part, NEUTRAL_HAND_PROJECTION);
+    });
   }
 
   applyRootIdle(y: number, scaleY: number): void {
@@ -128,6 +138,14 @@ export class SignVerseSkeletalRig {
     const amount = clamp(blend, 0, 1);
     for (const part of JOINT_PARTS) {
       const targetPose = pose[part];
+      if (HAND_PARTS.includes(part as (typeof HAND_PARTS)[number]) && targetPose?.scaleY !== undefined) {
+        const handPart = part as (typeof HAND_PARTS)[number];
+        const previousProjection = this.handProjections.get(handPart) ?? NEUTRAL_HAND_PROJECTION;
+        const targetProjection = clamp(finite(targetPose.scaleY, previousProjection), 0.18, 1);
+        const projection = previousProjection + (targetProjection - previousProjection) * amount;
+        this.handProjections.set(handPart, projection);
+        this.applyHandProjection(handPart, projection);
+      }
       if (!targetPose || targetPose.rotation === undefined) continue;
       const definition = BONES[part]!;
       const previous = this.rotations.get(part) ?? definition.restRotation;
@@ -192,9 +210,16 @@ export class SignVerseSkeletalRig {
   }
 
   snapshotPose(): AvatarPoseSnapshot {
-    return Object.fromEntries(
+    const snapshot: AvatarPoseSnapshot = Object.fromEntries(
       Array.from(this.rotations, ([part, rotation]) => [part, { rotation }]),
     );
+    HAND_PARTS.forEach((part) => {
+      snapshot[part] = {
+        ...snapshot[part],
+        scaleY: this.handProjections.get(part) ?? NEUTRAL_HAND_PROJECTION,
+      };
+    });
+    return snapshot;
   }
 
   armChain(side: 'left' | 'right'): {
@@ -232,6 +257,13 @@ export class SignVerseSkeletalRig {
       'transform',
       pivot ? `rotate(${rotation} ${pivot[0]} ${pivot[1]})` : `rotate(${rotation})`,
     );
+  }
+
+  private applyHandProjection(part: (typeof HAND_PARTS)[number], projection: number): void {
+    const side = part.startsWith('left') ? 'left' : 'right';
+    const artwork = this.root.querySelector<SVGGElement>(`[data-avatar-hand-artwork="${side}"]`);
+    const mirror = side === 'left' ? -1 : 1;
+    artwork?.setAttribute('transform', `scale(1 ${mirror * projection})`);
   }
 
   private applyFacial(part: AvatarPart, pose: AvatarPose): void {

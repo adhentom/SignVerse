@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AnimationScheduler } from '../../playback/AnimationScheduler';
+import { segmentCaption } from '../../overlay/components/EnglishCaptionTrack';
 
 const sequence = {
   items: [
@@ -25,5 +26,13 @@ describe('AnimationScheduler', () => {
     const scheduler = new AnimationScheduler({ items: [], unsupported_tokens: [] });
     expect(scheduler.totalDuration).toBe(0);
     expect(scheduler.locate(0)).toBeUndefined();
+  });
+
+  it('keeps the displayed caption segment aligned with the active sign', () => {
+    const scheduler = new AnimationScheduler(sequence);
+    const captions = segmentCaption('first phrase second phrase', sequence.items.length);
+
+    expect(captions[scheduler.locate(0.5)!.index]).toBe('first phrase');
+    expect(captions[scheduler.locate(1.5)!.index]).toBe('second phrase');
   });
 });

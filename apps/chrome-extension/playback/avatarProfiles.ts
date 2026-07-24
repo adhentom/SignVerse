@@ -13,7 +13,7 @@ export interface AvatarProfile {
 export const AVATAR_PROFILES: readonly AvatarProfile[] = [
   {
     id: 'adult-female',
-    label: 'Female interpreter',
+    label: 'Girl avatar',
     artworkSet: 'signverse-female-v1',
     rigId: 'signverse-hierarchical-svg-v2',
     color: 0x665ee8,
@@ -21,7 +21,7 @@ export const AVATAR_PROFILES: readonly AvatarProfile[] = [
   },
   {
     id: 'adult-male',
-    label: 'Male interpreter',
+    label: 'Boy avatar',
     artworkSet: 'signverse-male-v1',
     rigId: 'signverse-hierarchical-svg-v2',
     color: 0x315db8,

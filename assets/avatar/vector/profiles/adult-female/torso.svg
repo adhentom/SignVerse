@@ -1,14 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 274 397" role="img" aria-label="SignVerse female interpreter torso artwork">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 274 397" role="img" aria-label="SignVerse cartoon girl interpreter torso artwork">
   <defs>
-    <linearGradient id="jacket" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7771f2"/><stop offset=".55" stop-color="#5550c8"/><stop offset="1" stop-color="#35338f"/></linearGradient>
-    <linearGradient id="shadow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#302c78"/><stop offset="1" stop-color="#211c57"/></linearGradient>
+    <linearGradient id="top" x1=".08" y1="0" x2=".9" y2="1"><stop stop-color="#27a58e"/><stop offset=".55" stop-color="#147d73"/><stop offset="1" stop-color="#0d5d5c"/></linearGradient>
+    <linearGradient id="shadow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#0e6c65"/><stop offset="1" stop-color="#084447"/></linearGradient>
   </defs>
-  <path d="M49 33 95 10h84l46 23c20 47 31 116 32 207 0 58-7 108-21 149H38C24 348 17 298 18 240c1-91 11-160 31-207Z" fill="url(#jacket)" stroke="#282568" stroke-width="4"/>
-  <path d="m95 10 42 52 42-52 19 10-35 83h-52L76 20Z" fill="#f5f7ff" stroke="#d8dded" stroke-width="2"/>
-  <path d="m112 103 25-39 25 39-9 66h-32Z" fill="#24224f"/>
-  <path d="M48 35c-20 75-28 156-22 243 3 43 9 80 18 111h31c-11-85-9-188 8-309Z" fill="url(#shadow)" opacity=".72"/>
-  <path d="M226 35c20 75 28 156 22 243-3 43-9 80-18 111h-31c11-85 9-188-8-309Z" fill="url(#shadow)" opacity=".72"/>
-  <path d="M77 250c39 15 81 15 120 0" fill="none" stroke="#8f8af8" stroke-width="4" opacity=".45"/>
-  <circle cx="137" cy="177" r="17" fill="#23c9ad" stroke="#f0fffb" stroke-width="3"/>
-  <path d="m129 177 6 6 11-14" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <path d="M48 38 92 12h90l44 26c20 48 29 115 28 200 0 59-7 109-21 151H41C27 347 20 297 20 238c-1-85 8-152 28-200Z" fill="url(#top)" stroke="#084c4c" stroke-width="4"/>
+  <path d="m92 12 45 49 45-49 19 11-37 76h-54L73 23Z" fill="#eefcf9" stroke="#c7ece6" stroke-width="2"/>
+  <path d="m112 99 25-38 25 38-8 67h-34Z" fill="#174d52"/>
+  <path d="M48 39c-18 77-24 159-18 244 3 42 8 77 15 106h29c-9-87-5-189 10-307Z" fill="url(#shadow)" opacity=".54"/>
+  <path d="M226 39c18 77 24 159 18 244-3 42-8 77-15 106h-29c9-87 5-189-10-307Z" fill="url(#shadow)" opacity=".54"/>
+  <path d="M76 251c40 14 82 14 122 0" fill="none" stroke="#62d3bf" stroke-width="4" opacity=".45"/>
+  <circle cx="137" cy="176" r="16" fill="#675ff0" stroke="#efffff" stroke-width="3"/><path d="m129 176 6 6 11-14" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
 </svg>

@@ -18,8 +18,8 @@ interface HandShapeDefinition {
 
 const SHAPES: Record<SignVerseHandShape, HandShapeDefinition> = {
   relaxed: {
-    thumb: [24, 24, 12, 8],
-    fingers: { index: [-13, 13, 8], middle: [-5, 18, 12], ring: [4, 24, 17], little: [13, 31, 22] },
+    thumb: [25, 12, 5, 3],
+    fingers: { index: [-3, 8, 4], middle: [-1, 7, 4], ring: [2, 9, 5], little: [5, 12, 7] },
   },
   open: {
     thumb: [30, 20, 0, 0],

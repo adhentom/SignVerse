@@ -22,6 +22,21 @@ interface AvatarRendererProps {
   profile: AvatarProfile;
 }
 
+const DEFAULT_TRANSITION_MS = 180;
+const MINIMUM_TRANSITION_MS = 120;
+const MAXIMUM_TRANSITION_MS = 500;
+
+/** Resolves a bounded sign-to-sign transition while respecting reduced motion. */
+export function avatarTransitionDuration(
+  cue: PlaybackItem | undefined,
+  reducedMotion: boolean,
+): number {
+  if (reducedMotion) return 0;
+  const requested = cue?.transition_ms ?? DEFAULT_TRANSITION_MS;
+  if (!Number.isFinite(requested)) return DEFAULT_TRANSITION_MS;
+  return Math.min(MAXIMUM_TRANSITION_MS, Math.max(MINIMUM_TRANSITION_MS, requested));
+}
+
 async function mountWithTimeout(operation: Promise<void>): Promise<void> {
   let timeout = 0;
   try {
@@ -120,9 +135,15 @@ export const AvatarRenderer = memo(function AvatarRenderer({
         renderers.current[nextSlot] = nextRenderer;
         activeSlot.current = nextSlot;
         window.clearTimeout(transitionTimer.current);
-        const transitionDuration = reducedMotion ? 0 : cue?.transition_ms ?? 180;
+        const transitionDuration = avatarTransitionDuration(cue, reducedMotion);
         nextLayer.style.transitionDuration = `${transitionDuration}ms`;
         if (previousLayer) previousLayer.style.transitionDuration = `${transitionDuration}ms`;
+        if (renderers.current[previousSlot] && previousSlot !== nextSlot) {
+          console.info('[SignVerse] avatar_transition_started', {
+            durationMs: transitionDuration,
+            nextAssetId: asset.asset_id,
+          });
+        }
         nextLayer.style.opacity = '1';
         if (previousLayer && previousSlot !== nextSlot) previousLayer.style.opacity = '0';
         transitionTimer.current = window.setTimeout(() => {
@@ -130,6 +151,10 @@ export const AvatarRenderer = memo(function AvatarRenderer({
           renderers.current[previousSlot]?.dispose();
           renderers.current[previousSlot] = undefined;
           previousLayer?.replaceChildren();
+          console.info('[SignVerse] avatar_transition_completed', {
+            assetId: asset.asset_id,
+            durationMs: transitionDuration,
+          });
         }, transitionDuration);
         setState(playing && !reducedMotion ? 'Playing' : 'Paused');
         console.info('[SignVerse] avatar_renderer_mounted', {

@@ -149,3 +149,9 @@ translation remains in the sidebar and never feeds the ISL playback path. Users 
 persisted female or male interpreter; both share the same fixed-length hierarchical rig. Animation
 clips remain pending until native ISL review is recorded. See
 [`docs/TWO_AVATAR_INTERPRETER.md`](../../docs/TWO_AVATAR_INTERPRETER.md).
+
+The scheduler is the single timing source for both the active avatar cue and highlighted English
+caption segment. Playback begins automatically when a validated sequence arrives. Sign changes use
+a bounded 120–500 ms cross-fade plus previous-pose interpolation; reduced-motion users receive an
+immediate transition. The next asset is preloaded before its cue, and streamed sequence appends do
+not restart completed signs.

@@ -214,9 +214,9 @@ describe('landmark avatar clips', () => {
 
     expect(svg.querySelectorAll('[data-avatar-hand-style="anatomical-articulated-palm-v3"]')).toHaveLength(2);
     expect(svg.querySelector('[data-avatar-hand-artwork="left"]')?.getAttribute('transform'))
-      .toBe('scale(1 1)');
-    expect(svg.querySelector('[data-avatar-hand-artwork="right"]')?.getAttribute('transform'))
       .toBe('scale(1 -1)');
+    expect(svg.querySelector('[data-avatar-hand-artwork="right"]')?.getAttribute('transform'))
+      .toBe('scale(1 1)');
     expect(svg.querySelectorAll('.svi-cuff')).toHaveLength(2);
     expect(svg.querySelectorAll('.svi-cuff-trim')).toHaveLength(2);
     expect(svg.querySelectorAll('.svi-phalanx')).toHaveLength(32);
@@ -230,14 +230,22 @@ describe('landmark avatar clips', () => {
       svg.querySelector(`[data-avatar-anchor="left-${finger}-pip"]`)?.getAttribute('transform')
     ));
     expect(proximalLengths).toEqual([
-      'translate(20 0)', 'translate(22 0)', 'translate(21 0)', 'translate(16 0)',
+      'translate(19 0)', 'translate(21 0)', 'translate(19.5 0)', 'translate(15 0)',
     ]);
     const middleLengths = ['index', 'middle', 'ring', 'little'].map((finger) => (
       svg.querySelector(`[data-avatar-anchor="left-${finger}-dip"]`)?.getAttribute('transform')
     ));
     expect(middleLengths).toEqual([
-      'translate(14 0)', 'translate(16 0)', 'translate(15 0)', 'translate(11 0)',
+      'translate(13.5 0)', 'translate(14.5 0)', 'translate(13.5 0)', 'translate(10.5 0)',
     ]);
+    const palm = svg.querySelector('[data-avatar-palm-artwork="left"]');
+    expect(palm?.getAttribute('width')).toBe('58');
+    expect(palm?.getAttribute('height')).toBe('52');
+    new SignVerseSkeletalRig(svg);
+    expect(svg.querySelector('[data-avatar-hand-artwork="left"]')?.getAttribute('transform'))
+      .toBe('scale(1 -0.78)');
+    expect(svg.querySelector('[data-avatar-hand-artwork="right"]')?.getAttribute('transform'))
+      .toBe('scale(1 0.78)');
   });
 
   it('renders both professional interpreter skins on the identical anatomical rig', () => {
@@ -252,11 +260,11 @@ describe('landmark avatar clips', () => {
     const maleTorso = male.querySelector('[data-avatar-costume="adult-male-professional-attire"]')?.getAttribute('href');
     const femaleHead = female.querySelector('[data-avatar-hairstyle="adult-female-professional"]')?.getAttribute('href');
     const maleHead = male.querySelector('[data-avatar-hairstyle="adult-male-professional"]')?.getAttribute('href');
-    expect(femaleTorso).toContain('female');
-    expect(maleTorso).toContain('male');
+    expect(femaleTorso).toContain('cartoon%20girl');
+    expect(maleTorso).toContain('cartoon%20boy');
     expect(femaleTorso).not.toBe(maleTorso);
-    expect(femaleHead).toContain('female');
-    expect(maleHead).toContain('male');
+    expect(femaleHead).toContain('cartoon%20girl');
+    expect(maleHead).toContain('cartoon%20boy');
     expect(femaleHead).not.toBe(maleHead);
     for (const svg of [female, male]) {
       expect(svg.querySelectorAll('.svi-illustrated-bone--upper image')).toHaveLength(2);

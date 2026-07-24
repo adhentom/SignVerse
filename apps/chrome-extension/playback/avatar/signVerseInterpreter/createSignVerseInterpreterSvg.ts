@@ -55,11 +55,11 @@ const phalanx = (
 ) => {
   const start = width / 2;
   const end = endWidth / 2;
-  const joint = segment === 'distal' ? 2.5 : 1.8;
-  const tipX = segment === 'distal' ? length + 1.8 : length + 1;
+  const joint = segment === 'distal' ? 1.5 : 1.15;
+  const tipX = segment === 'distal' ? length + 2.1 : length + 0.8;
   return `
     <path
-      d="M${-joint} ${-start * 0.78}C${length * 0.18} ${-start - 0.55} ${length * 0.62} ${-end - 0.35} ${length - 2.1} ${-end}C${tipX} ${-end * 0.72} ${tipX} ${end * 0.72} ${length - 2.1} ${end}C${length * 0.62} ${end + 0.35} ${length * 0.18} ${start + 0.55} ${-joint} ${start * 0.78}C${-joint - 1.8} ${start * 0.38} ${-joint - 1.8} ${-start * 0.38} ${-joint} ${-start * 0.78}Z"
+      d="M${-joint} ${-start * 0.72}C${length * 0.2} ${-start - 0.35} ${length * 0.64} ${-end - 0.22} ${length - 2} ${-end}C${tipX} ${-end * 0.7} ${tipX} ${end * 0.7} ${length - 2} ${end}C${length * 0.64} ${end + 0.22} ${length * 0.2} ${start + 0.35} ${-joint} ${start * 0.72}C${-joint - 1.05} ${start * 0.32} ${-joint - 1.05} ${-start * 0.32} ${-joint} ${-start * 0.72}Z"
       class="svi-phalanx svi-phalanx--${segment}"
       data-avatar-finger-anatomy="tapered-human-v1"
     />`;
@@ -95,19 +95,19 @@ const finger = (
 };
 
 const thumb = (side: Side) => `
-  <g data-avatar-anchor="${side}-thumb-cmc" transform="translate(13 19)">
-    <g data-avatar-part="${side}-thumb-cmc" data-parent-bone="${side}-hand" transform="rotate(31)">
-      ${phalanx(7, 14.4, 13.1, 'proximal')}
-      <g data-avatar-anchor="${side}-thumb-mcp" transform="translate(7 0)">
+  <g data-avatar-anchor="${side}-thumb-cmc" transform="translate(11 15)">
+    <g data-avatar-part="${side}-thumb-cmc" data-parent-bone="${side}-hand" transform="rotate(28)">
+      ${phalanx(8, 14.8, 13.5, 'proximal')}
+      <g data-avatar-anchor="${side}-thumb-mcp" transform="translate(8 0)">
         <g data-avatar-part="${side}-thumb-mcp" data-parent-bone="${side}-thumb-cmc" transform="rotate(24)">
-          ${phalanx(11, 13.4, 11.8, 'proximal')}
-          <g data-avatar-anchor="${side}-thumb-pip" transform="translate(11 0)">
+          ${phalanx(12, 13.8, 12.1, 'proximal')}
+          <g data-avatar-anchor="${side}-thumb-pip" transform="translate(12 0)">
             <g data-avatar-part="${side}-thumb-pip" data-parent-bone="${side}-thumb-mcp" transform="rotate(12)">
-              ${phalanx(8, 11.8, 10.1, 'middle')}
-              <g data-avatar-anchor="${side}-thumb-dip" transform="translate(8 0)">
+              ${phalanx(8.5, 12.1, 10.5, 'middle')}
+              <g data-avatar-anchor="${side}-thumb-dip" transform="translate(8.5 0)">
                 <g data-avatar-part="${side}-thumb-dip" data-parent-bone="${side}-thumb-pip" transform="rotate(8)">
-                  ${phalanx(5.5, 10.2, 7.9, 'distal')}
-                  <path d="M1 -1.7Q3.7 -2.6 5.7 -.2" class="svi-nail"/>
+                  ${phalanx(6, 10.5, 8.4, 'distal')}
+                  <path d="M1 -1.7Q4 -2.6 6.2 -.2" class="svi-nail"/>
                 </g>
               </g>
             </g>
@@ -120,15 +120,17 @@ const thumb = (side: Side) => `
 const hand = (side: Side) => {
   // Keep the articulated bone hierarchy untouched and mirror only the artwork.
   // Mirroring the joint group itself would be overwritten by the skeletal rig.
-  const artworkScaleY = side === 'right' ? -1 : 1;
+  // In the arm's local coordinate space, the left hand must be mirrored so
+  // both thumbs face inward toward the body in the neutral pose.
+  const artworkScaleY = side === 'left' ? -1 : 1;
   return `
   <g data-avatar-part="${side}-hand" data-parent-bone="${side}-forearm" data-avatar-hand-style="anatomical-articulated-palm-v3" transform="rotate(0)">
     <g data-avatar-hand-artwork="${side}" transform="scale(1 ${artworkScaleY})">
-      ${finger(side, 'index', 34, -17, [20, 14, 10], -14)}
-      ${finger(side, 'middle', 41, -7, [22, 16, 11], -5)}
-      ${finger(side, 'ring', 41, 4, [21, 15, 10], 6)}
-      ${finger(side, 'little', 36, 15, [16, 11, 8], 17)}
-      <image data-avatar-palm-artwork="${side}" href="${anatomicalPalmArtwork}" x="-9" y="-31" width="74" height="82" preserveAspectRatio="xMidYMid meet"/>
+      ${finger(side, 'index', 34, -13, [19, 13.5, 9.5], -8)}
+      ${finger(side, 'middle', 40, -4.5, [21, 14.5, 10], -2)}
+      ${finger(side, 'ring', 40, 4.5, [19.5, 13.5, 9.5], 4)}
+      ${finger(side, 'little', 35, 13, [15, 10.5, 7.5], 10)}
+      <image data-avatar-palm-artwork="${side}" href="${anatomicalPalmArtwork}" x="-8" y="-24" width="58" height="52" preserveAspectRatio="xMidYMid meet"/>
       ${thumb(side)}
     </g>
   </g>`;
@@ -190,11 +192,11 @@ const buildSvg = (profile: AvatarProfile) => {
     <filter id="svi-shadow" x="-30%" y="-25%" width="160%" height="165%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#020712" flood-opacity=".3"/></filter>
     <style>
       .svi-clavicle{fill:none;stroke:none}
-      .svi-illustrated-bone{pointer-events:none}
+      .svi-illustrated-bone{display:none;pointer-events:none}
       .svi-joint-bridge{stroke-width:1;stroke-linejoin:round}
       .svi-skin-bridge{fill:url(#svi-skin);stroke:#704335}
       .svi-legacy-face-controls{display:none!important}
-      .svi-rig-silhouette{fill:transparent!important;stroke:transparent!important;pointer-events:none}
+      .svi-rig-silhouette{fill:url(#svi-skin)!important;stroke:#704335!important;stroke-width:1.35;pointer-events:none}
       .svi-shoulder-bridge{fill:url(#svi-sleeve);stroke:#343690;stroke-width:1.5;stroke-linejoin:round}
       .svi-shoulder-cap,.svi-upper-arm{fill:url(#svi-sleeve);stroke:#343690;stroke-width:2}
       .svi-forearm,.svi-elbow{fill:url(#svi-skin);stroke:#704335;stroke-width:1.4}
@@ -203,7 +205,7 @@ const buildSvg = (profile: AvatarProfile) => {
       .svi-arm-highlight--forearm{stroke:#e4aa8e;stroke-width:2.2;opacity:.35}
       .svi-cuff{fill:#4059c9;stroke:#283c9d;stroke-width:1.1}
       .svi-cuff-trim{fill:#edf0f8;stroke:#c7cedd;stroke-width:.7}
-      .svi-phalanx{fill:url(#svi-skin);stroke:#7c493d;stroke-linejoin:round;stroke-width:.45;stroke-opacity:.3;vector-effect:non-scaling-stroke}
+      .svi-phalanx{fill:url(#svi-skin);stroke:none;stroke-linejoin:round;vector-effect:non-scaling-stroke}
       .svi-phalanx--middle,.svi-phalanx--distal{fill:url(#svi-skin)}
       .svi-nail{fill:none;stroke:#9d6252;stroke-width:.6;stroke-linecap:round;opacity:.14;vector-effect:non-scaling-stroke}
     </style>

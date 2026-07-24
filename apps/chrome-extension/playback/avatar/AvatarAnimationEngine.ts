@@ -178,6 +178,11 @@ export class AvatarAnimationEngine {
     if (!pose.head) pose.head = { rotation: idle * 0.7 };
     else pose.head.rotation = (pose.head.rotation ?? 0) + idle * 0.7;
     if (!pose.torso) pose.torso = { rotation: idle * 0.35 };
+    // The neutral interpreter shows the hands edge-on beside the body. During
+    // signing, reveal the full palm plane so handshapes remain readable.
+    for (const hand of ['left-hand', 'right-hand'] as const) {
+      pose[hand] = { ...pose[hand], scaleY: pose[hand]?.scaleY ?? 1 };
+    }
     if (this.transitionSource && progress < 0.15) {
       const transition = smoothStep(clamp(progress / 0.15));
       const parts = new Set([

@@ -1,13 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 182 198" role="img" aria-label="SignVerse female interpreter head artwork">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 182 198" role="img" aria-label="SignVerse cartoon girl interpreter head artwork">
   <defs>
-    <linearGradient id="skin" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#e7a081"/><stop offset="1" stop-color="#bd7059"/></linearGradient>
-    <linearGradient id="hair" x1=".15" y1="0" x2=".85" y2="1"><stop stop-color="#42295d"/><stop offset=".55" stop-color="#2d1c45"/><stop offset="1" stop-color="#1b142e"/></linearGradient>
+    <linearGradient id="skin" x1=".18" y1=".08" x2=".82" y2=".95">
+      <stop stop-color="#f1b092"/><stop offset=".58" stop-color="#db8b70"/><stop offset="1" stop-color="#c87560"/>
+    </linearGradient>
+    <linearGradient id="hair" x1=".12" y1="0" x2=".88" y2="1">
+      <stop stop-color="#56346f"/><stop offset=".5" stop-color="#38234f"/><stop offset="1" stop-color="#21162f"/>
+    </linearGradient>
   </defs>
-  <path d="M33 89C24 48 43 13 88 8c42-4 68 24 63 69 13 10 17 29 10 45-5 12-15 20-28 23-8 27-24 43-44 43s-38-17-45-44c-14-3-24-13-27-27-3-13 3-24 16-28Z" fill="url(#hair)" stroke="#171126" stroke-width="4"/>
-  <path d="M46 74c4-32 21-49 47-49 28 0 44 19 45 51l-4 41c-4 39-21 59-44 59-24 0-40-21-44-59Z" fill="url(#skin)" stroke="#8f5143" stroke-width="2"/>
-  <path d="M38 91c-12-1-17 8-14 19 2 10 9 16 18 15M140 91c12-1 17 8 14 19-2 10-9 16-18 15" fill="url(#skin)" stroke="#8f5143" stroke-width="2"/>
-  <path d="M43 73c5-41 32-58 65-49 19 5 31 21 34 46-17-4-31-14-39-30-13 17-34 29-60 33Z" fill="url(#hair)"/>
-  <path d="M36 62c-9 39-4 83 17 111-18-5-31-19-35-41-5-26 1-54 18-70ZM142 58c13 18 18 43 14 70-3 23-15 38-33 46 17-32 22-71 19-116Z" fill="url(#hair)"/>
-  <path d="M57 46c16-24 51-30 73-8-20-8-39-5-54 8-8 7-16 10-24 11Z" fill="#5b3976" opacity=".72"/>
-  <path d="M68 143c13 9 30 9 43 0-4 17-12 25-21 25s-17-8-22-25Z" fill="#d98569" opacity=".45"/>
+  <path d="M23 91C20 42 45 9 89 7c44-2 72 29 69 77 12 13 14 31 6 47-6 12-16 19-29 21-9 27-25 41-46 41-22 0-39-15-47-42-14-3-24-12-28-25-5-15-1-27 9-35Z" fill="url(#hair)" stroke="#1b1028" stroke-width="3"/>
+  <path d="M43 72c5-31 22-47 48-47 28 0 45 18 48 50l-4 44c-4 37-21 57-45 57-25 0-42-20-46-57Z" fill="url(#skin)" stroke="#985746" stroke-width="1.7"/>
+  <path d="M41 91c-10-2-16 6-14 17 2 10 8 16 17 17M140 91c10-2 16 6 14 17-2 10-8 16-17 17" fill="url(#skin)" stroke="#985746" stroke-width="1.7"/>
+  <path d="M39 72C44 30 67 12 99 17c24 4 39 21 42 50-16-2-30-11-39-26-13 17-34 28-63 31Z" fill="url(#hair)"/>
+  <path d="M32 69c-13 25-14 61-1 88 6 12 15 19 27 22-13-27-17-62-12-101ZM146 66c12 23 15 56 6 84-5 15-14 25-28 30 12-32 15-68 10-105Z" fill="url(#hair)"/>
+  <path d="M48 48c15-23 44-32 68-20-20-4-38 1-51 14-6 6-12 9-19 10Z" fill="#775095" opacity=".7"/>
+  <path d="M61 131c18 13 40 13 58 0-5 29-15 43-29 43-14 0-24-14-29-43Z" fill="#d7866b" opacity=".18"/>
+  <circle cx="48" cy="111" r="5" fill="#edaa8a" opacity=".55"/><circle cx="133" cy="111" r="5" fill="#edaa8a" opacity=".55"/>
 </svg>
