@@ -1,20 +1,20 @@
 # SignVerse AI
 
 SignVerse AI is an accessibility-focused Chrome extension and FastAPI service that interprets
-website reading context, YouTube captions or user-authorized tab audio, and Google Meet live
-captions into structured Malayalam and Indian Sign Language (ISL) output.
+website reading context, YouTube captions or automatic tab-audio transcription, and Google Meet
+live captions into structured Malayalam and Indian Sign Language (ISL) output.
 
-> **Release status:** `v0.1.0` is a research and developer preview. The semantic pipeline,
-> extension, backend, governed gloss contracts, and branded avatar renderer are implemented.
-> No third-party sign recordings or derived animation clips are distributed in this public
-> repository. Real sign playback requires separately authorized, reviewed assets.
+> **Release status:** The local YouTube accessibility flow is production-hardened and covered by
+> automated unit and integration tests. A public release remains gated on native-ISL review,
+> Deaf-community comprehension testing, privacy review, and signed distribution. No third-party
+> sign recordings or derived animation clips are distributed in this repository.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     A["Website selection or readable block"] --> C["ContentPacket"]
-    B["YouTube / Google Meet captions or tab audio"] --> C
+    B["YouTube / Google Meet captions or automatic tab audio"] --> C
     C --> D["MV3 background service worker"]
     D <--> E["FastAPI /stream WebSocket"]
     D -. "bounded fallback" .-> F["POST /interpret"]
@@ -36,7 +36,10 @@ background service worker, which maintains the streaming connection and validate
 
 - Manifest V3 Chrome extension built with React, TypeScript, Vite, and Tailwind CSS.
 - Cursor- and selection-aware website reading context instead of whole-page extraction.
-- Live YouTube caption handling plus opt-in tab-audio transcription.
+- Automatic YouTube startup with official-caption priority and tab-audio transcription fallback.
+- Synchronized floating English captions and ISL avatar playback.
+- Minimize, restore, close, drag, and resize controls on the floating interpreter.
+- Production UI hides mock-provider and playback-debug controls.
 - Google Meet live-caption extraction with speaker-aware updates.
 - Persistent WebSocket streaming with ordered delivery and bounded REST fallback.
 - Semantic-first interpretation using either deterministic mock output or OpenAI Responses API.
@@ -99,7 +102,7 @@ OPENAI_API_KEY=<your-local-key>
 
 ```bash
 cp apps/chrome-extension/.env.example apps/chrome-extension/.env.local
-npm run build
+npm run check
 ```
 
 Set `VITE_SIGNVERSE_BACKEND_URL` to the backend origin before building. Vite uses it to generate
@@ -123,9 +126,15 @@ source .venv/bin/activate
 uvicorn signverse_api.main:app --reload
 ```
 
-Open a supported webpage and use the extension action to show SignVerse. On websites, select text
-or click near a readable paragraph. On YouTube or Google Meet, enable official captions. YouTube
-tab-audio transcription is opt-in from the popup and requires an OpenAI key.
+Open a YouTube watch page after starting the backend. SignVerse starts automatically and gives
+official YouTube captions priority. If no cues arrive within the configured timeout, the extension
+captures tab audio and streams short segments to the backend transcription endpoint. The floating
+caption and interpreter appear without a popup action; if official captions later become available,
+audio capture stops and duplicate packets are rejected. Tab-audio transcription requires a
+configured backend transcription provider.
+
+On ordinary websites, select text or click near a readable paragraph and use the extension action.
+Google Meet continues to consume its live-caption surface.
 
 Useful endpoints:
 
@@ -139,9 +148,12 @@ Useful endpoints:
 
 ```bash
 # Extension
+npm run lint
 npm run typecheck
 npm test
 npm run build
+# Or run the complete extension gate:
+npm run check
 
 # Backend
 cd apps/api
@@ -186,7 +198,7 @@ See [Licensing and access](docs/datasets/LICENSING_AND_ACCESS.md),
 - Complete native ISL review and Deaf-community comprehension testing.
 - Publish only explicitly redistributable, reviewer-approved sign assets.
 - Expand regional and phrase-level lexicon coverage with versioned provenance.
-- Add end-to-end browser tests for supported YouTube and Google Meet variants.
+- Expand the cross-version browser-fixture matrix for YouTube and Google Meet.
 - Harden authenticated, rate-limited production deployment and observability.
 - Package signed Chrome Web Store releases after privacy and accessibility review.
 

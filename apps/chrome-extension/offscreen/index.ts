@@ -4,8 +4,9 @@ import type {
   AudioCaptureStatus,
 } from '../shared/audioCapture';
 import { isAudioCaptureMessage } from '../shared/audioCapture';
+import { transcribeAudio } from './transcriptionClient';
 
-const SEGMENT_DURATION_MS = 4_500;
+const SEGMENT_DURATION_MS = 2_000;
 const MINIMUM_AUDIO_BYTES = 1_024;
 const backendConfig = getBackendConfig();
 
@@ -38,33 +39,22 @@ async function transcribe(blob: Blob, tabId: number): Promise<void> {
   if (blob.size < MINIMUM_AUDIO_BYTES || !backendConfig.baseUrl) return;
 
   try {
-    const response = await fetch(`${backendConfig.baseUrl}/transcribe`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': blob.type || 'audio/webm',
-        'X-SignVerse-Language': 'en',
-      },
-      body: blob,
-      signal: AbortSignal.timeout(Math.max(15_000, backendConfig.timeoutMs)),
-    });
-    if (!response.ok) throw new Error(`Transcription failed with HTTP ${response.status}.`);
-    const payload = await response.json() as { language?: unknown; text?: unknown };
-    const text = typeof payload.text === 'string' ? payload.text.replace(/\s+/gu, ' ').trim() : '';
-    if (!text || activeTabId !== tabId) return;
+    const transcript = await transcribeAudio(blob, backendConfig);
+    if (activeTabId !== tabId) return;
 
     sequence += 1;
     console.info('[SignVerse] transcription_received', {
       sequence,
       source: 'tab-audio',
-      textLength: text.length,
+      textLength: transcript.text.length,
     });
     await chrome.runtime.sendMessage({
       type: 'SIGNVERSE_AUDIO_TRANSCRIPT',
       target: 'background',
       tabId,
       sequence,
-      text,
-      language: typeof payload.language === 'string' ? payload.language : 'en',
+      text: transcript.text,
+      language: transcript.language,
     } satisfies AudioCaptureMessage);
   } catch (error) {
     console.error('[SignVerse] audio_transcription_failed', error);
