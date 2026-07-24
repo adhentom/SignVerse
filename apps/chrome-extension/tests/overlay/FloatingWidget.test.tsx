@@ -57,6 +57,8 @@ describe('FloatingWidget', () => {
     const sidebar = container.querySelector('aside');
     expect(sidebar?.getAttribute('aria-label')).toContain('accessibility sidebar');
     expect(sidebar?.textContent).toContain('Connected');
+    expect(container.querySelector('[aria-label="Interpreter processing status"]')?.textContent)
+      .toContain('Captions');
     expect(container.querySelector('.sv-interpreter-overlay')).not.toBeNull();
     const openButton = container.querySelector<HTMLButtonElement>(
       'button[aria-label="Open SignVerse accessibility sidebar"]',
@@ -111,6 +113,52 @@ describe('FloatingWidget', () => {
       'button[aria-label="Refresh page to reconnect SignVerse"]',
     );
     act(() => refresh?.click());
+    expect(retry).toHaveBeenCalledOnce();
+  });
+
+  it('announces transcript, backend, and processing states without hiding retry', () => {
+    const retry = vi.fn();
+    act(() => {
+      root.render(
+        <FloatingWidget
+          backendHealthState={{
+            status: 'error',
+            code: 'connection-failure',
+            message: 'The backend could not be reached.',
+          }}
+          contentState={{ status: 'loading' }}
+          interpretationState={{ status: 'idle' }}
+          liveState={{
+            status: 'no-captions',
+            statusMessage: 'No transcript is available.',
+            title: 'Video',
+            timestamp: '00:00',
+            metadata: {},
+            currentPacket: null,
+            history: [],
+          }}
+          sourceText=""
+          onRetry={retry}
+          platform={{
+            id: 'youtube',
+            displayName: 'YouTube',
+            modeLabel: 'YouTube Mode',
+            statusLabel: 'YouTube Interpretation',
+          }}
+        />,
+      );
+    });
+
+    const openButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Open SignVerse accessibility sidebar"]',
+    );
+    act(() => openButton?.click());
+    expect(container.textContent).toContain('Backend offline');
+    expect(container.textContent).toContain('Transcript unavailable');
+    expect(container.querySelector('.sv-status-indicator--error')?.textContent).toBe('Error');
+    const retryButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent?.includes('Retry connection'));
+    act(() => retryButton?.click());
     expect(retry).toHaveBeenCalledOnce();
   });
 

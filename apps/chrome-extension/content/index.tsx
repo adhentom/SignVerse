@@ -30,6 +30,11 @@ import {
   ISL_DEBUG_STORAGE_KEY,
   setIslDebugMode,
 } from '../shared/debugMode';
+import {
+  getSitePreferences,
+  isSiteEnabled,
+  preferencesFromStorageChange,
+} from '../shared/sitePreferences';
 
 declare global {
   interface Window {
@@ -49,9 +54,10 @@ function WidgetContainer() {
   const [audioLiveState, setAudioLiveState] = useState<YouTubeLiveSnapshot | null>(null);
   const [websitePacket, setWebsitePacket] = useState<ContentPacket | null>(null);
   const [debugEnabled, setDebugEnabled] = useState(false);
+  const [siteAccess, setSiteAccess] = useState<'loading' | 'enabled' | 'disabled'>('loading');
   const liveStateRef = useRef<LiveContentSnapshot | null>(null);
   const audioFallbackRef = useRef<YouTubeAudioFallback | null>(null);
-  const visible = true;
+  const visible = siteAccess === 'enabled';
 
   if (platformAdapter.platform.id === 'youtube' && !audioFallbackRef.current) {
     audioFallbackRef.current = new YouTubeAudioFallback({
@@ -80,6 +86,41 @@ function WidgetContainer() {
   useEffect(() => {
     liveStateRef.current = liveState;
   }, [liveState]);
+
+  useEffect(() => {
+    let active = true;
+    const updateAccess = (preferences: Awaited<ReturnType<typeof getSitePreferences>>) => {
+      if (!active) return;
+      const enabled = isSiteEnabled(window.location.hostname, preferences);
+      setSiteAccess(enabled ? 'enabled' : 'disabled');
+      console.info('[SignVerse] site_access_updated', {
+        domain: window.location.hostname,
+        enabled,
+        onboardingComplete: preferences.onboardingComplete,
+      });
+    };
+    void getSitePreferences()
+      .then(updateAccess)
+      .catch((error: unknown) => {
+        console.warn('[SignVerse] site_preferences_unavailable', {
+          message: error instanceof Error ? error.message : String(error),
+        });
+        if (active) setSiteAccess('disabled');
+      });
+    const handleStorage = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      area: string,
+    ) => {
+      if (area !== 'local') return;
+      const preferences = preferencesFromStorageChange(changes);
+      if (preferences) updateAccess(preferences);
+    };
+    chrome.storage.onChanged.addListener(handleStorage);
+    return () => {
+      active = false;
+      chrome.storage.onChanged.removeListener(handleStorage);
+    };
+  }, []);
 
   useEffect(() => {
     const handleAudioMessage = (message: unknown) => {
@@ -134,11 +175,12 @@ function WidgetContainer() {
   }, [liveState, visible]);
 
   useEffect(() => {
+    if (!visible) return;
     console.info('[SignVerse] automatic_interpretation_started', {
       platform: platformAdapter.platform.id,
       mode: platformAdapter.platform.modeLabel,
     });
-  }, []);
+  }, [visible]);
 
   useEffect(() => {
     let active = true;
@@ -242,7 +284,7 @@ function WidgetContainer() {
     });
   }, [visible]);
 
-  if (!visible) return null;
+  if (siteAccess !== 'enabled') return null;
 
   return (
     <FloatingWidget

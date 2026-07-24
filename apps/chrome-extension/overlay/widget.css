@@ -295,6 +295,97 @@
   height: 15px;
 }
 
+.sv-status-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sv-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 5px 8px;
+  border: 1px solid var(--sv-border);
+  border-radius: 999px;
+  color: var(--sv-text-muted);
+  background: var(--sv-surface-soft);
+  font-size: 9px;
+  font-weight: 720;
+}
+
+.sv-status-indicator > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #697386;
+}
+
+.sv-status-indicator--active {
+  border-color: rgba(67, 214, 162, 0.3);
+  color: #d1fae5;
+  background: rgba(67, 214, 162, 0.09);
+}
+
+.sv-status-indicator--active > span {
+  background: var(--sv-green);
+  box-shadow: 0 0 0 3px rgba(67, 214, 162, 0.12);
+}
+
+.sv-status-indicator--error {
+  border-color: rgba(251, 113, 133, 0.34);
+  color: #ffe4e8;
+  background: rgba(251, 113, 133, 0.1);
+}
+
+.sv-status-indicator--error > span {
+  background: var(--sv-red);
+  box-shadow: 0 0 0 3px rgba(251, 113, 133, 0.12);
+}
+
+.sv-service-notice,
+.sv-source-notice {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid rgba(251, 113, 133, 0.24);
+  border-radius: var(--sv-radius-md);
+  color: var(--sv-text-secondary);
+  background: rgba(251, 113, 133, 0.075);
+}
+
+.sv-source-notice {
+  border-color: rgba(250, 204, 21, 0.22);
+  background: rgba(250, 204, 21, 0.065);
+}
+
+.sv-service-notice .sv-error-visual,
+.sv-source-notice .sv-state-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.sv-service-notice strong,
+.sv-source-notice strong {
+  display: block;
+  color: var(--sv-text);
+  font-size: 11px;
+}
+
+.sv-service-notice p,
+.sv-source-notice p {
+  margin: 3px 0 0;
+  color: var(--sv-text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 .sv-pipeline {
   margin-top: 12px;
   padding: 14px;
@@ -2256,6 +2347,33 @@
   .sv-pipeline,
   .sv-command-bar > div {
     border-width: 2px;
+  }
+}
+
+@media (forced-colors: active) {
+  .sv-sidebar,
+  .sv-card,
+  .sv-command-bar > div,
+  .sv-status-indicator,
+  .sv-service-notice,
+  .sv-source-notice,
+  button,
+  select {
+    border: 1px solid CanvasText;
+  }
+
+  .sv-connection-dot,
+  .sv-status-indicator > span,
+  .sv-fab-status {
+    background: ButtonText;
+    forced-color-adjust: none;
+  }
+
+  button:focus-visible,
+  select:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
   }
 }
 

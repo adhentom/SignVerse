@@ -66,10 +66,19 @@ can reconnect to the new service worker.
 
 ## Accessibility sidebar
 
+On first use, the popup explains page access, backend processing, optional YouTube tab-audio
+capture, local settings, and SignVerse's content-retention behavior. Interpretation remains
+disabled until the user completes this notice. The popup then provides an accessible per-site
+enable/disable control and a domain exclusion list; excluding a domain also excludes its
+subdomains. These preferences are stored in `chrome.storage.local`, and disabling a site stops
+extraction, backend health and streaming connections, and tab-audio fallback on that site.
+
 The extension renders a responsive, collapsible SignVerse sidebar inside an isolated Shadow DOM.
 It includes connection and platform status, animated pipeline progress, skeleton loading,
 collapsible interpretation cards, an interactive playback-plan console, and contextual source
-content for websites, YouTube, and Google Meet. Keyboard users can close it with Escape and
+content for websites, YouTube, and Google Meet. Connected, listening, caption, translation,
+playback, and error indicators expose the active pipeline stage without relying on color alone.
+Keyboard users can close it with Escape and
 return through the focused floating action button.
 
 On YouTube, the floating interpreter is mounted automatically. Its caption strip displays the
@@ -86,8 +95,9 @@ content as Malayalam for assistive technology, and provides an accessible copy a
 success or failure feedback.
 
 The interface uses visible focus states, semantic landmarks, ARIA live regions, high-contrast
-media queries, and reduced-motion behavior. Backend failures distinguish offline, timeout,
+and forced-colors media queries, and reduced-motion behavior. Backend failures distinguish offline, timeout,
 configuration, unavailable, and invalid-response states and provide a local retry action.
+Transcript-unavailable and permission-denied states are announced with actionable explanations.
 Developer diagnostics are excluded from the normal UI. Local development builds may opt in with
 `VITE_SIGNVERSE_ENABLE_DEVELOPER_CONTROLS=true`; production builds ignore that switch. In an
 eligible development build, ISL diagnostics remain hidden inside the collapsed

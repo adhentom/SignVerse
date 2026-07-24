@@ -2,15 +2,21 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PopupApp } from '../../popup/PopupApp';
+import {
+  SITE_PREFERENCES_STORAGE_KEY,
+  type SitePreferences,
+} from '../../shared/sitePreferences';
 
 describe('PopupApp production controls', () => {
   let container: HTMLDivElement;
   let root: Root;
+  let preferences: SitePreferences;
 
   beforeEach(() => {
     container = document.createElement('div');
     document.body.append(container);
     root = createRoot(container);
+    preferences = { onboardingComplete: false, excludedDomains: [] };
   });
 
   afterEach(() => {
@@ -28,6 +34,14 @@ describe('PopupApp production controls', () => {
           url,
         }]),
       },
+      storage: {
+        local: {
+          get: vi.fn(async () => ({ [SITE_PREFERENCES_STORAGE_KEY]: preferences })),
+          set: vi.fn(async (value: Record<string, SitePreferences>) => {
+            preferences = value[SITE_PREFERENCES_STORAGE_KEY];
+          }),
+        },
+      },
     });
   }
 
@@ -36,34 +50,68 @@ describe('PopupApp production controls', () => {
     await act(async () => undefined);
   }
 
-  it('shows automatic YouTube startup without manual audio controls', async () => {
+  it('explains permissions and privacy before first use', async () => {
     installChrome('https://www.youtube.com/watch?v=test');
     await renderPopup();
 
-    expect(container.textContent).toContain('SignVerse starts automatically on supported pages');
-    expect(container.textContent).toContain('official captions are preferred');
-    expect(container.textContent).toContain('status-only');
-    expect(container.textContent).not.toContain('Listen to video audio');
-    expect(container.textContent).not.toContain('Start listening');
-    expect(container.textContent).not.toContain('Allow video audio');
+    expect(container.textContent).toContain('Accessibility with clear privacy controls');
+    expect(container.textContent).toContain('Read supported pages');
+    expect(container.textContent).toContain('Contact your configured backend');
+    expect(container.textContent).toContain('Optional video-audio access');
+    expect(container.textContent).toContain('does not save page content');
+    expect(container.querySelector('button[aria-label*="privacy notice"]')).not.toBeNull();
   });
 
-  it('requires no popup interaction on generic websites', async () => {
+  it('completes onboarding and exposes an accessible per-site switch', async () => {
+    installChrome('https://www.youtube.com/watch?v=test');
+    await renderPopup();
+
+    const continueButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label*="privacy notice"]',
+    );
+    await act(async () => continueButton?.click());
+
+    expect(preferences.onboardingComplete).toBe(true);
+    expect(container.textContent).toContain('Enabled');
+    const siteButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Disable SignVerse on www.youtube.com"]',
+    );
+    expect(siteButton?.getAttribute('aria-pressed')).toBe('true');
+
+    await act(async () => siteButton?.click());
+    expect(preferences.excludedDomains).toEqual(['www.youtube.com']);
+    expect(container.textContent).toContain('Extraction, backend connections, audio capture');
+  });
+
+  it('adds and removes domains from the exclusion list', async () => {
+    preferences = { onboardingComplete: true, excludedDomains: [] };
     installChrome('https://example.com/article');
     await renderPopup();
 
-    expect(container.textContent).toContain('Automatic mode');
-    expect(container.textContent).toContain('Running');
-    expect(container.textContent).toContain('No popup action is required');
-    expect(container.querySelector('button')).toBeNull();
-  });
+    const input = container.querySelector<HTMLInputElement>('#signverse-excluded-domain');
+    await act(async () => {
+      if (input) {
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          'value',
+        )?.set;
+        setter?.call(input, 'news.example.org');
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+    const form = input?.closest('form');
+    await act(async () => form?.dispatchEvent(new Event('submit', {
+      bubbles: true,
+      cancelable: true,
+    })));
 
-  it('reports automatic startup on Google Meet', async () => {
-    installChrome('https://meet.google.com/abc-defg-hij');
-    await renderPopup();
+    expect(preferences.excludedDomains).toContain('news.example.org');
+    expect(container.textContent).toContain('news.example.org');
 
-    expect(container.textContent).toContain('website, YouTube video, or Google Meet');
-    expect(container.textContent).toContain('starts automatically');
-    expect(container.querySelector('button')).toBeNull();
+    const remove = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Remove news.example.org from excluded domains"]',
+    );
+    await act(async () => remove?.click());
+    expect(preferences.excludedDomains).not.toContain('news.example.org');
   });
 });

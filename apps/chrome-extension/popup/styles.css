@@ -14,11 +14,37 @@
 
 body {
   margin: 0;
-  min-width: 360px;
+  min-width: 380px;
   min-height: 520px;
 }
 
-button:focus-visible {
+button:focus-visible,
+input:focus-visible {
   outline: 2px solid #c4b5fd;
   outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (forced-colors: active) {
+  button,
+  input,
+  [role="alert"],
+  section > div {
+    border: 1px solid CanvasText;
+  }
+
+  button:focus-visible,
+  input:focus-visible {
+    outline: 2px solid Highlight;
+  }
 }

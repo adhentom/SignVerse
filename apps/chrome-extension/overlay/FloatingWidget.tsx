@@ -5,7 +5,10 @@ import type { LiveContentSnapshot } from '../shared/liveContent';
 import type { PlatformInfo } from '../shared/platform';
 import type { WebsiteContentState } from '../shared/websiteContent';
 import { InterpretationPanel } from './components/InterpretationPanel';
-import { SignPlaybackPanel } from './components/SignPlaybackPanel';
+import {
+  SignPlaybackPanel,
+  type InterpreterActivity,
+} from './components/SignPlaybackPanel';
 import { SignVerseMark } from './components/SignVerseMark';
 import { UIIcon } from './components/UIIcon';
 import { AvatarPreferenceControl } from './components/AvatarPreferenceControl';
@@ -46,8 +49,83 @@ function connectionCopy(
   return { label: 'Unavailable', tone: 'offline' };
 }
 
+interface StatusIndicator {
+  active: boolean;
+  error?: boolean;
+  label: 'Connected' | 'Listening' | 'Captions' | 'Translating' | 'Playing' | 'Error';
+}
+
+function productionStatuses({
+  backendHealthState,
+  interpretationState,
+  liveState,
+  playbackActivity,
+  platformId,
+  sourceText,
+}: {
+  backendHealthState: BackendHealthState;
+  interpretationState: InterpretationState;
+  liveState: LiveContentSnapshot | null;
+  playbackActivity: InterpreterActivity;
+  platformId: string;
+  sourceText: string;
+}): StatusIndicator[] {
+  const livePlatform = platformId === 'youtube' || platformId === 'google-meet';
+  const listening = livePlatform && ['loading', 'playing', 'connected'].includes(liveState?.status ?? '');
+  const captions = livePlatform && sourceText.trim().length > 0;
+  const translating = interpretationState.status === 'loading';
+  const playing = playbackActivity === 'Playing';
+  const sourceError = ['no-captions', 'interrupted'].includes(liveState?.status ?? '') &&
+    sourceText.trim().length === 0;
+  const error = backendHealthState.status === 'error' ||
+    interpretationState.status === 'error' ||
+    sourceError;
+  return [
+    { label: 'Connected', active: backendHealthState.status === 'connected' },
+    { label: 'Listening', active: listening },
+    { label: 'Captions', active: captions },
+    { label: 'Translating', active: translating },
+    { label: 'Playing', active: playing },
+    { label: 'Error', active: error, error: true },
+  ];
+}
+
+function sourceIssue(
+  liveState: LiveContentSnapshot | null,
+  sourceText: string,
+): { title: string; detail: string } | null {
+  if (!liveState || sourceText.trim()) return null;
+  const message = liveState.statusMessage;
+  if (/permission|denied|not been invoked/iu.test(message)) {
+    return {
+      title: 'Permission required',
+      detail: `${message} Open the SignVerse popup and allow access before trying again.`,
+    };
+  }
+  if (liveState.status === 'no-captions') {
+    return {
+      title: 'Transcript unavailable',
+      detail: `${message} SignVerse will use tab-audio transcription when permission and a transcription provider are available.`,
+    };
+  }
+  if (liveState.status === 'captions-disabled') {
+    return {
+      title: 'Captions unavailable',
+      detail: message,
+    };
+  }
+  if (liveState.status === 'interrupted') {
+    return {
+      title: 'Listening interrupted',
+      detail: message,
+    };
+  }
+  return null;
+}
+
 export function FloatingWidget({
   backendHealthState,
+  contentState,
   debugEnabled = false,
   interpretationState,
   liveState,
@@ -58,11 +136,21 @@ export function FloatingWidget({
 }: FloatingWidgetProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [interpreterRoot, setInterpreterRoot] = useState<HTMLDivElement | null>(null);
+  const [playbackActivity, setPlaybackActivity] = useState<InterpreterActivity>('Waiting');
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const shouldMoveFocus = useRef(false);
   const connection = connectionCopy(backendHealthState, interpretationState);
   const avatarPreference = useAvatarPreference();
+  const statuses = productionStatuses({
+    backendHealthState,
+    interpretationState,
+    liveState,
+    playbackActivity,
+    platformId: platform.id,
+    sourceText,
+  });
+  const liveIssue = sourceIssue(liveState, sourceText);
 
   useEffect(() => {
     if (!shouldMoveFocus.current) return;
@@ -137,6 +225,61 @@ export function FloatingWidget({
               </div>
             </section>
 
+            <ul aria-label="Interpreter processing status" className="sv-status-indicators">
+              {statuses.map((status) => (
+                <li
+                  aria-current={status.active ? 'step' : undefined}
+                  className={[
+                    'sv-status-indicator',
+                    status.active ? 'sv-status-indicator--active' : '',
+                    status.error && status.active ? 'sv-status-indicator--error' : '',
+                  ].filter(Boolean).join(' ')}
+                  key={status.label}
+                >
+                  <span aria-hidden="true" />
+                  {status.label}
+                </li>
+              ))}
+            </ul>
+
+            {backendHealthState.status === 'error' && interpretationState.status !== 'error' && (
+              <section aria-live="assertive" className="sv-service-notice" role="alert">
+                <span className="sv-error-visual"><UIIcon name="alert" /></span>
+                <div>
+                  <strong>Backend offline</strong>
+                  <p>{backendHealthState.message}</p>
+                  <button className="sv-retry-button" onClick={onRetry} type="button">
+                    <UIIcon name="refresh" />
+                    Retry connection
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {liveIssue && (
+              <section
+                aria-live={liveIssue.title === 'Permission required' ? 'assertive' : 'polite'}
+                className="sv-source-notice"
+                role={liveIssue.title === 'Permission required' ? 'alert' : 'status'}
+              >
+                <span className="sv-state-icon"><UIIcon name="alert" /></span>
+                <div>
+                  <strong>{liveIssue.title}</strong>
+                  <p>{liveIssue.detail}</p>
+                </div>
+              </section>
+            )}
+
+            {platform.id === 'website' && contentState.status === 'error' && (
+              <section aria-live="polite" className="sv-source-notice" role="status">
+                <span className="sv-state-icon"><UIIcon name="alert" /></span>
+                <div>
+                  <strong>Page content unavailable</strong>
+                  <p>{contentState.message}</p>
+                </div>
+              </section>
+            )}
+
             <section aria-labelledby="sv-results-heading" className="sv-results-section">
               <div className="sv-section-title">
                 <div>
@@ -174,6 +317,7 @@ export function FloatingWidget({
       <div className="sv-playback-host">
         <SignPlaybackPanel
           paused={liveState?.status === 'paused' || liveState?.status === 'advertisement' || liveState?.status === 'reconnecting'}
+          onActivityChange={setPlaybackActivity}
           profile={avatarPreference.profile}
           portalTarget={interpreterRoot}
           sourceStatus={liveState?.statusMessage ?? ''}

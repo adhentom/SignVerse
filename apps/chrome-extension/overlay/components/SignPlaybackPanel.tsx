@@ -26,7 +26,17 @@ function resolveAsset(item: PlaybackSequence['items'][number] | undefined) {
   return signAssetRegistry.lookup(item.asset_id);
 }
 
-function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile, floatingOnly = false }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile; floatingOnly?: boolean }) {
+export type InterpreterActivity =
+  | 'Attention needed'
+  | 'Finished'
+  | 'Idle'
+  | 'Interpreting'
+  | 'Loading'
+  | 'Paused'
+  | 'Playing'
+  | 'Waiting';
+
+function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile, floatingOnly = false, onActivityChange }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile; floatingOnly?: boolean; onActivityChange?: (activity: InterpreterActivity) => void }) {
   const controller = usePlaybackController(sequence);
   const { scheduled, snapshot, totalDuration } = controller;
   const current = scheduled?.item;
@@ -63,6 +73,10 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
       : playbackStatus === 'Interpreting'
         ? 'processing'
         : 'idle';
+
+  useEffect(() => {
+    onActivityChange?.(playbackStatus as InterpreterActivity);
+  }, [onActivityChange, playbackStatus]);
 
   useEffect(() => {
     if (paused && snapshot.state === 'Playing') controller.pause();
@@ -324,7 +338,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
   );
 }
 
-export function SignPlaybackPanel({ state, paused = false, portalTarget = null, sourceStatus = '', sourceText = '', profile = DEFAULT_AVATAR }: { state: InterpretationState; paused?: boolean; portalTarget?: HTMLDivElement | null; sourceStatus?: string; sourceText?: string; profile?: AvatarProfile }) {
+export function SignPlaybackPanel({ state, paused = false, portalTarget = null, sourceStatus = '', sourceText = '', profile = DEFAULT_AVATAR, onActivityChange }: { state: InterpretationState; paused?: boolean; portalTarget?: HTMLDivElement | null; sourceStatus?: string; sourceText?: string; profile?: AvatarProfile; onActivityChange?: (activity: InterpreterActivity) => void }) {
   const [fallbackPortalTarget, setFallbackPortalTarget] = useState<HTMLDivElement | null>(null);
   if (state.status === 'loading') {
     return (
@@ -339,6 +353,7 @@ export function SignPlaybackPanel({ state, paused = false, portalTarget = null, 
           paused={paused}
           portalTarget={portalTarget}
           profile={profile}
+          onActivityChange={onActivityChange}
           sequence={EMPTY_SEQUENCE}
           sourceStatus={sourceStatus}
           sourceText={sourceText}
@@ -353,7 +368,7 @@ export function SignPlaybackPanel({ state, paused = false, portalTarget = null, 
   return (
     <>
       <CollapsibleCard badge={`${sequence.items.length || glossCount} signs`} defaultExpanded icon="translate" title="ISL Playback">
-        <PlaybackController sourceStatus={sourceStatus} sourceText={sourceText} paused={paused} portalTarget={portalTarget ?? fallbackPortalTarget} profile={profile} sequence={sequence} />
+        <PlaybackController sourceStatus={sourceStatus} sourceText={sourceText} paused={paused} portalTarget={portalTarget ?? fallbackPortalTarget} profile={profile} sequence={sequence} onActivityChange={onActivityChange} />
       </CollapsibleCard>
       {!portalTarget && <div ref={setFallbackPortalTarget} />}
     </>
