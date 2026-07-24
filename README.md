@@ -32,6 +32,10 @@ flowchart LR
 The content script never contacts the API directly. Backend traffic is owned by the Manifest V3
 background service worker, which maintains the streaming connection and validates messages.
 
+Avatar production architecture, performance policy, compatibility, diagnostics, and release
+qualification are documented in
+[Avatar Production Optimization and Release Readiness](docs/AVATAR_PRODUCTION_READINESS.md).
+
 ## Features
 
 - Manifest V3 Chrome extension built with React, TypeScript, Vite, and Tailwind CSS.
@@ -63,7 +67,7 @@ Runtime screenshots will be added after the native-ISL and privacy review gate.
 
 ## Requirements
 
-- Chrome or Chromium with Manifest V3 extension support
+- Current Chrome, Edge, Brave, or another Chromium browser with Manifest V3 extension support
 - Node.js 22 or newer and npm
 - Python 3.12 or newer
 - An OpenAI API key only when using the OpenAI or tab-audio transcription paths

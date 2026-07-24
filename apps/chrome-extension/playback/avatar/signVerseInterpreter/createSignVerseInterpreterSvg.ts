@@ -47,6 +47,8 @@ const ARTWORK_BY_SET: Record<AvatarProfile['artworkSet'], InterpreterArtwork> = 
   },
 };
 
+const SVG_TEMPLATE_CACHE = new Map<string, HTMLTemplateElement>();
+
 const phalanx = (
   length: number,
   width: number,
@@ -259,7 +261,16 @@ const buildSvg = (profile: AvatarProfile) => {
 };
 
 export function createSignVerseInterpreterSvg(profile: AvatarProfile = DEFAULT_AVATAR): SVGSVGElement {
-  const template = document.createElement('template');
-  template.innerHTML = buildSvg(profile).trim();
-  return template.content.firstElementChild as unknown as SVGSVGElement;
+  const cacheKey = `${profile.id}:${profile.artworkSet}`;
+  let template = SVG_TEMPLATE_CACHE.get(cacheKey);
+  if (!template) {
+    template = document.createElement('template');
+    template.innerHTML = buildSvg(profile).trim();
+    SVG_TEMPLATE_CACHE.set(cacheKey, template);
+  }
+  const avatar = template.content.firstElementChild?.cloneNode(true);
+  if (!(avatar instanceof SVGSVGElement)) {
+    throw new Error(`SignVerse avatar template "${cacheKey}" did not produce an SVG root.`);
+  }
+  return avatar;
 }

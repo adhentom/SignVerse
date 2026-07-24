@@ -1,5 +1,9 @@
 import type { BackendConfig } from '../config/backendConfig';
 import { isStreamClientMessage, isStreamServerMessage, type StreamClientMessage } from '../shared/streaming';
+import {
+  runtimeDiagnostic,
+  streamCorrelationId,
+} from '../shared/runtimeDiagnostics';
 
 const MAX_RECONNECT_MS = 5_000;
 export const MAX_PENDING_STREAM_MESSAGES = 256;
@@ -21,6 +25,10 @@ export class StreamingBridge {
   start(): void {
     this.port.onMessage.addListener(this.handlePortMessage);
     this.port.onDisconnect.addListener(this.handlePortDisconnect);
+    runtimeDiagnostic('stream_bridge_started', {
+      tabId: this.port.sender?.tab?.id ?? null,
+      frameId: this.port.sender?.frameId ?? null,
+    });
     this.connect();
   }
 
@@ -28,6 +36,10 @@ export class StreamingBridge {
     // Chrome reports expected BFCache/navigation port closure through lastError.
     // Reading it prevents an "Unchecked runtime.lastError" extension warning.
     if (typeof chrome !== 'undefined') void chrome.runtime.lastError?.message;
+    runtimeDiagnostic('stream_bridge_port_disconnected', {
+      tabId: this.port.sender?.tab?.id ?? null,
+      pending: this.pending.size,
+    }, 'warn');
     this.close();
   };
 
@@ -64,9 +76,10 @@ export class StreamingBridge {
       }
     }
     this.pending.set(value.sequence, value);
-    console.info('[SignVerse] stream_bridge_message_queued', {
+    runtimeDiagnostic('stream_bridge_queue_append', {
       type: value.type,
       sequence: value.sequence,
+      correlationId: streamCorrelationId(value.session_id, value.sequence),
       pending: this.pending.size,
     });
     this.flush();
@@ -85,11 +98,16 @@ export class StreamingBridge {
       type: 'status', status: this.reconnectAttempt > 0 ? 'reconnecting' : 'connecting',
     });
     const url = `${this.config.baseUrl.replace(/^http/u, 'ws')}/stream`;
+    runtimeDiagnostic('stream_bridge_connecting', {
+      url,
+      reconnectAttempt: this.reconnectAttempt,
+    });
     const socket = this.createSocket(url);
     this.socket = socket;
     socket.addEventListener('open', () => {
       if (this.socket !== socket) return;
       this.reconnectAttempt = 0;
+      runtimeDiagnostic('stream_bridge_connected', { url });
       this.postToPort({ type: 'status', status: 'connected' });
       this.flush();
     });
@@ -98,14 +116,22 @@ export class StreamingBridge {
       try { value = JSON.parse(String(event.data)); } catch { return; }
       if (!isStreamServerMessage(value)) return;
       if (value.type === 'interpretation') {
-        console.info('[SignVerse] stream_bridge_interpretation_received', {
+        runtimeDiagnostic('stream_bridge_packet_received', {
           sequence: value.sequence,
+          correlationId: streamCorrelationId(value.session_id, value.sequence),
           playbackCount: value.data.playback?.items.length ?? 0,
+          glossCount: value.data.isl_gloss.length,
         });
       }
       if ('sequence' in value && (value.type === 'interpretation' || value.type === 'reset')) {
         this.pending.delete(value.sequence);
         this.sent.delete(value.sequence);
+        runtimeDiagnostic('stream_bridge_queue_remove', {
+          sequence: value.sequence,
+          correlationId: streamCorrelationId(value.session_id, value.sequence),
+          pending: this.pending.size,
+          reason: value.type,
+        });
       }
       this.postToPort(value);
     });
@@ -113,9 +139,15 @@ export class StreamingBridge {
       if (this.socket !== socket || this.closed) return;
       this.socket = undefined;
       this.sent.clear();
+      runtimeDiagnostic('stream_bridge_disconnected', {
+        pending: this.pending.size,
+      }, 'warn');
       this.scheduleReconnect();
     });
-    socket.addEventListener('error', () => socket.close());
+    socket.addEventListener('error', () => {
+      runtimeDiagnostic('stream_bridge_socket_error', { url }, 'error');
+      socket.close();
+    });
   }
 
   private flush(): void {
@@ -124,6 +156,12 @@ export class StreamingBridge {
       if (this.sent.has(message.sequence)) continue;
       this.socket.send(JSON.stringify(message));
       this.sent.add(message.sequence);
+      runtimeDiagnostic('stream_bridge_packet_sent', {
+        type: message.type,
+        sequence: message.sequence,
+        correlationId: streamCorrelationId(message.session_id, message.sequence),
+        pending: this.pending.size,
+      });
     }
   }
 
@@ -131,6 +169,11 @@ export class StreamingBridge {
     clearTimeout(this.reconnectTimer);
     const delay = Math.min(250 * 2 ** this.reconnectAttempt, MAX_RECONNECT_MS);
     this.reconnectAttempt += 1;
+    runtimeDiagnostic('stream_bridge_reconnect_scheduled', {
+      delayMs: delay,
+      reconnectAttempt: this.reconnectAttempt,
+      pending: this.pending.size,
+    }, 'warn');
     this.reconnectTimer = setTimeout(() => this.connect(), delay);
   }
 
@@ -141,6 +184,9 @@ export class StreamingBridge {
     this.port.onDisconnect.removeListener(this.handlePortDisconnect);
     this.socket?.close();
     this.socket = undefined;
+    runtimeDiagnostic('stream_bridge_closed', {
+      pending: this.pending.size,
+    });
     this.pending.clear();
     this.sent.clear();
   };

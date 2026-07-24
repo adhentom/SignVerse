@@ -3,6 +3,7 @@ import { segmentText } from '../../content/interpretation/sentenceSegmentation';
 import {
   incrementalLiveText,
   mergeInterpretations,
+  normalizeStreamErrorCode,
   segmentIdentity,
 } from '../../content/interpretation/useStreamingInterpretation';
 
@@ -57,5 +58,12 @@ describe('real-time interpretation pipeline', () => {
       timestamp: '00:20',
       metadata: { ...packet.metadata, cueId: 'video:youtube-dom:20000' },
     }));
+  });
+
+  it('maps untrusted streaming errors to supported UI diagnostics', () => {
+    expect(normalizeStreamErrorCode('invalid-message')).toBe('invalid-response');
+    expect(normalizeStreamErrorCode('interpretation-failed')).toBe('backend-unavailable');
+    expect(normalizeStreamErrorCode('stream-backpressure')).toBe('backend-unavailable');
+    expect(normalizeStreamErrorCode('unexpected-code')).toBe('backend-unavailable');
   });
 });

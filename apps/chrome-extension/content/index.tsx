@@ -35,6 +35,7 @@ import {
   isSiteEnabled,
   preferencesFromStorageChange,
 } from '../shared/sitePreferences';
+import { runtimeDiagnostic } from '../shared/runtimeDiagnostics';
 
 declare global {
   interface Window {
@@ -320,12 +321,25 @@ function WidgetContainer() {
 function mountWidget(): void {
   const existingHost = document.getElementById('signverse-ai-widget-host');
   if (existingHost) {
+    const ownerExtensionId = existingHost.getAttribute('data-signverse-extension-id');
+    runtimeDiagnostic(
+      ownerExtensionId && ownerExtensionId !== chrome.runtime.id
+        ? 'multiple_signverse_extensions_detected'
+        : 'duplicate_content_script_detected',
+      {
+        currentExtensionId: chrome.runtime.id,
+        ownerExtensionId: ownerExtensionId ?? 'unknown',
+        pageUrl: window.location.href,
+      },
+      'warn',
+    );
     return;
   }
 
   const host = document.createElement('div');
   host.id = 'signverse-ai-widget-host';
   host.setAttribute('data-signverse-root', '');
+  host.setAttribute('data-signverse-extension-id', chrome.runtime.id);
 
   const shadowRoot = host.attachShadow({ mode: 'open' });
   const style = document.createElement('style');
@@ -368,6 +382,10 @@ function getStatus(): ContentStatus {
 
 if (!window.__SIGNVERSE_CONTENT_INITIALIZED__) {
   window.__SIGNVERSE_CONTENT_INITIALIZED__ = true;
+  runtimeDiagnostic('content_script_initializing', {
+    extensionId: chrome.runtime.id,
+    pageUrl: window.location.href,
+  });
   mountWidget();
 
   chrome.runtime.onMessage.addListener(
@@ -391,4 +409,10 @@ if (!window.__SIGNVERSE_CONTENT_INITIALIZED__) {
   );
 
   void chrome.runtime.sendMessage({ type: 'SIGNVERSE_CONTENT_READY' }).catch(() => undefined);
+} else {
+  runtimeDiagnostic('duplicate_content_script_detected', {
+    currentExtensionId: chrome.runtime.id,
+    pageUrl: window.location.href,
+    reason: 'isolated-world-initialization-guard',
+  }, 'warn');
 }

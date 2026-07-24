@@ -83,6 +83,8 @@ def base_source(path: str, **overrides: object) -> dict[str, object]:
         "source_url": "https://example.test/source",
         "attribution": "Test source",
         "review_status": "governed",
+        "language": "Indian Sign Language",
+        "region": "India",
         "media_glob": "*/*.mp4",
     }
     source.update(overrides)
@@ -197,3 +199,42 @@ def test_promotion_is_permission_gated_and_never_overwrites(tmp_path: Path) -> N
     )
     with pytest.raises(PermissionError, match="permission_reference"):
         DatasetPipeline(tmp_path, blocked_config).promote("test-source")
+
+
+def test_dataset_configuration_rejects_non_indian_sign_languages(
+    tmp_path: Path,
+) -> None:
+    config = write_config(
+        tmp_path,
+        [
+            base_source(
+                "assets",
+                language="Indo-Pakistani Sign Language",
+                region="Pakistan",
+            )
+        ],
+    )
+
+    with pytest.raises(ValueError, match="excludes Indo-Pakistani"):
+        load_sources(config, tmp_path)
+
+
+def test_promotion_rejects_candidate_metadata_from_outside_indian_isl(
+    tmp_path: Path,
+) -> None:
+    source_video = write_asset(tmp_path / "imports", "hello", word="hello")
+    metadata_path = source_video.parent / "metadata.json"
+    metadata = json.loads(metadata_path.read_text())
+    metadata.update(
+        {
+            "language": "Indo-Pakistani Sign Language",
+            "region": "Pakistan",
+            "review_status": "approved",
+        }
+    )
+    metadata_path.write_text(json.dumps(metadata), encoding="utf-8")
+    source = base_source("imports", permission_reference="approval-123")
+    config = write_config(tmp_path, [source])
+
+    with pytest.raises(ValueError, match="non-Indian Sign Language"):
+        DatasetPipeline(tmp_path, config).promote("test-source")

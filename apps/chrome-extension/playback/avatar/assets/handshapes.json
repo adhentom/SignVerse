@@ -1,0 +1,10 @@
+[
+  { "id": "open_palm", "rendererShapeId": "open", "aliases": ["open", "open-hand"], "version": "1.0" },
+  { "id": "fist", "rendererShapeId": "fist", "aliases": ["closed-fist"], "version": "1.0" },
+  { "id": "pointing", "rendererShapeId": "point", "aliases": ["point", "index"], "version": "1.0" },
+  { "id": "curved_hand", "rendererShapeId": "curved", "aliases": ["curved", "c-hand"], "version": "1.0" },
+  { "id": "pinch", "rendererShapeId": "pinch", "aliases": ["pinched"], "version": "1.0" },
+  { "id": "spread", "rendererShapeId": "spread", "aliases": ["spread-fingers"], "version": "1.0" },
+  { "id": "flat_hand", "rendererShapeId": "flat", "aliases": ["flat"], "version": "1.0" },
+  { "id": "relaxed", "rendererShapeId": "relaxed", "aliases": ["neutral-hand"], "version": "1.0" }
+]

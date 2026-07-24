@@ -49,3 +49,8 @@ New sources are declared in `config/isl_datasets.json`. CSV, JSON, a standalone 
 trees are supported. Analysis is non-destructive. Promotion requires both
 `license_status=approved` and a recorded `permission_reference`, refuses overwrites, and can invoke
 the existing landmark converter with `promote SOURCE_ID --convert`.
+
+Every source must explicitly declare `language` as `ISL` or `Indian Sign Language` and `region` as
+`India`. Intake and promotion fail closed for Indo-Pakistani, Pakistani, or any other sign-language
+source. SignVerse does not train a model from these files; approved Indian Sign Language resources
+are indexed for governed vocabulary, landmark extraction, and playback only.

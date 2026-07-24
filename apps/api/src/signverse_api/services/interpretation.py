@@ -20,9 +20,12 @@ class InterpretationService:
         self._playback_service = playback_service
 
     async def interpret(self, packet: ContentPacket) -> InterpretationResponse:
+        correlation_id = packet.metadata.get("_signverse_correlation_id")
         logger.info(
             "interpretation_pipeline_started",
             extra={
+                "correlation_id": correlation_id,
+                "provider": self._provider.name,
                 "platform": packet.platform,
                 "text_length": len(packet.text),
                 "reading_context": packet.metadata.get("readingContext"),
@@ -33,15 +36,29 @@ class InterpretationService:
         except InterpretationProviderError as error:
             logger.warning(
                 "interpretation_provider_failed",
-                extra={"provider": self._provider.name, "error_code": error.code},
+                extra={
+                    "correlation_id": correlation_id,
+                    "provider": self._provider.name,
+                    "error_code": error.code,
+                },
             )
             return InterpretationResponse()
 
+        if not response.isl_gloss:
+            logger.warning(
+                "interpretation_provider_empty_output",
+                extra={
+                    "correlation_id": correlation_id,
+                    "provider": self._provider.name,
+                    "diagnosis": "PlaybackSequence empty: provider produced no governed ISL gloss.",
+                },
+            )
         if self._playback_service is None:
             return response
         logger.info(
             "interpretation_gloss_generated",
             extra={
+                "correlation_id": correlation_id,
                 "gloss_count": len(response.isl_gloss),
                 "confidence": response.confidence,
             },
@@ -54,10 +71,21 @@ class InterpretationService:
         logger.info(
             "interpretation_playback_planned",
             extra={
+                "correlation_id": correlation_id,
                 "playback_items": len(playback.items),
                 "unsupported_tokens": len(playback.unsupported_tokens),
             },
         )
+        if response.isl_gloss and not playback.items:
+            logger.warning(
+                "interpretation_playback_empty",
+                extra={
+                    "correlation_id": correlation_id,
+                    "gloss_count": len(response.isl_gloss),
+                    "missing_count": len(playback.missing),
+                    "diagnosis": "No approved animation found for the governed gloss output.",
+                },
+            )
         total_glosses = len(response.isl_gloss)
         asset_matching = len(playback.items) / total_glosses if total_glosses else 0.0
         animation_readiness = (

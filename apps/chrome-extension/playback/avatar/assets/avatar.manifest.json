@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0",
+  "avatarVersion": "1.0.0",
+  "rigVersion": "6.0",
+  "animationVersion": "1.0",
+  "defaultProfile": "adult-female",
+  "defaultRenderer": "signverse-svg-v2",
+  "supportedFeatures": {
+    "handShapes": true,
+    "facialExpressions": true,
+    "eyeTracking": true,
+    "secondaryMotion": true
+  },
+  "renderers": [
+    {
+      "id": "signverse-svg-v2",
+      "kind": "svg",
+      "version": "1.0.0",
+      "rigId": "signverse-hierarchical-svg-v2",
+      "profiles": ["adult-female", "adult-male"],
+      "fallback": true
+    }
+  ],
+  "libraries": {
+    "animations": "animations.json",
+    "handshapes": "handshapes.json",
+    "expressions": "expressions.json",
+    "transitions": "transitions.json"
+  },
+  "frequentlyUsedAnimations": []
+}

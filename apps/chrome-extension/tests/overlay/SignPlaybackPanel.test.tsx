@@ -45,7 +45,8 @@ describe('SignPlaybackPanel', () => {
     expect(container.textContent).toContain('ISL Playback');
     expect(container.textContent).toContain('Current sign');
     expect(container.textContent).toContain('greeting-hello');
-    expect(container.textContent).toContain('Dataset asset unavailable');
+    expect(container.textContent).toContain('No approved animation found');
+    expect(container.textContent).toContain('asset-placeholder-hello');
     expect(container.querySelector('select[aria-label="Interpreter avatar"]')).toBeNull();
     expect(container.querySelector('select[aria-label="Floating interpreter avatar"]')).toBeNull();
     expect(container.querySelector('button[aria-label="Dock interpreter left"]')).toBeNull();
@@ -91,7 +92,8 @@ describe('SignPlaybackPanel', () => {
     expect(currentSign).not.toBeNull();
     expect(caption!.compareDocumentPosition(avatar!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(avatar!.compareDocumentPosition(currentSign!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(portal.querySelector('.sv-interpreter-status')?.textContent).toContain('Interpreting');
+    expect(portal.querySelector('.sv-interpreter-status')?.textContent)
+      .toContain('Attention needed');
     act(() => minimize?.click());
     expect(portal.querySelector('.sv-interpreter-overlay--minimized')).not.toBeNull();
     expect(portal.querySelector('.sv-floating-caption')?.textContent).toContain('Speech remains visible');
@@ -167,8 +169,32 @@ describe('SignPlaybackPanel', () => {
       }} />);
     });
 
-    expect(container.textContent).toContain('Dataset asset unavailable');
+    expect(container.textContent).toContain('No approved animation found');
+    expect(container.textContent).toContain('kaggle-animated-help-v1');
     expect(container.textContent).not.toContain('Help · ISL sign');
+  });
+
+  it('diagnoses a valid backend response with no governed gloss or playback', () => {
+    act(() => {
+      root.render(<SignPlaybackPanel state={{
+        status: 'ready',
+        response: {
+          summary: '',
+          malayalam_translation: '',
+          key_points: [],
+          keywords: [],
+          glossary: [],
+          isl_gloss: [],
+          confidence: 0,
+          playback: { items: [], unsupported_tokens: [] },
+        },
+      }} />);
+    });
+
+    expect(container.textContent).toContain('PlaybackSequence empty');
+    expect(container.textContent)
+      .toContain('The interpretation provider returned no governed ISL gloss.');
+    expect(container.textContent).not.toContain('Preparing interpretation');
   });
 
   it('supports keyboard movement and persists interpreter geometry', () => {
@@ -193,7 +219,7 @@ describe('SignPlaybackPanel', () => {
     act(() => handle?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' })));
 
     expect(container.querySelector<HTMLElement>('.sv-interpreter-overlay')?.style.left).toBe('34px');
-    expect(document.body.textContent).toContain('Preparing interpretation');
+    expect(document.body.textContent).toContain('PlaybackSequence empty');
     expect(set).toHaveBeenCalledWith(expect.objectContaining({
       'signverse.interpreterGeometry': expect.objectContaining({ x: 34 }),
     }));

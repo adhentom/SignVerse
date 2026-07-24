@@ -10,6 +10,7 @@ import { UIIcon } from './UIIcon';
 import { useInterpreterGeometry } from '../hooks/useInterpreterGeometry';
 import { DEFAULT_AVATAR, type AvatarProfile } from '../../playback/avatarProfiles';
 import type { MediaClockSample } from '../../synchronization/SynchronizationTimeline';
+import { runtimeDiagnostic } from '../../shared/runtimeDiagnostics';
 
 const EMPTY_SEQUENCE: PlaybackSequence = { items: [], unsupported_tokens: [] };
 
@@ -27,6 +28,59 @@ function resolveAsset(item: PlaybackSequence['items'][number] | undefined) {
   return signAssetRegistry.lookup(item.asset_id);
 }
 
+export interface PlaybackDiagnostic {
+  code:
+    | 'invalid-response-schema'
+    | 'no-approved-animation'
+    | 'playback-sequence-empty'
+    | 'renderer-waiting';
+  detail: string;
+  title: string;
+}
+
+export function diagnosePlayback(state: InterpretationState): PlaybackDiagnostic | null {
+  if (state.status === 'error') {
+    return {
+      code: state.code === 'invalid-response'
+        ? 'invalid-response-schema'
+        : 'renderer-waiting',
+      title: state.code === 'invalid-response'
+        ? 'Invalid response schema'
+        : 'Renderer waiting for PlaybackSequence',
+      detail: state.message,
+    };
+  }
+  if (state.status !== 'ready') return null;
+  const sequence = state.response.playback ?? EMPTY_SEQUENCE;
+  if (state.response.isl_gloss.length === 0) {
+    return {
+      code: 'playback-sequence-empty',
+      title: 'PlaybackSequence empty',
+      detail: 'The interpretation provider returned no governed ISL gloss.',
+    };
+  }
+  if (sequence.items.length === 0) {
+    const miss = sequence.missing?.[0];
+    return {
+      code: miss ? 'no-approved-animation' : 'playback-sequence-empty',
+      title: miss ? 'No approved animation found' : 'PlaybackSequence empty',
+      detail: miss?.detail ??
+        'The backend returned ISL glosses but did not schedule a playback item.',
+    };
+  }
+  const unresolved = sequence.items.filter((item) => !resolveAsset(item));
+  if (unresolved.length === sequence.items.length) {
+    return {
+      code: 'no-approved-animation',
+      title: 'No approved animation found',
+      detail:
+        `The extension received ${sequence.items.length} playback item(s), but none of their ` +
+        'asset IDs exist in this build.',
+    };
+  }
+  return null;
+}
+
 export type InterpreterActivity =
   | 'Attention needed'
   | 'Finished'
@@ -37,11 +91,18 @@ export type InterpreterActivity =
   | 'Playing'
   | 'Waiting';
 
-function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile, floatingOnly = false, onActivityChange, mediaClock, debugEnabled = false }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile; floatingOnly?: boolean; onActivityChange?: (activity: InterpreterActivity) => void; mediaClock?: MediaClockSample | null; debugEnabled?: boolean }) {
+function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile, floatingOnly = false, onActivityChange, mediaClock, debugEnabled = false, diagnostic = null }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile; floatingOnly?: boolean; onActivityChange?: (activity: InterpreterActivity) => void; mediaClock?: MediaClockSample | null; debugEnabled?: boolean; diagnostic?: PlaybackDiagnostic | null }) {
   const controller = usePlaybackController(sequence, mediaClock);
   const { scheduled, snapshot, synchronization, synchronized, totalDuration } = controller;
   const current = scheduled?.item;
   const currentAsset = resolveAsset(current);
+  const activeDiagnostic = current && !currentAsset
+    ? {
+        code: 'no-approved-animation' as const,
+        title: 'No approved animation found',
+        detail: `Playback asset '${current.asset_id}' is not present in this extension build.`,
+      }
+    : diagnostic;
   const nextItem = sequence.items[(scheduled?.index ?? -1) + 1];
   const nextAsset = resolveAsset(nextItem);
   const missingAssets = useMemo(
@@ -60,7 +121,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
   const { geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
   const playbackStatus = paused
     ? 'Paused'
-    : snapshot.state === 'Error'
+    : snapshot.state === 'Error' || activeDiagnostic
       ? 'Attention needed'
       : current
         ? snapshot.state
@@ -98,6 +159,22 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
       });
     });
   }, [sequence]);
+
+  useEffect(() => {
+    if (!activeDiagnostic) return;
+    runtimeDiagnostic('playback_blocked', {
+      code: activeDiagnostic.code,
+      title: activeDiagnostic.title,
+      detail: activeDiagnostic.detail,
+      playbackItems: sequence.items.length,
+      registeredAssets: signAssetRegistry.list().length,
+    }, 'warn');
+  }, [
+    activeDiagnostic?.code,
+    activeDiagnostic?.detail,
+    activeDiagnostic?.title,
+    sequence.items.length,
+  ]);
 
   useEffect(() => {
     if (!current) return;
@@ -206,6 +283,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
                 asset={currentAsset}
                 cue={current}
                 cueIndex={scheduled?.index ?? -1}
+                emptyMessage={activeDiagnostic?.title}
                 nextAsset={nextAsset}
                 onError={controller.fail}
                 playing={snapshot.state === 'Playing'}
@@ -219,10 +297,15 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
             <div className="sv-current-sign" aria-live="polite">
               <div>
                 <span>Current sign</span>
-                <strong>{current?.source_gloss ?? current?.token_id ?? 'Preparing interpretation'}</strong>
+                <strong>
+                  {current?.source_gloss ?? current?.token_id ??
+                    activeDiagnostic?.title ?? 'Renderer waiting for PlaybackSequence'}
+                </strong>
                 <small>{currentAsset
                   ? `${currentAsset.display_name} · ISL sign`
-                  : current ? 'Dataset asset unavailable' : firstMiss
+                  : activeDiagnostic?.detail
+                    ? activeDiagnostic.detail
+                    : current ? 'Dataset asset unavailable' : firstMiss
                     ? `${firstMiss.token || '(blank)'} — ${firstMiss.detail}`
                     : 'Waiting for an ISL playback plan'}</small>
               </div>
@@ -385,11 +468,12 @@ export function SignPlaybackPanel({ state, paused = false, portalTarget = null, 
 
   const sequence = state.status === 'ready' ? state.response.playback ?? EMPTY_SEQUENCE : EMPTY_SEQUENCE;
   const glossCount = state.status === 'ready' ? state.response.isl_gloss.length : 0;
+  const diagnostic = diagnosePlayback(state);
 
   return (
     <>
       <CollapsibleCard badge={`${sequence.items.length || glossCount} signs`} defaultExpanded icon="translate" title="ISL Playback">
-        <PlaybackController sourceStatus={sourceStatus} sourceText={sourceText} paused={paused} portalTarget={portalTarget ?? fallbackPortalTarget} profile={profile} sequence={sequence} onActivityChange={onActivityChange} mediaClock={mediaClock} debugEnabled={debugEnabled} />
+        <PlaybackController sourceStatus={sourceStatus} sourceText={sourceText} paused={paused} portalTarget={portalTarget ?? fallbackPortalTarget} profile={profile} sequence={sequence} onActivityChange={onActivityChange} mediaClock={mediaClock} debugEnabled={debugEnabled} diagnostic={diagnostic} />
       </CollapsibleCard>
       {!portalTarget && <div ref={setFallbackPortalTarget} />}
     </>

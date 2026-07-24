@@ -19,6 +19,7 @@ import {
   transcriptCueAt,
   type YouTubeTranscriptCue,
 } from './YouTubeTranscriptTrack';
+import { runtimeDiagnostic } from '../../shared/runtimeDiagnostics';
 
 const HISTORY_LIMIT = 10;
 const VIDEO_EVENTS = [
@@ -75,6 +76,7 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
   private domCueSequence = 0;
   private domCueStartSeconds = 0;
   private domCueText = '';
+  private lastDiagnosticCueId = '';
 
   constructor(
     private readonly document: Document,
@@ -263,7 +265,6 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       playbackTimeMs: Math.round(playbackTimeSeconds * 1_000),
       playbackState,
     };
-
     if (!player || !video) {
       this.emit({
         ...this.snapshot,
@@ -340,6 +341,18 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
     const packet = activeText
       ? this.createPacket(title, timestamp, activeText, metadata)
       : null;
+    if (packet && metadata.cueId && metadata.cueId !== this.lastDiagnosticCueId) {
+      this.lastDiagnosticCueId = metadata.cueId;
+      runtimeDiagnostic('youtube_caption_received', {
+        cueId: metadata.cueId,
+        videoId,
+        captionSource,
+        captionStartMs,
+        captionEndMs,
+        playbackState,
+        textLength: packet.text.length,
+      });
+    }
     const history = captionText
       ? this.appendHistory(this.snapshot.history, this.createPacket(title, timestamp, captionText, metadata))
       : this.snapshot.history;
@@ -423,6 +436,7 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
     this.transcriptLanguage = 'und';
     this.transcriptState = 'idle';
     this.transcriptVideoId = '';
+    this.lastDiagnosticCueId = '';
   }
 
   private getPlaybackState(

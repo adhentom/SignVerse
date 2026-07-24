@@ -1,15 +1,16 @@
-import { SignVerseSkeletalRig } from './signVerseInterpreter/SignVerseSkeletalRig';
-import {
-  resolveSignVerseExpression,
-  signVerseExpressionPose,
-} from './signVerseInterpreter/expressionSystem';
-import {
-  isSignVerseHandShape,
-  signVerseHandShapePose,
-  type SignVerseHandShape,
-} from './signVerseInterpreter/handShapeLibrary';
 import type { NonManualMarker } from '../../shared/interpretation';
-import type { AvatarPoseSnapshot } from '../types';
+import type { AvatarPoseSnapshot, RenderingDiagnostics } from '../types';
+import { AnimationController } from './controllers/AnimationController';
+import { ExpressionController } from './controllers/ExpressionController';
+import { HandController } from './controllers/HandController';
+import { RenderLoop } from './controllers/RenderLoop';
+import { RigController } from './controllers/RigController';
+import { SecondaryMotionController } from './controllers/SecondaryMotionController';
+import {
+  CoArticulationController,
+  mergeWithNeutral,
+  WristFingerRefinementController,
+} from './motion';
 
 type AvatarSide = 'left' | 'right';
 type Finger = 'thumb' | 'index' | 'middle' | 'ring' | 'little';
@@ -54,221 +55,226 @@ export interface AvatarClip {
   };
 }
 
-const clamp = (value: number) => Math.max(0, Math.min(1, value));
-const lerp = (from = 0, to = 0, progress: number) => from + (to - from) * progress;
-const smoothStep = (value: number) => value * value * value * (value * (value * 6 - 15) + 10);
-const lerpAngle = (from = 0, to = 0, progress: number) => {
-  const delta = ((to - from + 540) % 360) - 180;
-  return from + delta * progress;
-};
-
 export class AvatarAnimationEngine {
-  private frame = 0;
+  private readonly animation: AnimationController;
+  private readonly coArticulation: CoArticulationController;
+  private readonly expression = new ExpressionController();
+  private readonly hands = new HandController();
+  private readonly rig: RigController;
+  private readonly neutralPose: AvatarPoseSnapshot;
+  private readonly mergedPose: Partial<Record<AvatarPart, AvatarPose>> = {};
+  private readonly secondary = new SecondaryMotionController();
+  private readonly wristAndFingers = new WristFingerRefinementController();
+  private readonly renderLoop: RenderLoop;
   private playing = false;
-  private progress = 0;
-  private speed = 1;
-  private lastTime = 0;
-  private readonly rig: SignVerseSkeletalRig;
-  private transitionSource?: AvatarPoseSnapshot;
-  private nonManualMarkers: NonManualMarker[] = [];
-  private handShapes: Partial<Record<AvatarSide, SignVerseHandShape>> = {};
+  private holdNeutral = false;
+  private pendingInitialSeek = false;
+  private requestedTransitionMs?: number;
+  private availableTransitionMs?: number;
+  private motionProfile = 'precise';
+  private transitionHint?: string;
 
   constructor(
     private readonly root: SVGSVGElement,
-    private readonly clip?: AvatarClip,
+    clip?: AvatarClip,
     private readonly reducedMotion = false,
   ) {
-    this.rig = new SignVerseSkeletalRig(root);
+    this.animation = new AnimationController(clip);
+    this.rig = new RigController(root);
+    this.neutralPose = this.rig.neutralPose();
+    this.coArticulation = new CoArticulationController({ reducedMotion });
+    const renderState = {
+      queueDepth: 0,
+      blendDurationMs: 0,
+      activeAnimation: 'idle',
+    };
+    this.renderLoop = new RenderLoop(
+      (time, elapsedSeconds) => this.renderFrame(time, elapsedSeconds),
+      () => {
+        renderState.queueDepth = this.animation.queueDepth;
+        renderState.blendDurationMs = this.coArticulation.configuredDurationMs;
+        renderState.activeAnimation = this.animation.activeAnimation;
+        return renderState;
+      },
+    );
   }
 
   play(speed = 1): void {
-    this.speed = speed;
-    if (this.playing || this.reducedMotion) return;
+    this.animation.setSpeed(speed);
+    if (this.playing) return;
+    if (this.holdNeutral && this.animation.hasClip && !this.reducedMotion) {
+      const current = this.rig.snapshot();
+      this.wristAndFingers.seed(current);
+      this.secondary.seed(current);
+      this.coArticulation.beginTransition(current, this.animation.activeAnimation);
+    }
+    this.holdNeutral = false;
     this.playing = true;
-    this.lastTime = performance.now();
-    this.frame = requestAnimationFrame(this.tick);
+    if (this.reducedMotion) {
+      this.renderFrame(performance.now(), 0, 1);
+      return;
+    }
+    this.renderLoop.start();
   }
 
   pause(): void {
+    if (!this.playing && this.holdNeutral) return;
     this.playing = false;
-    cancelAnimationFrame(this.frame);
+    this.holdNeutral = true;
+    const current = this.rig.snapshot();
+    this.wristAndFingers.seed(current);
+    this.secondary.seed(current);
+    this.coArticulation.beginIdleRecovery(current, this.neutralPose);
+    if (this.reducedMotion) {
+      this.renderFrame(performance.now(), 0, 1);
+      return;
+    }
+    this.renderLoop.start();
   }
 
-  resume(speed = this.speed): void {
+  resume(speed = 1): void {
     this.play(speed);
   }
 
   stop(): void {
-    this.pause();
-    this.progress = 0;
-    this.render(0, performance.now());
+    const current = this.rig.snapshot();
+    this.animation.reset();
+    this.playing = false;
+    this.holdNeutral = true;
+    this.expression.reset();
+    this.wristAndFingers.seed(current);
+    this.secondary.seed(current);
+    if (this.reducedMotion) {
+      this.coArticulation.cancel();
+      this.rig.apply(this.neutralPose, 1);
+      return;
+    }
+    this.coArticulation.beginIdleRecovery(current, this.neutralPose);
+    this.renderLoop.start();
   }
 
   seek(progress: number): void {
-    this.progress = clamp(progress);
-    this.render(this.progress, performance.now());
+    const currentProgress = this.animation.currentProgress;
+    const discontinuity = Math.abs(progress - currentProgress) > this.seekThreshold();
+    this.animation.seek(progress);
+    if (this.pendingInitialSeek) {
+      this.pendingInitialSeek = false;
+    } else if (discontinuity && this.playing && !this.holdNeutral) {
+      const current = this.rig.snapshot();
+      this.wristAndFingers.seed(current);
+      this.secondary.seed(current);
+      this.coArticulation.beginTransition(
+        current,
+        `${this.animation.activeAnimation}:seek`,
+      );
+    }
+    this.renderFrame(performance.now(), 0, 1);
   }
 
-  setTransitionSource(pose: AvatarPoseSnapshot): void {
-    this.transitionSource = pose;
+  configureTransition(
+    durationMs: number | undefined,
+    availableDurationMs?: number,
+  ): void {
+    this.requestedTransitionMs = durationMs;
+    this.availableTransitionMs = availableDurationMs;
+    this.configureMotionControllers();
+  }
+
+  configureMotion(profile: string | undefined, transitionHint?: string): void {
+    this.motionProfile = profile ?? 'precise';
+    this.transitionHint = transitionHint;
+    this.configureMotionControllers();
+  }
+
+  setTransitionSource(pose: AvatarPoseSnapshot, previousAnimationId?: string): void {
+    const source = Object.keys(pose).length > 0 ? pose : this.neutralPose;
+    this.wristAndFingers.seed(source);
+    this.secondary.seed(source);
+    this.coArticulation.beginTransition(
+      source,
+      this.animation.activeAnimation,
+      previousAnimationId,
+    );
+    this.pendingInitialSeek = true;
   }
 
   setNonManualMarkers(markers: NonManualMarker[]): void {
-    this.nonManualMarkers = markers;
+    this.expression.setMarkers(markers);
   }
 
   setHandShape(side: AvatarSide, shape: string): void {
-    if (isSignVerseHandShape(shape)) {
-      this.handShapes[side] = shape.trim().toLowerCase() as SignVerseHandShape;
-    }
+    this.hands.setShape(side, shape);
   }
 
   snapshotPose(): AvatarPoseSnapshot {
-    return this.rig.snapshotPose();
+    return this.rig.snapshot();
+  }
+
+  diagnostics(): RenderingDiagnostics {
+    const motion = this.coArticulation.diagnostics();
+    const rendering = this.renderLoop.diagnostics();
+    return {
+      ...rendering,
+      blendDurationMs: this.coArticulation.configuredDurationMs,
+      motion: {
+        ...motion,
+        wristFingerSamples: this.wristAndFingers.samples,
+      },
+    };
   }
 
   dispose(): void {
-    this.pause();
+    this.playing = false;
+    this.renderLoop.stop();
+    this.coArticulation.dispose();
+    this.secondary.reset();
+    this.wristAndFingers.reset();
     this.root.remove();
   }
 
-  private readonly tick = (time: number): void => {
-    if (!this.playing) return;
-    const elapsed = Math.max(0, time - this.lastTime) / 1_000;
-    this.lastTime = time;
-    if (this.clip) {
-      this.progress = Math.min(1, this.progress + elapsed * this.speed / this.clip.duration);
-    }
-    const blend = 1 - Math.exp(-elapsed * 24);
-    this.render(this.progress, time, blend);
-    this.frame = requestAnimationFrame(this.tick);
-  };
-
-  private render(progress: number, time: number, blend = 1): void {
-    const idle = this.reducedMotion ? 0 : Math.sin(time / 900);
-    this.rig.applyRootIdle(idle * 1.6, 1 + idle * 0.004);
-    this.rig.setBlink(this.reducedMotion ? 1 : this.blinkOpenness(time));
-    this.rig.setGaze(0, 0);
-    this.rig.setFacialExpression(resolveSignVerseExpression(this.nonManualMarkers));
-    if (!this.clip) {
-      this.rig.applyPose({ head: { rotation: idle * 0.7 } }, blend);
-      return;
-    }
-
-    const frames = this.clip.keyframes;
-    const endIndex = Math.max(1, frames.findIndex((frame) => frame.offset >= progress));
-    const from = frames[endIndex - 1] ?? frames[0];
-    const to = frames[endIndex] ?? frames.at(-1)!;
-    const local = smoothStep(clamp(
-      (progress - from.offset) / Math.max(0.0001, to.offset - from.offset),
-    ));
-    const parts = new Set([...Object.keys(from.pose), ...Object.keys(to.pose)] as AvatarPart[]);
-    const pose: Partial<Record<AvatarPart, AvatarPose>> = {};
-    parts.forEach((part) => {
-      const a = from.pose[part] ?? {};
-      const b = to.pose[part] ?? a;
-      pose[part] = {
-        x: lerp(a.x, b.x, local), y: lerp(a.y, b.y, local),
-        rotation: lerpAngle(a.rotation, b.rotation, local),
-        scaleX: lerp(a.scaleX ?? 1, b.scaleX ?? 1, local),
-        scaleY: lerp(a.scaleY ?? 1, b.scaleY ?? 1, local),
-        opacity: lerp(a.opacity ?? 1, b.opacity ?? 1, local),
-      };
-    });
-    if (!pose.head) pose.head = { rotation: idle * 0.7 };
-    else pose.head.rotation = (pose.head.rotation ?? 0) + idle * 0.7;
-    if (!pose.torso) pose.torso = { rotation: idle * 0.35 };
-    // The neutral interpreter shows the hands edge-on beside the body. During
-    // signing, reveal the full palm plane so handshapes remain readable.
-    for (const hand of ['left-hand', 'right-hand'] as const) {
-      pose[hand] = { ...pose[hand], scaleY: pose[hand]?.scaleY ?? 1 };
-    }
-    if (this.transitionSource && progress < 0.15) {
-      const transition = smoothStep(clamp(progress / 0.15));
-      const parts = new Set([
-        ...Object.keys(this.transitionSource),
-        ...Object.keys(pose),
-      ] as AvatarPart[]);
-      parts.forEach((part) => {
-        const source = this.transitionSource?.[part] ?? {};
-        const target = pose[part] ?? source;
-        pose[part] = {
-          rotation: lerpAngle(source.rotation, target.rotation, transition),
-          scaleX: lerp(source.scaleX ?? 1, target.scaleX ?? 1, transition),
-          scaleY: lerp(source.scaleY ?? 1, target.scaleY ?? 1, transition),
-          opacity: lerp(source.opacity ?? 1, target.opacity ?? 1, transition),
-          x: lerp(source.x, target.x, transition),
-          y: lerp(source.y, target.y, transition),
-        };
-      });
-    }
-    // Non-manual grammar belongs to the current phrase and must not be faded out
-    // by the skeletal transition from the previous sign.
-    Object.entries(this.handShapes).forEach(([side, shape]) => {
-      if (shape) Object.assign(pose, signVerseHandShapePose(side as AvatarSide, shape));
-    });
-    this.mergePose(
-      pose,
-      signVerseExpressionPose(resolveSignVerseExpression(this.nonManualMarkers)),
+  private renderFrame(time: number, elapsedSeconds: number, smoothing?: number): void {
+    if (this.playing) this.animation.advance(elapsedSeconds);
+    const motionElapsedMs = elapsedSeconds * 1_000 * (
+      this.coArticulation.returningToIdle ? 1 : this.animation.currentSpeed
     );
-    this.mergePose(pose, this.expressionPose(time));
-    this.rig.applyPose(pose, blend);
+    this.coArticulation.advance(motionElapsedMs);
+    this.rig.renderIdle(time, this.reducedMotion);
+
+    let pose = this.holdNeutral ? {} : this.animation.sample();
+    this.hands.apply(pose);
+    pose = mergeWithNeutral(this.neutralPose, pose, this.mergedPose);
+    pose = this.coArticulation.apply(pose);
+    const terminalFrame = this.animation.finished && !this.coArticulation.active;
+    this.wristAndFingers.apply(pose, elapsedSeconds, terminalFrame, this.reducedMotion);
+    const exactTransitionEndpoint = this.coArticulation.active && elapsedSeconds === 0;
+    if ((!terminalFrame || this.holdNeutral) && !exactTransitionEndpoint) {
+      this.secondary.apply(pose, time, this.reducedMotion);
+    }
+    // Non-manual grammar belongs to the active phrase and must not be faded by
+    // a skeletal transition from the previous sign.
+    this.expression.apply(this.rig.rig, pose, time);
+    const amount = smoothing ?? 1;
+    this.rig.apply(pose, amount);
   }
 
-  private expressionPose(time: number): Partial<Record<AvatarPart, AvatarPose>> {
-    const pose: Partial<Record<AvatarPart, AvatarPose>> = {};
-    const oscillation = Math.sin(time / 105);
-    this.nonManualMarkers.forEach((marker) => {
-      const weight = marker.intensity;
-      switch (marker.marker) {
-        case 'brow-raise': pose.eyebrows = { y: -4 * weight }; break;
-        case 'brow-lower': pose.eyebrows = { y: 3 * weight, scaleY: 0.82 }; break;
-        case 'head-shake': pose.head = { rotation: oscillation * 9 * weight }; break;
-        case 'head-nod': pose.neck = { rotation: oscillation * 5 * weight }; break;
-        case 'head-tilt': pose.head = { rotation: 8 * weight }; break;
-        case 'eye-gaze': {
-          const direction = marker.value.toLowerCase();
-          this.rig.setGaze(
-            direction.includes('left') ? -3 * weight : direction.includes('right') ? 3 * weight : 0,
-            direction.includes('up') ? -2 * weight : direction.includes('down') ? 2 * weight : 0,
-          );
-          break;
-        }
-        case 'mouth-gesture': pose.mouth = { scaleY: 1 + 0.8 * weight }; break;
-        case 'body-shift': pose.torso = { rotation: oscillation * 3 * weight }; break;
-        case 'facial-emotion': {
-          if (marker.value.toLowerCase().includes('happy')) {
-            pose.mouth = { scaleY: 1 + 0.2 * weight };
-            pose.eyebrows = { y: -2 * weight };
-          } else if (marker.value.toLowerCase().includes('sad')) {
-            pose.eyebrows = { y: 2 * weight, rotation: -4 * weight };
-          }
-          break;
-        }
-      }
-    });
-    return pose;
+  private configureMotionControllers(): void {
+    this.coArticulation.configure(
+      this.requestedTransitionMs,
+      this.availableTransitionMs,
+      this.reducedMotion,
+      this.motionProfile,
+      this.transitionHint,
+    );
+    this.wristAndFingers.configure(this.motionProfile);
+    this.secondary.configure(this.motionProfile);
   }
 
-  private blinkOpenness(time: number): number {
-    const phase = time % 3_200;
-    if (phase < 80) return 1 - phase / 80;
-    if (phase < 160) return (phase - 80) / 80;
-    return 1;
+  private seekThreshold(): number {
+    if (this.animation.duration <= 0) return 0.12;
+    return Math.max(0.06, Math.min(0.18, 0.15 / this.animation.duration));
   }
 
-  private mergePose(
-    target: Partial<Record<AvatarPart, AvatarPose>>,
-    addition: Partial<Record<AvatarPart, AvatarPose>>,
-  ): void {
-    Object.entries(addition).forEach(([key, next]) => {
-      const part = key as AvatarPart;
-      const current = target[part] ?? {};
-      target[part] = {
-        ...current,
-        ...next,
-        rotation: (current.rotation ?? 0) + (next.rotation ?? 0),
-      };
-    });
+  get activeAnimationId(): string {
+    return this.animation.activeAnimation;
   }
 }

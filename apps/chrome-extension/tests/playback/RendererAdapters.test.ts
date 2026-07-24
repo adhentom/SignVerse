@@ -51,6 +51,30 @@ describe('renderer adapters', () => {
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:sign');
   });
 
+  it('cancels pending video metadata listeners when the renderer is destroyed', async () => {
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn(() => 'blob:pending-sign'),
+      revokeObjectURL: vi.fn(),
+    });
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined);
+    const target = document.createElement('div');
+    const adapter = new Mp4Adapter();
+    const mounting = adapter.mount(target, {
+      metadata: {} as never,
+      data: new Blob([new Uint8Array([1])], { type: 'video/mp4' }),
+    }, false);
+    const video = target.querySelector('video')!;
+    const remove = vi.spyOn(video, 'removeEventListener');
+    const cancelled = expect(mounting).rejects.toThrow('load was cancelled');
+
+    adapter.destroy();
+
+    await cancelled;
+    expect(remove).toHaveBeenCalledWith('loadedmetadata', expect.any(Function));
+    expect(remove).toHaveBeenCalledWith('error', expect.any(Function));
+    expect(target.querySelector('video')).toBeNull();
+  });
+
   it('renders the professional interpreter with independently addressable finger joints', () => {
     vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1));
     vi.stubGlobal('cancelAnimationFrame', vi.fn());

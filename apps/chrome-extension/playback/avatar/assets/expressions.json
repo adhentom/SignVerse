@@ -1,0 +1,8 @@
+[
+  { "id": "neutral", "nonManualMarkers": [], "version": "1.0" },
+  { "id": "emphasis", "nonManualMarkers": ["emphasis"], "version": "1.0" },
+  { "id": "affirmation", "nonManualMarkers": ["affirmation"], "version": "1.0" },
+  { "id": "negation", "nonManualMarkers": ["negation"], "version": "1.0" },
+  { "id": "question", "nonManualMarkers": ["question"], "version": "1.0" },
+  { "id": "surprise", "nonManualMarkers": ["surprise"], "version": "1.0" }
+]

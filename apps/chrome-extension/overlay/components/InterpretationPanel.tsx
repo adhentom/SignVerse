@@ -28,8 +28,9 @@ const ERROR_DETAILS: Record<InterpretationErrorCode, { title: string; detail: st
     detail: 'The backend took too long to respond. Your page remains unchanged.',
   },
   'connection-failure': {
-    title: 'You appear to be offline',
-    detail: 'Check your network connection, then try the interpretation again.',
+    title: 'Backend unreachable',
+    detail:
+      'The health endpoint could not be reached. Verify the backend process, extension host permission, and configured CORS origin.',
   },
   'backend-unavailable': {
     title: 'Backend temporarily unavailable',
@@ -279,7 +280,7 @@ export function InterpretationPanel({
             {state.code === 'extension-context-invalidated'
               ? 'Extension updated'
               : state.code === 'connection-failure'
-                ? 'Offline'
+                ? 'Backend unreachable'
                 : 'Connection issue'}
           </span>
           <h3>{details.title}</h3>

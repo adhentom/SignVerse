@@ -1,5 +1,10 @@
-# Offline conversion of the repository's existing validated sign videos.
+# SignVerse AI dataset, preprocessing, visualization, and training runtime.
+kaggle>=2.2,<3
+matplotlib>=3.9,<4
 mediapipe==0.10.21
 numpy==1.26.4
 opencv-contrib-python==4.11.0.86
+PyYAML>=6,<7
 pytest>=8.3,<9
+torch>=2.5,<3
+tqdm>=4.66,<5

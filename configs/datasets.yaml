@@ -1,0 +1,59 @@
+# Raw dataset registry and download sources. Paths are relative to the project
+# root. Downloading never performs preprocessing, training, or inference.
+datasets:
+  include:
+    path: data/datasets/include
+    adapter: src.dataset.adapters.include_adapter.INCLUDEDatasetAdapter
+    source:
+      type: huggingface
+      repo_id: ai4bharat/INCLUDE
+      # Set filename when a specific raw archive is approved for download.
+      filename: null
+
+  cislr:
+    path: data/datasets/cislr
+    adapter: src.dataset.adapters.cislr_adapter.CISLRDatasetAdapter
+    source:
+      type: manual_url
+      # Replace with an approved raw archive URL before downloading.
+      url: null
+
+  isl-csltr:
+    path: data/datasets/isl-csltr
+    adapter: src.dataset.adapters.isl_csltr_adapter.ISLCSLTRDatasetAdapter
+    archive_name: isl-csltr.zip
+    extract: true
+    strip_single_root: true
+    source:
+      type: kaggle
+      dataset: drblack00/isl-csltr-indian-sign-language-dataset
+    validation:
+      min_files: 1
+      allowed_extensions:
+        - .avi
+        - .mp4
+        - .jpg
+        - .jpeg
+        - .png
+      min_matching_files: 1
+
+  nish:
+    path: data/datasets/nish
+    adapter: src.dataset.adapters.nish_adapter.NISHDatasetAdapter
+    source:
+      type: manual_url
+      url: null
+
+  mudra:
+    path: data/datasets/mudra
+    adapter: src.dataset.adapters.mudra_adapter.MUDRADatasetAdapter
+    source:
+      type: manual_url
+      url: null
+
+  isign:
+    path: data/datasets/isign
+    adapter: src.dataset.adapters.isign_adapter.ISignDatasetAdapter
+    source:
+      type: manual_url
+      url: null

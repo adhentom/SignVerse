@@ -1690,6 +1690,8 @@
   z-index: 2147483646;
   display: grid;
   grid-template: 48px auto minmax(260px, 1fr) auto / minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0;
   width: 360px;
   min-width: 280px;
   max-width: calc(100vw - 16px);

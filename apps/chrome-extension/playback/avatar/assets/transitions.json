@@ -1,0 +1,7 @@
+[
+  { "id": "default", "easing": "cubic-bezier(0.4, 0, 0.2, 1)", "duration": 180, "interpolationProfile": "ease", "version": "1.0" },
+  { "id": "fast", "easing": "cubic-bezier(0.2, 0, 0, 1)", "duration": 90, "interpolationProfile": "ease", "version": "1.0" },
+  { "id": "slow", "easing": "cubic-bezier(0.4, 0, 0.2, 1)", "duration": 320, "interpolationProfile": "ease", "version": "1.0" },
+  { "id": "directional", "easing": "cubic-bezier(0.2, 0.8, 0.2, 1)", "duration": 200, "interpolationProfile": "directional", "version": "1.0" },
+  { "id": "emphasis", "easing": "cubic-bezier(0.1, 0.9, 0.2, 1)", "duration": 240, "interpolationProfile": "emphasis", "version": "1.0" }
+]

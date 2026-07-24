@@ -6,6 +6,7 @@ import {
   type InterpretationErrorCode,
   type InterpretationResponse,
 } from '../shared/interpretation';
+import { runtimeDiagnostic } from '../shared/runtimeDiagnostics';
 
 export class BackendClientError extends Error {
   constructor(
@@ -71,7 +72,13 @@ export class BackendClient implements InterpretationClient {
     const url = `${this.config.baseUrl}${path}`;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.config.timeoutMs);
-    console.info('[SignVerse] backend_request_started', { method: init.method, url });
+    const correlationId = crypto.randomUUID();
+    runtimeDiagnostic('backend_request_started', {
+      correlationId,
+      method: init.method,
+      path,
+      url,
+    });
 
     try {
       const request = this.request;
@@ -79,13 +86,16 @@ export class BackendClient implements InterpretationClient {
         ...init,
         headers: {
           Accept: 'application/json',
+          'X-Request-ID': correlationId,
           ...init.headers,
         },
         signal: controller.signal,
       });
 
-      console.info('[SignVerse] backend_response_received', {
+      runtimeDiagnostic('backend_response_received', {
+        correlationId,
         method: init.method,
+        path,
         status: response.status,
         url,
       });
@@ -115,16 +125,31 @@ export class BackendClient implements InterpretationClient {
         throw error;
       }
       if (controller.signal.aborted) {
-        console.warn(`[SignVerse] backend_request_timed_out ${init.method ?? 'GET'} ${url}`);
-        throw new BackendClientError('timeout', 'The SignVerse backend request timed out.');
+        runtimeDiagnostic('backend_request_timed_out', {
+          correlationId,
+          method: init.method ?? 'GET',
+          path,
+          timeoutMs: this.config.timeoutMs,
+          url,
+        }, 'warn');
+        throw new BackendClientError(
+          'timeout',
+          `${path === '/health' ? 'Health endpoint' : 'Interpretation request'} timed out.`,
+        );
       }
       const reason = error instanceof Error ? error.message : 'Unknown fetch error';
-      console.warn(
-        `[SignVerse] backend_request_failed ${init.method ?? 'GET'} ${url}: ${reason}`,
-      );
+      runtimeDiagnostic('backend_request_failed', {
+        correlationId,
+        method: init.method ?? 'GET',
+        path,
+        reason,
+        url,
+      }, 'warn');
       throw new BackendClientError(
         'connection-failure',
-        'The extension could not connect to the SignVerse backend.',
+        path === '/health'
+          ? 'Health endpoint failed. The backend is unreachable or the request was blocked by host permissions or CORS.'
+          : 'Backend unreachable. The interpretation request could not reach the SignVerse service.',
       );
     } finally {
       clearTimeout(timeout);

@@ -1,4 +1,5 @@
 import type { PlaybackSequence } from '../shared/interpretation';
+import { runtimeDiagnostic } from '../shared/runtimeDiagnostics';
 
 export const MAX_QUEUED_SIGNS = 1_000;
 
@@ -10,7 +11,11 @@ export function appendPlayback(
     .map((item, index) => ({ item, index }))
     .sort((left, right) => (right.item.priority ?? 0) - (left.item.priority ?? 0) || left.index - right.index)
     .map(({ item }) => item);
-  console.info('[SignVerse] playback_queue_append', { count: incoming.length });
+  runtimeDiagnostic('playback_queue_append', {
+    count: incoming.length,
+    currentDepth: current.items.length,
+    nextDepth: Math.min(MAX_QUEUED_SIGNS, current.items.length + incoming.length),
+  });
   return {
     // Keep the active prefix stable while streaming. Dropping the head makes
     // the controller treat an append as a replacement and restarts playback.
@@ -25,11 +30,15 @@ export function appendPlayback(
 }
 
 export function removeCompleted(sequence: PlaybackSequence, count: number): PlaybackSequence {
-  console.info('[SignVerse] playback_queue_remove', { count });
+  runtimeDiagnostic('playback_queue_remove', {
+    count,
+    currentDepth: sequence.items.length,
+    nextDepth: Math.max(0, sequence.items.length - Math.max(0, count)),
+  });
   return { ...sequence, items: sequence.items.slice(Math.max(0, count)) };
 }
 
 export function cancelPlayback(): PlaybackSequence {
-  console.info('[SignVerse] playback_queue_cancel');
+  runtimeDiagnostic('playback_queue_cancel');
   return { items: [], unsupported_tokens: [], missing: [] };
 }

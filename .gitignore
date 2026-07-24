@@ -56,7 +56,14 @@ apps/chrome-extension/public/animations/*.json
 
 # Permission-gated dataset imports and derived vocabularies are local artifacts.
 data/imports/
+data/datasets/
+data/landmarks/
+data/normalized/
 resources/datasets/*.csv
 !resources/datasets/*.example.csv
 apps/api/resources/lexicon/lexicon.generated.json
 apps/api/resources/lexicon/unified_vocabulary.json
+
+# Download caches and reproducible local training outputs are not release assets.
+.downloads/
+artifacts/

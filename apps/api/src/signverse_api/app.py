@@ -24,11 +24,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     configure_logging(resolved_settings.log_level)
     provider = create_interpretation_provider(resolved_settings)
     lexicon = JSONLexiconProvider()
+    sign_asset_registry = SignAssetRegistry()
     playback_service = PlaybackService(
         lexicon=lexicon,
         validator=GlossValidator(lexicon),
         planner=PlaybackPlanner(
-            SignAssetRegistry(),
+            sign_asset_registry,
             minimum_asset_confidence=resolved_settings.minimum_asset_match_confidence,
         ),
     )
@@ -50,8 +51,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             extra={
                 "environment": resolved_settings.environment,
                 "interpretation_provider": provider.name,
+                "playback_registry": sign_asset_registry.health(),
             },
         )
+        if provider.name == "mock":
+            logger.warning(
+                "interpretation_provider_not_production_ready",
+                extra={
+                    "interpretation_provider": provider.name,
+                    "diagnosis": "The mock provider returns no governed ISL gloss.",
+                },
+            )
+        if sign_asset_registry.health()["indexed_assets"] == 0:
+            logger.warning(
+                "playback_registry_empty",
+                extra={
+                    "diagnosis": "No approved playable sign assets are indexed.",
+                    **sign_asset_registry.health(),
+                },
+            )
         try:
             yield
         finally:

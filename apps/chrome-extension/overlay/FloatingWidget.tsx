@@ -42,7 +42,7 @@ function connectionCopy(
       label: healthState.code === 'extension-context-invalidated'
         ? 'Refresh required'
         : healthState.code === 'connection-failure'
-          ? 'Offline'
+          ? 'Backend unreachable'
           : 'Unavailable',
       tone: 'offline',
     };
@@ -80,6 +80,7 @@ function productionStatuses({
     sourceText.trim().length === 0;
   const error = backendHealthState.status === 'error' ||
     interpretationState.status === 'error' ||
+    playbackActivity === 'Attention needed' ||
     sourceError;
   return [
     { label: 'Connected', active: backendHealthState.status === 'connected' },
@@ -248,7 +249,11 @@ export function FloatingWidget({
               <section aria-live="assertive" className="sv-service-notice" role="alert">
                 <span className="sv-error-visual"><UIIcon name="alert" /></span>
                 <div>
-                  <strong>Backend offline</strong>
+                  <strong>
+                    {backendHealthState.code === 'connection-failure'
+                      ? 'Backend unreachable'
+                      : 'Backend unavailable'}
+                  </strong>
                   <p>{backendHealthState.message}</p>
                   <button className="sv-retry-button" onClick={onRetry} type="button">
                     <UIIcon name="refresh" />

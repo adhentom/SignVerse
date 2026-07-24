@@ -29,7 +29,10 @@ const packet: ContentPacket = {
 };
 
 describe('StreamingPortClient', () => {
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
 
   it('reconnects after a BFCache port disconnect', () => {
     const first = port();
@@ -47,7 +50,36 @@ describe('StreamingPortClient', () => {
 
     expect(connect).toHaveBeenCalledTimes(2);
     expect(first.value.postMessage).toHaveBeenCalledOnce();
+    expect(second.value.postMessage).toHaveBeenCalledTimes(2);
+    expect(second.value.postMessage).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ sequence: 1, type: 'content' }),
+    );
+    expect(second.value.postMessage).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ sequence: 2, type: 'content' }),
+    );
+    client.close();
+  });
+
+  it('replays an unacknowledged packet after the service worker port disconnects', async () => {
+    vi.useFakeTimers();
+    const first = port();
+    const second = port();
+    const connect = vi.fn()
+      .mockReturnValueOnce(first.value)
+      .mockReturnValueOnce(second.value);
+    vi.stubGlobal('chrome', { runtime: { connect, lastError: undefined } });
+
+    const client = new StreamingPortClient();
+    client.send(packet);
+    const original = (first.value.postMessage as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    first.onDisconnect.emit();
+    await vi.runOnlyPendingTimersAsync();
+
+    expect(connect).toHaveBeenCalledTimes(2);
     expect(second.value.postMessage).toHaveBeenCalledOnce();
+    expect(second.value.postMessage).toHaveBeenCalledWith(original);
     client.close();
   });
 

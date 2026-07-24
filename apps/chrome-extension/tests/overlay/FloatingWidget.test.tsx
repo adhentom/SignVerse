@@ -153,7 +153,7 @@ describe('FloatingWidget', () => {
       'button[aria-label="Open SignVerse accessibility sidebar"]',
     );
     act(() => openButton?.click());
-    expect(container.textContent).toContain('Backend offline');
+    expect(container.textContent).toContain('Backend unreachable');
     expect(container.textContent).toContain('Transcript unavailable');
     expect(container.querySelector('.sv-status-indicator--error')?.textContent).toBe('Error');
     const retryButton = [...container.querySelectorAll<HTMLButtonElement>('button')]

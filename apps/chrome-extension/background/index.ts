@@ -11,13 +11,15 @@ import {
   isAudioCaptureMessage,
   type AudioCaptureMessage,
 } from '../shared/audioCapture';
+import { runtimeDiagnostic } from '../shared/runtimeDiagnostics';
 
 const backendConfig = getBackendConfig();
 const backendClient = new BackendClient(backendConfig);
 
-console.info('[SignVerse] background_service_worker_started', {
+runtimeDiagnostic('background_service_worker_started', {
   backendUrl: backendConfig.baseUrl || 'not configured',
   timeoutMs: backendConfig.timeoutMs,
+  extensionId: chrome.runtime.id,
 });
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
@@ -29,8 +31,27 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 chrome.runtime.onMessage.addListener(createInterpretationMessageHandler(backendClient));
 chrome.runtime.onMessage.addListener(createBackendHealthMessageHandler(backendClient));
 
+const activeStreamPorts = new Map<string, number>();
+
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name === STREAM_PORT_NAME) new StreamingBridge(backendConfig, port).start();
+  if (port.name !== STREAM_PORT_NAME) return;
+  const key = `${port.sender?.tab?.id ?? 'unknown'}:${port.sender?.frameId ?? 0}`;
+  const nextCount = (activeStreamPorts.get(key) ?? 0) + 1;
+  activeStreamPorts.set(key, nextCount);
+  if (nextCount > 1) {
+    runtimeDiagnostic('duplicate_stream_port_detected', {
+      tabId: port.sender?.tab?.id ?? null,
+      frameId: port.sender?.frameId ?? null,
+      activePorts: nextCount,
+      extensionId: chrome.runtime.id,
+    }, 'warn');
+  }
+  port.onDisconnect.addListener(() => {
+    const remaining = Math.max(0, (activeStreamPorts.get(key) ?? 1) - 1);
+    if (remaining === 0) activeStreamPorts.delete(key);
+    else activeStreamPorts.set(key, remaining);
+  });
+  new StreamingBridge(backendConfig, port).start();
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, sender) => {
@@ -40,8 +61,10 @@ chrome.runtime.onMessage.addListener((message: unknown, sender) => {
     'type' in message &&
     message.type === 'SIGNVERSE_CONTENT_READY'
   ) {
-    console.info('SignVerse AI content script ready.', {
+    runtimeDiagnostic('content_script_ready', {
       tabId: sender.tab?.id,
+      frameId: sender.frameId ?? null,
+      extensionId: chrome.runtime.id,
     });
   }
 });

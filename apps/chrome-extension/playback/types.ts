@@ -1,4 +1,5 @@
 import type { PlaybackItem } from '../shared/interpretation';
+import type { MotionQualityDiagnostics } from './avatar/motion/types';
 
 export type RendererState = 'Idle' | 'Loading' | 'Playing' | 'Paused' | 'Finished' | 'Error';
 export type AssetFormat = 'lottie' | 'svg-sequence' | 'mp4' | 'glb' | 'vrm';
@@ -61,6 +62,40 @@ export interface Renderer {
   setPlaybackContext?(item: PlaybackItem): void;
   setTransitionSource?(pose: AvatarPoseSnapshot): void;
   capturePose?(): AvatarPoseSnapshot;
+  getRenderingDiagnostics?(): RenderingDiagnostics;
+}
+
+export interface RenderingDiagnostics {
+  fps: number;
+  frameTimeMs: number;
+  animationQueueDepth: number;
+  blendDurationMs: number;
+  activeAnimation: string;
+  droppedRenderFrames: number;
+  motion?: MotionQualityDiagnostics;
+  health?: RenderingHealthDiagnostics;
+}
+
+export interface RenderingHealthDiagnostics {
+  averageFps: number;
+  frameTimeDistributionMs: {
+    p50: number;
+    p95: number;
+    p99: number;
+    maximum: number;
+  };
+  droppedFramePercentage: number;
+  memoryUsageEstimateBytes: number;
+  memoryEstimateSource: 'performance-api' | 'asset-cache-estimate' | 'unavailable';
+  cacheHitRatio: number;
+  assetLoadLatencyMs: number;
+  renderLoopUptimeMs: number;
+  intentionallySkippedFrames: number;
+  recoveryAttempts: number;
+  fatalErrorCount: number;
+  resourceMode: 'standard' | 'reduced';
+  browserFamily: 'chrome' | 'edge' | 'brave' | 'chromium' | 'unknown';
+  frameScheduler: 'animation-frame' | 'timer-fallback';
 }
 
 export interface PlaybackSnapshot {

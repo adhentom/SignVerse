@@ -10,6 +10,7 @@ from .models import DatasetSource, LicenseStatus, SourceType
 
 SOURCE_TYPES = {"csv", "json", "mp4", "folder"}
 LICENSE_STATUSES = {"approved", "conditional", "pending", "blocked"}
+ISL_LANGUAGE_NAMES = {"isl", "indian sign language"}
 
 
 def load_sources(path: Path, repository: Path) -> tuple[DatasetSource, ...]:
@@ -29,10 +30,20 @@ def load_sources(path: Path, repository: Path) -> tuple[DatasetSource, ...]:
         seen.add(source_id)
         source_type = _required(item, "type")
         license_status = _required(item, "license_status")
+        language = _required(item, "language")
+        region = _required(item, "region")
         if source_type not in SOURCE_TYPES:
             raise ValueError(f"Unsupported dataset source type: {source_type}")
         if license_status not in LICENSE_STATUSES:
             raise ValueError(f"Unsupported license status: {license_status}")
+        if (
+            language.casefold() not in ISL_LANGUAGE_NAMES
+            or region.casefold() != "india"
+        ):
+            raise ValueError(
+                f"Dataset source {source_id} is not Indian Sign Language from India. "
+                "SignVerse excludes Indo-Pakistani and other sign-language datasets."
+            )
         configured_path = Path(_required(item, "path"))
         sources.append(
             DatasetSource(
@@ -47,6 +58,8 @@ def load_sources(path: Path, repository: Path) -> tuple[DatasetSource, ...]:
                 source_url=str(item.get("source_url", "")).strip(),
                 attribution=str(item.get("attribution", "")).strip(),
                 review_status=str(item.get("review_status", "candidate")).strip(),
+                language=language,
+                region=region,
                 record_kind=str(item.get("record_kind", "vocabulary")).strip(),
                 media_glob=str(item.get("media_glob", "**/*.mp4")).strip(),
                 columns={

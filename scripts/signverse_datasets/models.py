@@ -21,6 +21,8 @@ class DatasetSource:
     source_url: str
     attribution: str
     review_status: str
+    language: str
+    region: str
     record_kind: str = "vocabulary"
     media_glob: str = "**/*.mp4"
     columns: dict[str, str] = field(default_factory=dict)

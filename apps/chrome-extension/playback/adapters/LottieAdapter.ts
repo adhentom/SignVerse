@@ -4,9 +4,13 @@ import type { LoadedAsset, Renderer } from '../types';
 export class LottieAdapter implements Renderer {
   readonly format = 'lottie' as const;
   private animation?: AnimationItem;
+  private loadCleanup?: () => void;
+  private rejectLoad?: (error: Error) => void;
+  private generation = 0;
 
   async mount(target: HTMLElement, asset: LoadedAsset, reducedMotion: boolean): Promise<void> {
     this.destroy();
+    const generation = this.generation;
     this.animation = lottie.loadAnimation({
       animationData: structuredClone(asset.data) as object,
       autoplay: false,
@@ -18,6 +22,10 @@ export class LottieAdapter implements Renderer {
     await new Promise<void>((resolve, reject) => {
       const loaded = () => {
         cleanup();
+        if (generation !== this.generation) {
+          reject(new Error('The Lottie animation load was cancelled.'));
+          return;
+        }
         if (reducedMotion) this.animation?.goToAndStop(this.animation.totalFrames - 1, true);
         resolve();
       };
@@ -28,7 +36,11 @@ export class LottieAdapter implements Renderer {
       const cleanup = () => {
         this.animation?.removeEventListener('DOMLoaded', loaded);
         this.animation?.removeEventListener('data_failed', failed);
+        this.loadCleanup = undefined;
+        this.rejectLoad = undefined;
       };
+      this.loadCleanup = cleanup;
+      this.rejectLoad = reject;
       this.animation?.addEventListener('DOMLoaded', loaded);
       this.animation?.addEventListener('data_failed', failed);
     });
@@ -49,6 +61,10 @@ export class LottieAdapter implements Renderer {
   }
 
   destroy(): void {
+    this.generation += 1;
+    const rejectLoad = this.rejectLoad;
+    this.loadCleanup?.();
+    rejectLoad?.(new Error('The Lottie animation load was cancelled.'));
     this.animation?.destroy();
     this.animation = undefined;
   }

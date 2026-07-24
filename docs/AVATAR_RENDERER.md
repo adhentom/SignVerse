@@ -1,5 +1,11 @@
 # Avatar Renderer
 
+> **Historical design note:** This document records the earlier format-renderer MVP. The current
+> branded SVG renderer, versioned asset pipeline, and production runtime are documented in
+> [Production Avatar Rendering Engine](PRODUCTION_AVATAR_RENDERING_ENGINE.md),
+> [Avatar Asset Pipeline](AVATAR_ASSET_PIPELINE.md), and
+> [Avatar Production Optimization and Release Readiness](AVATAR_PRODUCTION_READINESS.md).
+
 ## Scope
 
 The extension consumes the existing backend `PlaybackSequence` and renders each scheduled asset

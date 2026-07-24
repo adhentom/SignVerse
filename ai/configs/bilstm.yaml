@@ -1,0 +1,62 @@
+# End-to-end SignVerse BiLSTM training configuration.
+paths:
+  normalized_root: data/normalized
+  landmarks_root: data/landmarks
+  output_dir: artifacts/bilstm
+
+dataset:
+  datasets: null
+  languages: null
+  expected_features: 258
+  strict: true
+
+loader:
+  batch_size: 32
+  num_workers: 0
+  max_length: 180
+  padding_value: 0.0
+  truncation: right
+  pin_memory: true
+
+model:
+  model_type: bilstm
+  projection_size: 128
+  hidden_size: 128
+  num_layers: 2
+  dropout: 0.3
+  bidirectional: true
+  pooling: mean
+
+optimizer:
+  name: adamw
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  momentum: 0.9
+
+scheduler:
+  name: plateau
+  step_size: 5
+  gamma: 0.5
+  t_max: 30
+  factor: 0.5
+  patience: 3
+  min_learning_rate: 0.000001
+
+training:
+  epochs: 50
+  device: auto
+  mixed_precision: true
+  gradient_clip_norm: 1.0
+  gradient_accumulation_steps: 1
+  scheduler_interval: epoch
+  monitor: validation_f1_macro
+  monitor_mode: max
+  seed: 42
+  deterministic: true
+  early_stopping: true
+  early_stopping_patience: 10
+  early_stopping_min_delta: 0.0001
+
+loss:
+  label_smoothing: 0.1
+  class_weights: null

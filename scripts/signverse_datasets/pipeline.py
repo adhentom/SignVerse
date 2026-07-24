@@ -15,6 +15,8 @@ from .config import load_sources
 from .models import CandidateAsset, SourceInventory
 from .normalization import normalize_term
 
+ISL_LANGUAGE_NAMES = {"isl", "indian sign language"}
+
 CATEGORY_MAP = {
     "greetings": "Greetings",
     "education": "Education",
@@ -47,6 +49,7 @@ class PipelineResult:
     invalid_candidates: int
     animations: int
     mp4_fallbacks: int
+    excluded_non_isl: int
 
 
 class DatasetPipeline:
@@ -57,9 +60,15 @@ class DatasetPipeline:
 
     def run(self, *, write: bool = True) -> PipelineResult:
         inventories = tuple(inspect_source(source) for source in self.sources)
-        candidates = tuple(
+        inspected_candidates = tuple(
             candidate for inventory in inventories for candidate in inventory.candidates
         )
+        candidates = tuple(
+            candidate
+            for candidate in inspected_candidates
+            if _is_indian_sign_language(candidate)
+        )
+        excluded_non_isl = len(inspected_candidates) - len(candidates)
         catalogs = tuple(
             record for inventory in inventories for record in inventory.catalog_records
         )
@@ -94,6 +103,7 @@ class DatasetPipeline:
                 candidate.media_path is not None and not candidate.animation_available
                 for candidate in candidates
             ),
+            excluded_non_isl=excluded_non_isl,
         )
         if write:
             self._write_outputs(
@@ -122,6 +132,16 @@ class DatasetPipeline:
                 "Promotion requires license_status=approved and a permission_reference."
             )
         inventory = inspect_source(source)
+        non_isl = [
+            candidate
+            for candidate in inventory.candidates
+            if not _is_indian_sign_language(candidate)
+        ]
+        if non_isl:
+            identifiers = ", ".join(item.candidate_id for item in non_isl[:5])
+            raise ValueError(
+                "Promotion rejected non-Indian Sign Language candidates: " + identifiers
+            )
         eligible = [
             candidate
             for candidate in inventory.candidates
@@ -334,7 +354,8 @@ class DatasetPipeline:
             f"- Duplicate asset ID groups: {result.duplicate_asset_ids}\n"
             f"- Duplicate token ID groups: {result.duplicate_token_ids}\n"
             f"- Candidates with validation issues: {result.invalid_candidates}\n"
-            f"- Ambiguous aliases: {result.ambiguous_aliases}\n",
+            f"- Ambiguous aliases: {result.ambiguous_aliases}\n"
+            f"- Excluded non-ISL candidates: {result.excluded_non_isl}\n",
             encoding="utf-8",
         )
         media_rows = (
@@ -540,6 +561,13 @@ def _asset_index_record(candidate: CandidateAsset) -> dict[str, Any]:
         else "",
         "issues": list(candidate.issues),
     }
+
+
+def _is_indian_sign_language(candidate: CandidateAsset) -> bool:
+    return (
+        candidate.language.casefold() in ISL_LANGUAGE_NAMES
+        and candidate.region.casefold() == "india"
+    )
 
 
 def _duplicates(

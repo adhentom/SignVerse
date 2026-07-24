@@ -22,7 +22,9 @@ export function signVerseExpressionPose(
   return POSES[expression];
 }
 
-export function resolveSignVerseExpression(markers: NonManualMarker[]): SignVerseExpression {
+export function resolveSignVerseExpression(
+  markers: readonly NonManualMarker[],
+): SignVerseExpression {
   const emotion = markers.find(({ marker }) => marker === 'facial-emotion')?.value.toLowerCase();
   if (emotion?.includes('happy') || emotion?.includes('smile') || emotion?.includes('joy')) return 'smile';
   if (emotion?.includes('surprise')) return 'surprise';

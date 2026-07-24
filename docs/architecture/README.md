@@ -68,3 +68,18 @@ Input acquisition
 Platform adapters normalize discrete live content into a shared `ContentPacket` containing platform, title, timestamp, text, and platform metadata. Event-driven adapters expose a disposable live session; the content bootstrap subscribes through the generic adapter capability and passes snapshots to the isolated overlay. Platform DOM selectors, observers, and edge-state logic remain inside the platform adapter.
 
 Backend transport uses a separate versioned and correlated runtime-message envelope. The background service worker validates packets before network transport, applies environment-derived host permissions, enforces timeouts, validates backend responses, and returns typed errors without exposing network access to the content script.
+
+## Avatar subsystem
+
+The current production avatar remains a pure consumer of `PlaybackSequence`. Rendering,
+versioned asset management, motion continuity, and runtime hardening are documented separately:
+
+- [Production Avatar Rendering Engine](../PRODUCTION_AVATAR_RENDERING_ENGINE.md)
+- [Avatar Asset Pipeline](../AVATAR_ASSET_PIPELINE.md)
+- [Motion Quality and Co-articulation](../MOTION_QUALITY_AND_COARTICULATION.md)
+- [Avatar Production Optimization and Release Readiness](../AVATAR_PRODUCTION_READINESS.md)
+
+The Phase 6.4 runtime targets current Manifest V3 Chromium browsers, uses standard resource mode
+by default, keeps reduced resource mode opt-in, and exposes health information only through
+developer diagnostics. Runtime optimization does not alter playback timing, motion semantics,
+vocabulary, or interpretation output.

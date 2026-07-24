@@ -99,19 +99,26 @@ const finite = (value: number | undefined, fallback: number) => (
 );
 const normalizeAngle = (value: number) => ((value + 180) % 360 + 360) % 360 - 180;
 
-function elementFor(root: SVGSVGElement, part: AvatarPart): SVGGElement | null {
-  return root.querySelector<SVGGElement>(`[data-avatar-part="${part}"]`);
-}
-
 export class SignVerseSkeletalRig {
   private readonly rotations = new Map<AvatarPart, number>();
   private readonly handProjections = new Map<(typeof HAND_PARTS)[number], number>();
+  private readonly elements = new Map<AvatarPart, SVGGElement>();
+  private readonly handArtwork = new Map<(typeof HAND_PARTS)[number], SVGGElement>();
 
   constructor(private readonly root: SVGSVGElement) {
+    root.querySelectorAll<SVGGElement>('[data-avatar-part]').forEach((element) => {
+      const part = element.dataset.avatarPart as AvatarPart | undefined;
+      if (part && !this.elements.has(part)) this.elements.set(part, element);
+    });
+    HAND_PARTS.forEach((part) => {
+      const side = part.startsWith('left') ? 'left' : 'right';
+      const artwork = root.querySelector<SVGGElement>(`[data-avatar-hand-artwork="${side}"]`);
+      if (artwork) this.handArtwork.set(part, artwork);
+    });
     for (const part of JOINT_PARTS) {
       const definition = BONES[part]!;
-      const element = elementFor(root, part);
-      const parent = elementFor(root, definition.parent);
+      const element = this.elements.get(part);
+      const parent = this.elements.get(definition.parent);
       if (!element || !parent || !parent.contains(element)) {
         throw new Error(`SignVerse interpreter hierarchy is invalid at ${definition.parent} -> ${part}.`);
       }
@@ -125,7 +132,7 @@ export class SignVerseSkeletalRig {
   }
 
   applyRootIdle(y: number, scaleY: number): void {
-    const body = elementFor(this.root, 'body');
+    const body = this.elements.get('body');
     if (!body) return;
     const [pivotX, pivotY] = SIGNVERSE_INTERPRETER_GEOMETRY.rootPivot;
     body.setAttribute(
@@ -222,6 +229,16 @@ export class SignVerseSkeletalRig {
     return snapshot;
   }
 
+  neutralPose(): AvatarPoseSnapshot {
+    const snapshot: AvatarPoseSnapshot = Object.fromEntries(
+      JOINT_PARTS.map((part) => [part, { rotation: BONES[part]!.restRotation }]),
+    );
+    HAND_PARTS.forEach((part) => {
+      snapshot[part] = { ...snapshot[part], scaleY: NEUTRAL_HAND_PROJECTION };
+    });
+    return snapshot;
+  }
+
   armChain(side: 'left' | 'right'): {
     shoulder: readonly [number, number];
     elbow: readonly [number, number];
@@ -250,7 +267,7 @@ export class SignVerseSkeletalRig {
   }
 
   private applyJoint(part: AvatarPart, rotation: number): void {
-    const element = elementFor(this.root, part);
+    const element = this.elements.get(part);
     if (!element) return;
     const pivot = BONES[part]?.pivot;
     element.setAttribute(
@@ -261,13 +278,13 @@ export class SignVerseSkeletalRig {
 
   private applyHandProjection(part: (typeof HAND_PARTS)[number], projection: number): void {
     const side = part.startsWith('left') ? 'left' : 'right';
-    const artwork = this.root.querySelector<SVGGElement>(`[data-avatar-hand-artwork="${side}"]`);
+    const artwork = this.handArtwork.get(part);
     const mirror = side === 'left' ? -1 : 1;
     artwork?.setAttribute('transform', `scale(1 ${mirror * projection})`);
   }
 
   private applyFacial(part: AvatarPart, pose: AvatarPose): void {
-    const element = elementFor(this.root, part);
+    const element = this.elements.get(part);
     if (!element) return;
     const pivotX = finite(Number(element.dataset.pivotX), 0);
     const pivotY = finite(Number(element.dataset.pivotY), 0);

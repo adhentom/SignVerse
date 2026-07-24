@@ -1,5 +1,10 @@
 # Avatar Architecture
 
+> **Historical design note:** This document describes an earlier multi-profile avatar proposal.
+> The current production SVG runtime and its two supported interpreter profiles are documented in
+> [Production Avatar Rendering Engine](PRODUCTION_AVATAR_RENDERING_ENGINE.md) and
+> [Avatar Production Optimization and Release Readiness](AVATAR_PRODUCTION_READINESS.md).
+
 ## Management model
 
 Avatar identity is presentation-only and remains separate from linguistic tokens and animation

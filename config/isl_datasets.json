@@ -11,6 +11,8 @@
       "source_url": "",
       "attribution": "per-asset metadata",
       "review_status": "governed",
+      "language": "Indian Sign Language",
+      "region": "India",
       "media_glob": "*/*.mp4"
     },
     {
@@ -23,6 +25,8 @@
       "source_url": "https://islrtc.nic.in/faq/",
       "attribution": "Indian Sign Language Research and Training Centre, DEPwD, MSJ&E, Government of India",
       "review_status": "catalog-only",
+      "language": "Indian Sign Language",
+      "region": "India",
       "record_kind": "catalog",
       "columns": {
         "identifier": "Sr.No.",
@@ -40,6 +44,8 @@
       "source_url": "https://drive.google.com/drive/folders/1U-Pr4r1-cupgNOOq9NH_uTsQnPSVEKco",
       "attribution": "Indian Sign Language Research and Training Centre, DEPwD, MSJ&E, Government of India",
       "review_status": "candidate",
+      "language": "Indian Sign Language",
+      "region": "India",
       "media_glob": "**/*.mp4"
     }
   ]

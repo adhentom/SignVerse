@@ -9,8 +9,27 @@ import {
   attachPlaybackSynchronization,
   partitionTimedPacket,
 } from '../../synchronization/SynchronizationTimeline';
+import { runtimeDiagnostic } from '../../shared/runtimeDiagnostics';
 
 interface RequestError { code?: InterpretationErrorCode; message?: string }
+
+export function normalizeStreamErrorCode(code: string): InterpretationErrorCode {
+  switch (code) {
+    case 'extension-context-invalidated':
+    case 'configuration':
+    case 'timeout':
+    case 'connection-failure':
+    case 'backend-unavailable':
+    case 'invalid-response':
+      return code;
+    case 'invalid-message':
+      return 'invalid-response';
+    case 'interpretation-failed':
+    case 'stream-backpressure':
+    default:
+      return 'backend-unavailable';
+  }
+}
 
 function sourceIdentity(packet: ContentPacket): string {
   const metadata = packet.metadata as Record<string, unknown>;
@@ -98,12 +117,21 @@ export function useStreamingInterpretation(
         requestPackets.current.delete(message.sequence);
         window.clearTimeout(fallbackTimers.current.get(message.sequence));
         fallbackTimers.current.delete(message.sequence);
-        console.info('[SignVerse] interpretation_packet_received', {
+        runtimeDiagnostic('interpretation_packet_received', {
           sequence: message.sequence,
           glossCount: synchronizedData.isl_gloss.length,
           playbackCount: synchronizedData.playback?.items.length ?? 0,
           unsupportedCount: synchronizedData.playback?.unsupported_tokens.length ?? 0,
         });
+        if (
+          synchronizedData.isl_gloss.length === 0 &&
+          (synchronizedData.playback?.items.length ?? 0) === 0
+        ) {
+          runtimeDiagnostic('interpretation_provider_empty_output', {
+            sequence: message.sequence,
+            diagnosis: 'PlaybackSequence empty',
+          }, 'warn');
+        }
         setResponse((current) => {
           if (replaceNextResponse.current) {
             replaceNextResponse.current = false;
@@ -119,7 +147,10 @@ export function useStreamingInterpretation(
       } else if (message.type === 'error') {
         requestPackets.current.delete(message.sequence);
         setPending((current) => Math.max(0, current - 1));
-        setError({ code: message.code as InterpretationErrorCode, message: message.message });
+        setError({
+          code: normalizeStreamErrorCode(message.code),
+          message: message.message,
+        });
       }
     });
     return () => {
@@ -211,18 +242,31 @@ export function useStreamingInterpretation(
         : packet;
       const additions = partitionTimedPacket(timingPacket, texts);
       additions.forEach((item) => seen.current.add(segmentIdentity(item)));
+      let sentCount = 0;
       additions.forEach((item) => {
         const generation = requestGeneration.current;
         const sequence = client.current?.send(item);
         if (sequence === undefined) return;
-        requestPackets.current.set(sequence, item);
-        console.info('[SignVerse] interpretation_packet_sent', {
+        const correlationId = client.current?.correlationId(sequence);
+        const tracedItem: ContentPacket = correlationId
+          ? {
+              ...item,
+              metadata: {
+                ...item.metadata,
+                _signverse_correlation_id: correlationId,
+              },
+            }
+          : item;
+        sentCount += 1;
+        requestPackets.current.set(sequence, tracedItem);
+        runtimeDiagnostic('interpretation_packet_sent', {
+          correlationId,
           sequence,
           platform: item.platform,
           textLength: item.text.length,
           generation,
         });
-        console.info('[SignVerse] packet_sent', {
+        runtimeDiagnostic('packet_sent', {
           sequence,
           platform: item.platform,
           source: String(item.metadata.transcriptionSource ?? 'official'),
@@ -233,7 +277,7 @@ export function useStreamingInterpretation(
           fallbackTimers.current.delete(sequence);
           if (completed.current.has(sequence) || streamStatus.current === 'connected') return;
           console.info('[SignVerse] stream_unavailable_rest_fallback', { sequence });
-          void requestInterpretation(item)
+          void requestInterpretation(tracedItem)
             .then((data) => {
               if (generation !== requestGeneration.current || completed.current.has(sequence)) return;
               completed.current.add(sequence);
@@ -259,7 +303,13 @@ export function useStreamingInterpretation(
         }, 750);
         fallbackTimers.current.set(sequence, timer);
       });
-      if (additions.length > 0) setPending((current) => current + additions.length);
+      if (sentCount > 0) setPending((current) => current + sentCount);
+      if (additions.length > sentCount) {
+        setError({
+          code: 'extension-context-invalidated',
+          message: 'The content script could not deliver a packet to the background service worker.',
+        });
+      }
     }, debounceMs);
     return () => window.clearTimeout(timer);
   }, [enabled, packet ? JSON.stringify(packet) : '', debounceMs]);
@@ -268,6 +318,13 @@ export function useStreamingInterpretation(
     setError(null);
     if (packet && client.current) {
       const sequence = client.current.send(packet);
+      if (sequence === undefined) {
+        setError({
+          code: 'extension-context-invalidated',
+          message: 'The content script could not deliver the retry to the background service worker.',
+        });
+        return;
+      }
       requestPackets.current.set(sequence, packet);
       setPending((current) => current + 1);
     }

@@ -7,12 +7,14 @@ import type { PlaybackItem } from '../../shared/interpretation';
 import type { RendererState, SignAsset } from '../../playback/types';
 import type { AvatarProfile } from '../../playback/avatarProfiles';
 import { isNativeApproved } from '../../playback/nativeReview';
+import { runtimeDiagnostic } from '../../shared/runtimeDiagnostics';
 
 interface AvatarRendererProps {
   asset?: SignAsset;
   nextAsset?: SignAsset;
   cue?: PlaybackItem;
   cueIndex?: number;
+  emptyMessage?: string;
   playing: boolean;
   progress: number;
   reducedMotion: boolean;
@@ -59,6 +61,7 @@ export const AvatarRenderer = memo(function AvatarRenderer({
   nextAsset,
   cue,
   cueIndex,
+  emptyMessage,
   playing,
   progress,
   reducedMotion,
@@ -75,6 +78,8 @@ export const AvatarRenderer = memo(function AvatarRenderer({
   const activeSlot = useRef(0);
   const generation = useRef(0);
   const transitionTimer = useRef(0);
+  const lastStartedCue = useRef('');
+  const lastCompletedCue = useRef('');
   const [state, setState] = useState<RendererState>('Idle');
 
   useEffect(() => {
@@ -99,8 +104,10 @@ export const AvatarRenderer = memo(function AvatarRenderer({
     }
 
     setState('Loading');
-    console.info('[SignVerse] avatar_asset_load_started', {
+    runtimeDiagnostic('avatar_animation_scheduled', {
       assetId: asset.asset_id,
+      cueIndex: cueIndex ?? -1,
+      requestSequence: cue?.synchronization?.request_sequence ?? null,
       nextAssetId: nextAsset?.asset_id ?? null,
     });
     void signAssetLoader.load(asset)
@@ -139,7 +146,7 @@ export const AvatarRenderer = memo(function AvatarRenderer({
         nextLayer.style.transitionDuration = `${transitionDuration}ms`;
         if (previousLayer) previousLayer.style.transitionDuration = `${transitionDuration}ms`;
         if (renderers.current[previousSlot] && previousSlot !== nextSlot) {
-          console.info('[SignVerse] avatar_transition_started', {
+          runtimeDiagnostic('avatar_transition_started', {
             durationMs: transitionDuration,
             nextAssetId: asset.asset_id,
           });
@@ -151,13 +158,13 @@ export const AvatarRenderer = memo(function AvatarRenderer({
           renderers.current[previousSlot]?.dispose();
           renderers.current[previousSlot] = undefined;
           previousLayer?.replaceChildren();
-          console.info('[SignVerse] avatar_transition_completed', {
+          runtimeDiagnostic('avatar_transition_completed', {
             assetId: asset.asset_id,
             durationMs: transitionDuration,
           });
         }, transitionDuration);
         setState(playing && !reducedMotion ? 'Playing' : 'Paused');
-        console.info('[SignVerse] avatar_renderer_mounted', {
+        runtimeDiagnostic('avatar_renderer_mounted', {
           assetId: asset.asset_id,
           state: playing && !reducedMotion ? 'Playing' : 'Paused',
         });
@@ -175,11 +182,11 @@ export const AvatarRenderer = memo(function AvatarRenderer({
           idleRenderer.current = new Avatar2DAdapter(fetch, profile);
           idleRenderer.current.mountIdle(idleLayer, reducedMotion);
         }
-        console.error('[SignVerse] avatar_renderer_failed', {
+        runtimeDiagnostic('avatar_renderer_failed', {
           assetId: asset.asset_id,
           message,
           fallback: 'branded-avatar-idle',
-        });
+        }, 'error');
         setState('Error');
         onError(message);
       });
@@ -210,6 +217,33 @@ export const AvatarRenderer = memo(function AvatarRenderer({
     }
   }, [playing, progress, reducedMotion, speed, state]);
 
+  useEffect(() => {
+    if (!asset || state !== 'Playing') return;
+    const requestSequence = cue?.synchronization?.request_sequence ?? -1;
+    const cueKey = `${requestSequence}:${asset.asset_id}:${cueIndex ?? -1}`;
+    if (lastStartedCue.current === cueKey) return;
+    lastStartedCue.current = cueKey;
+    runtimeDiagnostic('avatar_animation_started', {
+      assetId: asset.asset_id,
+      cueIndex: cueIndex ?? -1,
+      requestSequence: requestSequence < 0 ? null : requestSequence,
+      speed,
+    });
+  }, [asset?.asset_id, cue?.synchronization?.request_sequence, cueIndex, speed, state]);
+
+  useEffect(() => {
+    if (!asset || progress < 0.999) return;
+    const requestSequence = cue?.synchronization?.request_sequence ?? -1;
+    const cueKey = `${requestSequence}:${asset.asset_id}:${cueIndex ?? -1}`;
+    if (lastCompletedCue.current === cueKey) return;
+    lastCompletedCue.current = cueKey;
+    runtimeDiagnostic('avatar_animation_completed', {
+      assetId: asset.asset_id,
+      cueIndex: cueIndex ?? -1,
+      requestSequence: requestSequence < 0 ? null : requestSequence,
+    });
+  }, [asset?.asset_id, cue?.synchronization?.request_sequence, cueIndex, progress]);
+
   return (
     <div className={`sv-avatar-shell${asset ? '' : ' sv-avatar-shell--empty'}`}>
       <div
@@ -222,7 +256,11 @@ export const AvatarRenderer = memo(function AvatarRenderer({
         <div className="sv-renderer-layer sv-renderer-layer--active" ref={layerA} />
         <div className="sv-renderer-layer" ref={layerB} />
       </div>
-      {!asset && <div className="sv-avatar-empty" role="status">Waiting for a mapped ISL sign</div>}
+      {!asset && (
+        <div className="sv-avatar-empty" role="status">
+          {emptyMessage ?? 'Renderer waiting for PlaybackSequence'}
+        </div>
+      )}
       {state === 'Loading' && <div className="sv-avatar-loading" aria-live="polite">Loading avatar…</div>}
       {state === 'Error' && <div className="sv-avatar-fallback" aria-hidden="true">Sign unavailable</div>}
       {asset && state !== 'Error' && !isNativeApproved(asset) && (

@@ -3,6 +3,7 @@ import type { AvatarClip } from './AvatarAnimationEngine';
 // Only clips reviewed as animation assets belong here. Generic motion is never mapped to an ISL gloss.
 const CLIPS = new Map<string, AvatarClip>();
 const LOADING = new Map<string, Promise<AvatarClip>>();
+const MAXIMUM_CACHED_CLIPS = 128;
 
 export function lookupAvatarClip(id: unknown): AvatarClip | undefined {
   return typeof id === 'string' ? CLIPS.get(id) : undefined;
@@ -63,7 +64,11 @@ export function loadAvatarClip(source: unknown, request: typeof fetch = fetch): 
   const registered = lookupAvatarClip(source);
   if (registered) return Promise.resolve(registered);
   const cached = LOADING.get(source);
-  if (cached) return cached;
+  if (cached) {
+    LOADING.delete(source);
+    LOADING.set(source, cached);
+    return cached;
+  }
   const loading = request(clipUrl(source))
     .then(async (response) => {
       if (!response.ok) throw new Error('Animation clip could not be loaded.');
@@ -74,5 +79,18 @@ export function loadAvatarClip(source: unknown, request: typeof fetch = fetch): 
       throw error;
     });
   LOADING.set(source, loading);
+  while (LOADING.size > MAXIMUM_CACHED_CLIPS) {
+    const oldest = LOADING.keys().next().value;
+    if (oldest === undefined) break;
+    LOADING.delete(oldest);
+  }
   return loading;
+}
+
+export function avatarClipCacheSize(): number {
+  return LOADING.size;
+}
+
+export function clearAvatarClipCache(): void {
+  LOADING.clear();
 }

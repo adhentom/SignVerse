@@ -4,9 +4,13 @@ export class Mp4Adapter implements Renderer {
   readonly format = 'mp4' as const;
   private video?: HTMLVideoElement;
   private objectUrl?: string;
+  private metadataCleanup?: () => void;
+  private rejectMetadata?: (error: Error) => void;
+  private generation = 0;
 
   async mount(target: HTMLElement, asset: LoadedAsset, reducedMotion: boolean): Promise<void> {
     this.destroy();
+    const generation = this.generation;
     if (!(asset.data instanceof Blob) || asset.data.size === 0) {
       throw new Error('The sign video asset is corrupted.');
     }
@@ -23,8 +27,28 @@ export class Mp4Adapter implements Renderer {
     target.append(this.video);
     if (this.video.readyState < HTMLMediaElement.HAVE_METADATA) {
       await new Promise<void>((resolve, reject) => {
-        this.video?.addEventListener('loadedmetadata', () => resolve(), { once: true });
-        this.video?.addEventListener('error', () => reject(new Error('The sign video could not be decoded.')), { once: true });
+        const loaded = () => {
+          cleanup();
+          if (generation !== this.generation) {
+            reject(new Error('The sign video load was cancelled.'));
+            return;
+          }
+          resolve();
+        };
+        const failed = () => {
+          cleanup();
+          reject(new Error('The sign video could not be decoded.'));
+        };
+        const cleanup = () => {
+          this.video?.removeEventListener('loadedmetadata', loaded);
+          this.video?.removeEventListener('error', failed);
+          this.metadataCleanup = undefined;
+          this.rejectMetadata = undefined;
+        };
+        this.metadataCleanup = cleanup;
+        this.rejectMetadata = reject;
+        this.video?.addEventListener('loadedmetadata', loaded, { once: true });
+        this.video?.addEventListener('error', failed, { once: true });
       });
     }
     if (reducedMotion) this.video.currentTime = 0;
@@ -46,6 +70,10 @@ export class Mp4Adapter implements Renderer {
   }
 
   destroy(): void {
+    this.generation += 1;
+    const rejectMetadata = this.rejectMetadata;
+    this.metadataCleanup?.();
+    rejectMetadata?.(new Error('The sign video load was cancelled.'));
     this.video?.pause();
     this.video?.remove();
     if (this.objectUrl) URL.revokeObjectURL(this.objectUrl);

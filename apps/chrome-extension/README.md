@@ -179,3 +179,21 @@ arrives. Sign changes use a bounded 120–500 ms cross-fade plus previous-pose i
 reduced-motion users receive an immediate transition. The next asset is preloaded before its cue,
 and streamed sequence appends do not restart completed signs. See
 [`docs/CAPTION_ENGINE.md`](../../docs/CAPTION_ENGINE.md) for cue identity and timestamp semantics.
+
+### Avatar production runtime
+
+The avatar runtime targets current Chrome, Edge, Brave, and other Manifest V3 Chromium builds.
+Capability detection falls back to a cancellable timer when animation frames are unavailable and
+uses a labeled cache estimate when Chromium heap telemetry is unavailable. Missing WebGL affects
+only optional WebGL renderers; the branded SVG interpreter remains the default.
+
+The standard resource policy is the default. An embedding or controlled deployment may explicitly
+select reduced resource mode to lower inactive-frame frequency, secondary motion, cache pressure,
+and preload concurrency. It does not change sign motion, playback timestamps, or interpretation.
+This is separate from the user's reduced-motion preference.
+
+FPS distributions, dropped frames, memory estimates, asset cache/load metrics, renderer uptime,
+and recovery counts are available programmatically for developer diagnostics only. They are not
+shown in production UI and contain no caption or interpretation content. See
+[`docs/AVATAR_PRODUCTION_READINESS.md`](../../docs/AVATAR_PRODUCTION_READINESS.md) for lifecycle,
+compatibility, recovery, deployment, and soak-test guidance.
