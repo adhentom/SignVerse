@@ -18,6 +18,15 @@ export interface PlaybackItem {
   transition_ms?: number;
   non_manual_markers?: NonManualMarker[];
   animation_ready?: boolean;
+  synchronization?: PlaybackSynchronization;
+}
+
+export interface PlaybackSynchronization {
+  caption_end_ms: number;
+  caption_start_ms: number;
+  cue_id: string;
+  request_sequence: number;
+  source_text: string;
 }
 
 export interface ISLGlossUnit {

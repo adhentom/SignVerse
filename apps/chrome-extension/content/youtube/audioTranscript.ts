@@ -25,6 +25,7 @@ function audioMetadata(
     captionsEnabled: false,
     isAdvertisement: Boolean(official?.metadata.isAdvertisement),
     isLive: Boolean(official?.metadata.isLive),
+    playbackRate: official?.metadata.playbackRate ?? 1,
     playbackTimeMs,
     playbackState: official?.metadata.playbackState === 'paused' ? 'paused' : 'playing',
     transcriptionSource: 'tab-audio',

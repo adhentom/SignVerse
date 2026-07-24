@@ -13,6 +13,7 @@ import { SignVerseMark } from './components/SignVerseMark';
 import { UIIcon } from './components/UIIcon';
 import { AvatarPreferenceControl } from './components/AvatarPreferenceControl';
 import { useAvatarPreference } from './hooks/useAvatarPreference';
+import { mediaClockFromSnapshot } from '../synchronization/mediaClock';
 
 interface FloatingWidgetProps {
   backendHealthState: BackendHealthState;
@@ -151,6 +152,7 @@ export function FloatingWidget({
     sourceText,
   });
   const liveIssue = sourceIssue(liveState, sourceText);
+  const mediaClock = mediaClockFromSnapshot(liveState);
 
   useEffect(() => {
     if (!shouldMoveFocus.current) return;
@@ -317,6 +319,8 @@ export function FloatingWidget({
       <div className="sv-playback-host">
         <SignPlaybackPanel
           paused={liveState?.status === 'paused' || liveState?.status === 'advertisement' || liveState?.status === 'reconnecting'}
+          debugEnabled={debugEnabled}
+          mediaClock={mediaClock}
           onActivityChange={setPlaybackActivity}
           profile={avatarPreference.profile}
           portalTarget={interpreterRoot}

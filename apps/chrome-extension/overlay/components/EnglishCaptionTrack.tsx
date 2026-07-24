@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { buildCaptionTimeline } from '../../captions/CaptionTimeline';
+import {
+  bufferedCaptionAtIndex,
+  buildCaptionTimeline,
+  buildSynchronizedCaptionBuffer,
+} from '../../captions/CaptionTimeline';
+import type { PlaybackItem } from '../../shared/interpretation';
 
 export function segmentCaption(caption: string, count: number): string[] {
   return buildCaptionTimeline(caption, Array.from({ length: count }, () => 1))
@@ -10,11 +15,13 @@ export function FloatingCaption({
   caption,
   currentIndex,
   emptyMessage,
+  playbackItems = [],
   signDurations,
 }: {
   caption: string;
   currentIndex: number;
   emptyMessage: string;
+  playbackItems?: readonly PlaybackItem[];
   signDurations: readonly number[];
 }) {
   const durationKey = signDurations.join('|');
@@ -22,7 +29,18 @@ export function FloatingCaption({
     () => buildCaptionTimeline(caption, signDurations),
     [caption, durationKey],
   );
-  const synchronized = (timeline[currentIndex]?.text ?? caption.trim()) || emptyMessage;
+  const itemKey = playbackItems.map((item) => (
+    `${item.asset_id}:${item.synchronization?.request_sequence ?? ''}`
+  )).join('|');
+  const buffer = useMemo(
+    () => buildSynchronizedCaptionBuffer(playbackItems),
+    [itemKey],
+  );
+  const synchronized = (
+    bufferedCaptionAtIndex(buffer, currentIndex)?.text ??
+    timeline[currentIndex]?.text ??
+    caption.trim()
+  ) || emptyMessage;
 
   return (
     <div aria-atomic="true" aria-live="polite" className="sv-floating-caption" lang="en">
@@ -36,11 +54,13 @@ export function EnglishCaptionTrack({
   caption,
   currentIndex,
   emptyMessage = 'English source text is unavailable.',
+  playbackItems = [],
   signDurations,
 }: {
   caption: string;
   currentIndex: number;
   emptyMessage?: string;
+  playbackItems?: readonly PlaybackItem[];
   signDurations: readonly number[];
 }) {
   const current = useRef<HTMLElement>(null);
@@ -48,6 +68,13 @@ export function EnglishCaptionTrack({
   const timeline = useMemo(
     () => buildCaptionTimeline(caption, signDurations),
     [caption, durationKey],
+  );
+  const itemKey = playbackItems.map((item) => (
+    `${item.asset_id}:${item.synchronization?.request_sequence ?? ''}`
+  )).join('|');
+  const buffer = useMemo(
+    () => buildSynchronizedCaptionBuffer(playbackItems),
+    [itemKey],
   );
 
   useEffect(() => {
@@ -63,7 +90,21 @@ export function EnglishCaptionTrack({
     <section aria-label="Synchronized English source captions" className="sv-playback-captions" lang="en">
       <span>English source</span>
       <div aria-live="polite" tabIndex={0}>
-        {timeline.length > 0 ? timeline.map((segment) => (
+        {buffer.length > 0 ? buffer.map((segment) => {
+          const active = currentIndex >= segment.startIndex && currentIndex <= segment.endIndex;
+          return (
+          <mark
+            aria-current={active ? 'true' : undefined}
+            className={active ? 'sv-caption--current' : ''}
+            data-end={segment.endSeconds}
+            data-start={segment.startSeconds}
+            key={segment.key}
+            ref={active ? current : undefined}
+          >
+            {segment.text}
+          </mark>
+          );
+        }) : timeline.length > 0 ? timeline.map((segment) => (
           <mark
             aria-current={segment.index === currentIndex ? 'true' : undefined}
             className={segment.index === currentIndex ? 'sv-caption--current' : ''}

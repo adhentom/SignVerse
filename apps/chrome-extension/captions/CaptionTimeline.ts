@@ -1,6 +1,17 @@
+import type { PlaybackItem } from '../shared/interpretation';
+
 export interface TimedCaptionSegment {
   endSeconds: number;
   index: number;
+  startSeconds: number;
+  text: string;
+}
+
+export interface BufferedCaptionSegment {
+  endIndex: number;
+  endSeconds: number;
+  key: string;
+  startIndex: number;
   startSeconds: number;
   text: string;
 }
@@ -58,4 +69,44 @@ export function captionAtTime(
   if (timeline.length === 0) return undefined;
   const elapsed = Math.max(0, elapsedSeconds);
   return timeline.find((segment) => elapsed < segment.endSeconds) ?? timeline.at(-1);
+}
+
+/**
+ * Buffers caption text carried by timestamped playback items. Repeated items
+ * from one interpretation response collapse into one stable caption cue.
+ */
+export function buildSynchronizedCaptionBuffer(
+  items: readonly PlaybackItem[],
+): BufferedCaptionSegment[] {
+  const cues = new Map<string, BufferedCaptionSegment>();
+  items.forEach((item, index) => {
+    const timing = item.synchronization;
+    if (!timing) return;
+    const key = `${timing.request_sequence}:${timing.cue_id}`;
+    const current = cues.get(key);
+    if (current) {
+      current.endIndex = index;
+      current.endSeconds = Math.max(current.endSeconds, timing.caption_end_ms / 1_000);
+      return;
+    }
+    cues.set(key, {
+      endIndex: index,
+      endSeconds: timing.caption_end_ms / 1_000,
+      key,
+      startIndex: index,
+      startSeconds: timing.caption_start_ms / 1_000,
+      text: timing.source_text,
+    });
+  });
+  return [...cues.values()].sort(
+    (left, right) => left.startSeconds - right.startSeconds ||
+      left.startIndex - right.startIndex,
+  );
+}
+
+export function bufferedCaptionAtIndex(
+  buffer: readonly BufferedCaptionSegment[],
+  index: number,
+): BufferedCaptionSegment | undefined {
+  return buffer.find((cue) => index >= cue.startIndex && index <= cue.endIndex);
 }

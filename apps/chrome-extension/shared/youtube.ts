@@ -15,6 +15,7 @@ export interface YouTubePacketMetadata {
   captionsEnabled: boolean;
   isAdvertisement: boolean;
   isLive: boolean;
+  playbackRate?: number;
   playbackState: YouTubePlaybackState;
 }
 

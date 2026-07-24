@@ -5,6 +5,10 @@ import { StreamingPortClient } from './StreamingPortClient';
 import { segmentText } from './sentenceSegmentation';
 import { appendPlayback } from '../../playback/queue';
 import { requestInterpretation } from './requestInterpretation';
+import {
+  attachPlaybackSynchronization,
+  partitionTimedPacket,
+} from '../../synchronization/SynchronizationTimeline';
 
 interface RequestError { code?: InterpretationErrorCode; message?: string }
 
@@ -59,6 +63,7 @@ export function useStreamingInterpretation(
   const streamStatus = useRef<'connecting' | 'connected' | 'reconnecting'>('connecting');
   const fallbackTimers = useRef(new Map<number, number>());
   const completed = useRef(new Set<number>());
+  const requestPackets = useRef(new Map<number, ContentPacket>());
   const requestGeneration = useRef(0);
   const replaceNextResponse = useRef(false);
   const [pending, setPending] = useState(0);
@@ -86,27 +91,33 @@ export function useStreamingInterpretation(
       if (message.type === 'interpretation') {
         if (completed.current.has(message.sequence)) return;
         completed.current.add(message.sequence);
+        const sourcePacket = requestPackets.current.get(message.sequence);
+        const synchronizedData = sourcePacket
+          ? attachPlaybackSynchronization(message.data, sourcePacket, message.sequence)
+          : message.data;
+        requestPackets.current.delete(message.sequence);
         window.clearTimeout(fallbackTimers.current.get(message.sequence));
         fallbackTimers.current.delete(message.sequence);
         console.info('[SignVerse] interpretation_packet_received', {
           sequence: message.sequence,
-          glossCount: message.data.isl_gloss.length,
-          playbackCount: message.data.playback?.items.length ?? 0,
-          unsupportedCount: message.data.playback?.unsupported_tokens.length ?? 0,
+          glossCount: synchronizedData.isl_gloss.length,
+          playbackCount: synchronizedData.playback?.items.length ?? 0,
+          unsupportedCount: synchronizedData.playback?.unsupported_tokens.length ?? 0,
         });
         setResponse((current) => {
           if (replaceNextResponse.current) {
             replaceNextResponse.current = false;
             console.info('[SignVerse] reading_context_playback_replaced', {
-              playbackCount: message.data.playback?.items.length ?? 0,
+              playbackCount: synchronizedData.playback?.items.length ?? 0,
             });
-            return message.data;
+            return synchronizedData;
           }
-          return mergeInterpretations(current, message.data);
+          return mergeInterpretations(current, synchronizedData);
         });
         setPending((current) => Math.max(0, current - 1));
         setError(null);
       } else if (message.type === 'error') {
+        requestPackets.current.delete(message.sequence);
         setPending((current) => Math.max(0, current - 1));
         setError({ code: message.code as InterpretationErrorCode, message: message.message });
       }
@@ -115,6 +126,7 @@ export function useStreamingInterpretation(
       fallbackTimers.current.forEach((timer) => window.clearTimeout(timer));
       fallbackTimers.current.clear();
       completed.current.clear();
+      requestPackets.current.clear();
       lastLiveText.current.clear();
       websiteContext.current = '';
       requestGeneration.current += 1;
@@ -134,9 +146,12 @@ export function useStreamingInterpretation(
       fallbackTimers.current.forEach((timer) => window.clearTimeout(timer));
       fallbackTimers.current.clear();
       completed.current.clear();
+      requestPackets.current.clear();
       lastLiveText.current.clear();
       setPending(0);
-      setResponse(null);
+      console.info('[SignVerse] media_seek_recovery_started', {
+        preserveBufferedPlayback: response !== null,
+      });
       return;
     }
     const nextSource = sourceIdentity(packet);
@@ -147,6 +162,7 @@ export function useStreamingInterpretation(
       seen.current.clear();
       lastLiveText.current.clear();
       websiteContext.current = '';
+      requestPackets.current.clear();
       client.current.reset();
       setPending(0);
       setResponse(null);
@@ -159,6 +175,7 @@ export function useStreamingInterpretation(
         fallbackTimers.current.forEach((timer) => window.clearTimeout(timer));
         fallbackTimers.current.clear();
         completed.current.clear();
+        requestPackets.current.clear();
         replaceNextResponse.current = response !== null;
         console.info('[SignVerse] reading_context_changed', {
           preserveActivePlayback: replaceNextResponse.current,
@@ -177,14 +194,28 @@ export function useStreamingInterpretation(
         ? incrementalLiveText(previousText, packet.text)
         : packet.text;
       if (packet.platform !== 'website') lastLiveText.current.set(liveKey, packet.text);
-      const additions = segmentText(incrementalText)
-        .filter((text) => !seen.current.has(segmentIdentity(packet, text)))
-        .map((text) => ({ ...packet, text }));
+      const texts = segmentText(incrementalText)
+        .filter((text) => !seen.current.has(segmentIdentity(packet, text)));
+      const incrementalAppend = packet.platform !== 'website' &&
+        previousText.length > 0 &&
+        packet.text.startsWith(previousText);
+      const timingPacket = incrementalAppend
+        ? {
+            ...packet,
+            metadata: {
+              ...packet.metadata,
+              captionStartMs: (packet.metadata as Record<string, unknown>).playbackTimeMs ??
+                (packet.metadata as Record<string, unknown>).captionStartMs,
+            },
+          }
+        : packet;
+      const additions = partitionTimedPacket(timingPacket, texts);
       additions.forEach((item) => seen.current.add(segmentIdentity(item)));
       additions.forEach((item) => {
         const generation = requestGeneration.current;
         const sequence = client.current?.send(item);
         if (sequence === undefined) return;
+        requestPackets.current.set(sequence, item);
         console.info('[SignVerse] interpretation_packet_sent', {
           sequence,
           platform: item.platform,
@@ -206,12 +237,14 @@ export function useStreamingInterpretation(
             .then((data) => {
               if (generation !== requestGeneration.current || completed.current.has(sequence)) return;
               completed.current.add(sequence);
+              requestPackets.current.delete(sequence);
+              const synchronizedData = attachPlaybackSynchronization(data, item, sequence);
               setResponse((current) => {
                 if (replaceNextResponse.current) {
                   replaceNextResponse.current = false;
-                  return data;
+                  return synchronizedData;
                 }
-                return mergeInterpretations(current, data);
+                return mergeInterpretations(current, synchronizedData);
               });
               setPending((current) => Math.max(0, current - 1));
               setError(null);
@@ -219,6 +252,7 @@ export function useStreamingInterpretation(
             .catch((fallbackError: RequestError) => {
               if (generation !== requestGeneration.current || completed.current.has(sequence)) return;
               completed.current.add(sequence);
+              requestPackets.current.delete(sequence);
               setPending((current) => Math.max(0, current - 1));
               setError(fallbackError);
             });
@@ -233,7 +267,8 @@ export function useStreamingInterpretation(
   const retry = useCallback(() => {
     setError(null);
     if (packet && client.current) {
-      client.current.send(packet);
+      const sequence = client.current.send(packet);
+      requestPackets.current.set(sequence, packet);
       setPending((current) => current + 1);
     }
   }, [packet ? JSON.stringify(packet) : '']);

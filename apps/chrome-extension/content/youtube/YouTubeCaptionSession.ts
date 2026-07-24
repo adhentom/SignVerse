@@ -29,6 +29,7 @@ const VIDEO_EVENTS = [
   'timeupdate',
   'loadedmetadata',
   'durationchange',
+  'ratechange',
 ] as const;
 
 function emptyMetadata(): YouTubePacketMetadata {
@@ -39,6 +40,7 @@ function emptyMetadata(): YouTubePacketMetadata {
     captionsEnabled: false,
     isAdvertisement: false,
     isLive: false,
+    playbackRate: 1,
     playbackTimeMs: 0,
     playbackState: 'paused',
   };
@@ -257,6 +259,7 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       captionsEnabled,
       isAdvertisement,
       isLive,
+      playbackRate: Math.min(2, Math.max(0.25, video?.playbackRate ?? 1)),
       playbackTimeMs: Math.round(playbackTimeSeconds * 1_000),
       playbackState,
     };

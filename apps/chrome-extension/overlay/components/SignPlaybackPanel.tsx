@@ -9,6 +9,7 @@ import { EnglishCaptionTrack, FloatingCaption } from './EnglishCaptionTrack';
 import { UIIcon } from './UIIcon';
 import { useInterpreterGeometry } from '../hooks/useInterpreterGeometry';
 import { DEFAULT_AVATAR, type AvatarProfile } from '../../playback/avatarProfiles';
+import type { MediaClockSample } from '../../synchronization/SynchronizationTimeline';
 
 const EMPTY_SEQUENCE: PlaybackSequence = { items: [], unsupported_tokens: [] };
 
@@ -36,9 +37,9 @@ export type InterpreterActivity =
   | 'Playing'
   | 'Waiting';
 
-function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile, floatingOnly = false, onActivityChange }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile; floatingOnly?: boolean; onActivityChange?: (activity: InterpreterActivity) => void }) {
-  const controller = usePlaybackController(sequence);
-  const { scheduled, snapshot, totalDuration } = controller;
+function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile, floatingOnly = false, onActivityChange, mediaClock, debugEnabled = false }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile; floatingOnly?: boolean; onActivityChange?: (activity: InterpreterActivity) => void; mediaClock?: MediaClockSample | null; debugEnabled?: boolean }) {
+  const controller = usePlaybackController(sequence, mediaClock);
+  const { scheduled, snapshot, synchronization, synchronized, totalDuration } = controller;
   const current = scheduled?.item;
   const currentAsset = resolveAsset(current);
   const nextItem = sequence.items[(scheduled?.index ?? -1) + 1];
@@ -79,8 +80,8 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
   }, [onActivityChange, playbackStatus]);
 
   useEffect(() => {
-    if (paused && snapshot.state === 'Playing') controller.pause();
-  }, [paused, snapshot.state]);
+    if (paused && snapshot.state === 'Playing' && !synchronized) controller.pause();
+  }, [paused, snapshot.state, synchronized]);
 
   useEffect(() => {
     console.info('[SignVerse] playback_sequence_received', {
@@ -195,6 +196,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
           caption={sourceText}
           currentIndex={scheduled?.index ?? 0}
           emptyMessage={sourceStatus || 'Waiting for speech or captions…'}
+          playbackItems={sequence.items}
           signDurations={sequence.items.map((item) => item.duration)}
         />
         {overlayState === 'visible' && (
@@ -274,12 +276,15 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
         </button>
         <label className="sv-speed-control">
           <span>Speed</span>
-          <select aria-label="Playback speed" onChange={(event) => controller.setSpeed(Number(event.currentTarget.value))} value={snapshot.speed}>
+          <select aria-label={synchronized ? 'Playback speed follows source video' : 'Playback speed'} disabled={synchronized} onChange={(event) => controller.setSpeed(Number(event.currentTarget.value))} value={snapshot.speed}>
+            <option value="0.25">0.25×</option>
             <option value="0.5">0.5×</option>
             <option value="0.75">0.75×</option>
             <option value="1">1×</option>
             <option value="1.25">1.25×</option>
             <option value="1.5">1.5×</option>
+            <option value="1.75">1.75×</option>
+            <option value="2">2×</option>
           </select>
         </label>
       </div>
@@ -307,8 +312,22 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
         caption={sourceText}
         currentIndex={scheduled?.index ?? 0}
         emptyMessage={sourceStatus || 'English source text is unavailable.'}
+        playbackItems={sequence.items}
         signDurations={sequence.items.map((item) => item.duration)}
       />
+
+      {debugEnabled && synchronized && (
+        <dl aria-label="Synchronization timing diagnostics" className="sv-sync-diagnostics">
+          <div><dt>Media time</dt><dd>{Math.round(synchronization.mediaPositionMs)} ms</dd></div>
+          <div><dt>Drift</dt><dd>{Math.round(synchronization.driftMs)} ms</dd></div>
+          <div><dt>Rate</dt><dd>{synchronization.playbackRate.toFixed(2)}×</dd></div>
+          <div><dt>Buffer</dt><dd>{synchronization.bufferDepth} signs</dd></div>
+          <div><dt>Corrections</dt><dd>{synchronization.correctionCount}</dd></div>
+          <div><dt>Seek resets</dt><dd>{synchronization.hardCorrectionCount}</dd></div>
+          <div><dt>Late items</dt><dd>{synchronization.lateItemCount}</dd></div>
+          <div><dt>State</dt><dd>{synchronization.state}</dd></div>
+        </dl>
+      )}
 
       <div className="sv-token-queue">
         <span>Playback order</span>
@@ -338,7 +357,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
   );
 }
 
-export function SignPlaybackPanel({ state, paused = false, portalTarget = null, sourceStatus = '', sourceText = '', profile = DEFAULT_AVATAR, onActivityChange }: { state: InterpretationState; paused?: boolean; portalTarget?: HTMLDivElement | null; sourceStatus?: string; sourceText?: string; profile?: AvatarProfile; onActivityChange?: (activity: InterpreterActivity) => void }) {
+export function SignPlaybackPanel({ state, paused = false, portalTarget = null, sourceStatus = '', sourceText = '', profile = DEFAULT_AVATAR, onActivityChange, mediaClock = null, debugEnabled = false }: { state: InterpretationState; paused?: boolean; portalTarget?: HTMLDivElement | null; sourceStatus?: string; sourceText?: string; profile?: AvatarProfile; onActivityChange?: (activity: InterpreterActivity) => void; mediaClock?: MediaClockSample | null; debugEnabled?: boolean }) {
   const [fallbackPortalTarget, setFallbackPortalTarget] = useState<HTMLDivElement | null>(null);
   if (state.status === 'loading') {
     return (
@@ -350,6 +369,8 @@ export function SignPlaybackPanel({ state, paused = false, portalTarget = null, 
         </section>
         <PlaybackController
           floatingOnly
+          debugEnabled={debugEnabled}
+          mediaClock={mediaClock}
           paused={paused}
           portalTarget={portalTarget}
           profile={profile}
@@ -368,7 +389,7 @@ export function SignPlaybackPanel({ state, paused = false, portalTarget = null, 
   return (
     <>
       <CollapsibleCard badge={`${sequence.items.length || glossCount} signs`} defaultExpanded icon="translate" title="ISL Playback">
-        <PlaybackController sourceStatus={sourceStatus} sourceText={sourceText} paused={paused} portalTarget={portalTarget ?? fallbackPortalTarget} profile={profile} sequence={sequence} onActivityChange={onActivityChange} />
+        <PlaybackController sourceStatus={sourceStatus} sourceText={sourceText} paused={paused} portalTarget={portalTarget ?? fallbackPortalTarget} profile={profile} sequence={sequence} onActivityChange={onActivityChange} mediaClock={mediaClock} debugEnabled={debugEnabled} />
       </CollapsibleCard>
       {!portalTarget && <div ref={setFallbackPortalTarget} />}
     </>

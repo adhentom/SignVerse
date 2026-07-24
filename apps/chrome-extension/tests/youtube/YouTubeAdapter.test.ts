@@ -202,6 +202,21 @@ describe('YouTubeCaptionSession', () => {
     expect(latest().currentPacket?.metadata.cueId).toBe(cueId);
   });
 
+  it('publishes source playback-rate changes for avatar synchronization', async () => {
+    const { video } = renderYouTubePlayer();
+    const { latest } = startSession();
+
+    Object.defineProperty(video, 'playbackRate', {
+      configurable: true,
+      value: 1.75,
+      writable: true,
+    });
+    video.dispatchEvent(new Event('ratechange'));
+    await flushObservers();
+
+    expect(latest().metadata.playbackRate).toBe(1.75);
+  });
+
   it('reports disabled, unavailable, advertisement, paused, seeking, and live states', async () => {
     const { caption, captionsButton, player, video } = renderYouTubePlayer({
       caption: '',
