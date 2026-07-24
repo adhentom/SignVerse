@@ -1598,19 +1598,62 @@
   position: fixed;
   z-index: 2147483646;
   display: grid;
-  grid-template: 32px minmax(180px, 1fr) auto auto / minmax(0, 1fr);
-  width: 300px;
-  min-width: 240px;
-  height: 440px;
-  min-height: 360px;
+  grid-template: 48px auto minmax(260px, 1fr) auto / minmax(0, 1fr);
+  width: 360px;
+  min-width: 280px;
+  max-width: calc(100vw - 16px);
+  height: 580px;
+  min-height: 460px;
+  max-height: calc(100vh - 16px);
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(169, 156, 255, 0.36);
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(184, 176, 255, 0.3);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 20%, rgba(124, 108, 255, 0.2), transparent 42%),
+    rgba(7, 10, 18, 0.97);
+  box-shadow:
+    0 28px 90px rgba(0, 0, 0, 0.58),
+    0 8px 28px rgba(0, 0, 0, 0.34),
+    inset 0 1px rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(24px);
+  container-type: inline-size;
   resize: both;
 }
 
-.sv-interpreter-overlay .sv-avatar-shell {
+.sv-interpreter-titlebar {
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px 5px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(13, 16, 28, 0.9);
+}
+
+.sv-interpreter-avatar-area {
+  position: relative;
+  grid-row: 3;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(124, 108, 255, 0.26), transparent 52%),
+    linear-gradient(180deg, rgba(18, 22, 39, 0.88), rgba(7, 10, 18, 0.96));
+}
+
+.sv-interpreter-avatar-area::after {
+  position: absolute;
+  right: 10%;
+  bottom: 0;
+  left: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(169, 156, 255, 0.4), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.sv-interpreter-avatar-area .sv-avatar-shell {
   grid-row: 2;
   width: 100%;
   height: 100%;
@@ -1620,23 +1663,29 @@
 
 .sv-interpreter-overlay .sv-current-sign {
   position: static;
-  grid-row: 3;
-  padding: 12px 14px 10px;
+  grid-row: 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 78px;
+  padding: 12px 16px 14px;
   border-top: 1px solid var(--sv-border);
-  background: rgba(5, 8, 14, 0.94);
+  background: rgba(5, 8, 14, 0.96);
 }
 
 .sv-floating-caption {
-  grid-row: 4;
+  grid-row: 2;
   min-width: 0;
-  padding: 10px 14px 12px;
-  border-top: 1px solid var(--sv-border);
-  background: rgba(3, 6, 12, 0.98);
+  min-height: 78px;
+  padding: 11px 16px 13px;
+  border-bottom: 1px solid var(--sv-border);
+  background: rgba(7, 10, 18, 0.97);
 }
 
 .sv-floating-caption span {
-  color: #a9a1df;
-  font-size: 9px;
+  color: #b9b1f2;
+  font-size: 10px;
   font-weight: 760;
   letter-spacing: 0.11em;
   text-transform: uppercase;
@@ -1644,15 +1693,19 @@
 
 .sv-floating-caption p {
   margin: 4px 0 0;
+  display: -webkit-box;
+  overflow: hidden;
   overflow-wrap: anywhere;
   color: #fff;
-  font-size: 15px;
-  font-weight: 650;
-  line-height: 1.45;
+  font-size: clamp(15px, 4.4cqw, 19px);
+  font-weight: 680;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .sv-interpreter-overlay--minimized {
-  grid-template-rows: 32px auto;
+  grid-template-rows: 48px auto;
   height: auto !important;
   min-height: 0;
   resize: none;
@@ -1660,42 +1713,143 @@
 
 .sv-interpreter-overlay--minimized .sv-floating-caption {
   grid-row: 2;
+  min-height: 0;
+  border-bottom: 0;
 }
 
 .sv-avatar-drag-handle {
-  grid-row: 1;
-  width: 100%;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+  padding: 4px;
   border: 0;
   color: #d8d3ff;
-  background: rgba(16, 18, 30, 0.96);
+  background: transparent;
   cursor: move;
-  font-size: 10px;
-  font-weight: 750;
+  text-align: left;
+}
+
+.sv-avatar-drag-handle > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.sv-avatar-drag-handle strong,
+.sv-avatar-drag-handle small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sv-avatar-drag-handle strong {
+  color: #f6f4ff;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.sv-avatar-drag-handle small {
+  color: #8f98aa;
+  font-size: 9px;
+}
+
+.sv-interpreter-brand {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(185, 177, 242, 0.35);
+  border-radius: 9px;
+  color: #f0edff;
+  background: linear-gradient(145deg, rgba(124, 108, 255, 0.48), rgba(75, 65, 167, 0.22));
+  font-size: 9px;
+  font-weight: 850;
   letter-spacing: 0.04em;
 }
 
+.sv-interpreter-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 4px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: #abb4c4;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 9px;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.sv-interpreter-status > span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #788397;
+}
+
+.sv-interpreter-status--active > span {
+  background: var(--sv-green);
+  box-shadow: 0 0 0 3px rgba(67, 214, 162, 0.12);
+}
+
+.sv-interpreter-status--processing > span {
+  background: var(--sv-primary-bright);
+  animation: sv-status-pulse 1.4s ease-in-out infinite;
+}
+
+.sv-interpreter-status--error > span {
+  background: var(--sv-red);
+}
+
 .sv-floating-controls {
-  position: absolute;
-  z-index: 4;
-  top: 3px;
-  right: 4px;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
 }
 
 .sv-floating-controls button,
 .sv-floating-playback button {
   display: grid;
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   padding: 0;
-  border: 0;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
   color: #e8e5ff;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
   cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.sv-floating-controls button:hover {
+  border-color: rgba(169, 156, 255, 0.4);
+  background: rgba(124, 108, 255, 0.14);
+}
+
+.sv-floating-controls button:last-child:hover {
+  border-color: rgba(251, 113, 133, 0.45);
+  background: rgba(251, 113, 133, 0.12);
+}
+
+.sv-floating-controls .sv-ui-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.sv-sign-progress {
+  align-self: center;
+  padding: 5px 8px;
+  border: 1px solid rgba(169, 156, 255, 0.2);
+  border-radius: 999px;
+  color: #bdb6ed !important;
+  background: rgba(124, 108, 255, 0.09);
+  font-size: 9px !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
 }
 
 .sv-floating-playback {
@@ -1897,14 +2051,60 @@
   }
 }
 
+.sv-developer-section {
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.sv-developer-section > summary {
+  display: grid;
+  gap: 2px;
+  padding: 11px 12px;
+  color: var(--sv-text-secondary);
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.sv-developer-section > summary:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.sv-developer-section > summary span {
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.sv-developer-section > summary small {
+  margin-left: 17px;
+  color: var(--sv-text-muted);
+  font-size: 10px;
+}
+
+.sv-developer-section-content {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.055);
+}
+
+.sv-developer-section-content > p {
+  margin: 10px 0 0;
+  color: var(--sv-text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 .sv-debug-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
   width: fit-content;
-  margin: 0 0 10px auto;
+  margin: 0;
   color: var(--sv-text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
 }
 
@@ -1982,6 +2182,42 @@
 
   .sv-sidebar-header {
     padding-left: 14px;
+  }
+
+  .sv-interpreter-overlay {
+    min-width: min(280px, calc(100vw - 16px));
+    border-radius: 16px;
+  }
+
+  .sv-interpreter-status {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@container (max-width: 310px) {
+  .sv-interpreter-status {
+    width: 9px;
+    height: 9px;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    color: transparent;
+    background: transparent;
+    font-size: 0;
+  }
+
+  .sv-interpreter-status > span {
+    flex: 0 0 auto;
+  }
+
+  .sv-floating-caption {
+    padding-inline: 12px;
+  }
+
+  .sv-interpreter-overlay .sv-current-sign {
+    padding-inline: 12px;
   }
 }
 

@@ -47,6 +47,22 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
   const [rendererAttempt, setRendererAttempt] = useState(0);
   const [overlayState, setOverlayState] = useState<'closed' | 'minimized' | 'visible'>('visible');
   const { geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
+  const playbackStatus = paused
+    ? 'Paused'
+    : snapshot.state === 'Error'
+      ? 'Attention needed'
+      : current
+        ? snapshot.state
+        : sourceText
+          ? 'Interpreting'
+          : 'Waiting';
+  const statusTone = snapshot.state === 'Error'
+    ? 'error'
+    : playbackStatus === 'Playing'
+      ? 'active'
+      : playbackStatus === 'Interpreting'
+        ? 'processing'
+        : 'idle';
 
   useEffect(() => {
     if (paused && snapshot.state === 'Playing') controller.pause();
@@ -119,63 +135,87 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
         ref={stageRef}
         style={{ left: geometry.x, top: geometry.y, width: geometry.width, height: geometry.height }}
       >
-        <button
-          aria-label="Move interpreter; use arrow keys or drag"
-          className="sv-avatar-drag-handle"
-          onKeyDown={moveWithKeyboard}
-          onPointerDown={startDrag}
-          type="button"
-        >SignVerse Interpreter · drag</button>
-        <div aria-label="Interpreter window controls" className="sv-floating-controls">
+        <header className="sv-interpreter-titlebar">
           <button
-            aria-label={overlayState === 'minimized' ? 'Expand interpreter' : 'Minimize interpreter'}
-            onClick={() => setOverlayState((currentState) => (
-              currentState === 'minimized' ? 'visible' : 'minimized'
-            ))}
+            aria-label="Move interpreter; use arrow keys or drag"
+            className="sv-avatar-drag-handle"
+            onKeyDown={moveWithKeyboard}
+            onPointerDown={startDrag}
             type="button"
           >
-            <UIIcon name={overlayState === 'minimized' ? 'accessibility' : 'minimize'} />
+            <span className="sv-interpreter-brand">SV</span>
+            <span>
+              <strong>SignVerse</strong>
+              <small>ISL interpreter</small>
+            </span>
           </button>
-          <button
-            aria-label="Close interpreter"
-            onClick={() => setOverlayState('closed')}
-            type="button"
+          <div
+            aria-live="polite"
+            className={`sv-interpreter-status sv-interpreter-status--${statusTone}`}
           >
-            <UIIcon name="close" />
-          </button>
-        </div>
-        {overlayState === 'visible' && (
-          <>
-            <AvatarRenderer
-              asset={currentAsset}
-              cue={current}
-              cueIndex={scheduled?.index ?? -1}
-              nextAsset={nextAsset}
-              onError={controller.fail}
-              playing={snapshot.state === 'Playing'}
-              progress={scheduled?.localProgress ?? 0}
-              profile={profile}
-              reducedMotion={reducedMotion}
-              retryKey={rendererAttempt}
-              speed={snapshot.speed}
-            />
-            <div className="sv-current-sign" aria-live="polite">
-              <span>Current sign</span>
-              <strong>{current?.source_gloss ?? current?.token_id ?? 'Preparing interpretation'}</strong>
-              <small>{currentAsset
-                ? `${currentAsset.display_name} · ISL sign`
-                : current ? 'Dataset asset unavailable' : firstMiss
-                  ? `${firstMiss.token || '(blank)'} — ${firstMiss.detail}`
-                  : 'Waiting for an ISL playback plan'}</small>
-            </div>
-          </>
-        )}
+            <span />
+            {playbackStatus}
+          </div>
+          <div aria-label="Interpreter window controls" className="sv-floating-controls">
+            <button
+              aria-label={overlayState === 'minimized' ? 'Expand interpreter' : 'Minimize interpreter'}
+              onClick={() => setOverlayState((currentState) => (
+                currentState === 'minimized' ? 'visible' : 'minimized'
+              ))}
+              title={overlayState === 'minimized' ? 'Expand interpreter' : 'Minimize interpreter'}
+              type="button"
+            >
+              <UIIcon name={overlayState === 'minimized' ? 'accessibility' : 'minimize'} />
+            </button>
+            <button
+              aria-label="Close interpreter"
+              onClick={() => setOverlayState('closed')}
+              title="Close interpreter"
+              type="button"
+            >
+              <UIIcon name="close" />
+            </button>
+          </div>
+        </header>
         <FloatingCaption
           caption={sourceText}
           currentIndex={scheduled?.index ?? 0}
           emptyMessage={sourceStatus || 'Waiting for speech or captions…'}
           signCount={sequence.items.length}
         />
+        {overlayState === 'visible' && (
+          <>
+            <div className="sv-interpreter-avatar-area">
+              <AvatarRenderer
+                asset={currentAsset}
+                cue={current}
+                cueIndex={scheduled?.index ?? -1}
+                nextAsset={nextAsset}
+                onError={controller.fail}
+                playing={snapshot.state === 'Playing'}
+                progress={scheduled?.localProgress ?? 0}
+                profile={profile}
+                reducedMotion={reducedMotion}
+                retryKey={rendererAttempt}
+                speed={snapshot.speed}
+              />
+            </div>
+            <div className="sv-current-sign" aria-live="polite">
+              <div>
+                <span>Current sign</span>
+                <strong>{current?.source_gloss ?? current?.token_id ?? 'Preparing interpretation'}</strong>
+                <small>{currentAsset
+                  ? `${currentAsset.display_name} · ISL sign`
+                  : current ? 'Dataset asset unavailable' : firstMiss
+                    ? `${firstMiss.token || '(blank)'} — ${firstMiss.detail}`
+                    : 'Waiting for an ISL playback plan'}</small>
+              </div>
+              <span className="sv-sign-progress">
+                {current ? `${(scheduled?.index ?? 0) + 1} of ${sequence.items.length}` : 'Ready'}
+              </span>
+            </div>
+          </>
+        )}
       </div>
     ),
     portalTarget,

@@ -31,14 +31,20 @@ quality gate for changes to this flow.
 
 The floating interpreter opens automatically for YouTube interpretation. It provides:
 
-- an English source caption synchronized to the active sign;
-- the SignVerse avatar and playback status;
+- an English source caption above and synchronized to the active sign;
+- a large, responsive SignVerse avatar stage;
+- the current sign and sequence position below the avatar;
+- visible waiting, interpreting, playing, paused, and error status indicators;
 - smooth, bounded transitions between sign poses;
 - minimize, restore, close, drag, and resize controls; and
 - keyboard and screen-reader semantics.
 
+Interpreter position and size are persisted in extension-local storage. Restored geometry is
+clamped to the current viewport so browser resizing cannot strand the controls off-screen.
+
 Mock-provider and playback-debug controls are compiled into development builds only when
-`VITE_SIGNVERSE_ENABLE_DEVELOPER_CONTROLS=true`. They are not visible in the normal production UI.
+`VITE_SIGNVERSE_ENABLE_DEVELOPER_CONTROLS=true`. They are not visible in the normal production UI;
+eligible builds place ISL inspection inside a collapsed **Advanced Developer** disclosure.
 
 ## Structured diagnostics
 

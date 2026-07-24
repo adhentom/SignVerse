@@ -68,8 +68,12 @@ return through the focused floating action button.
 
 On YouTube, the floating interpreter is mounted automatically. Its caption strip displays the
 active official-caption or tab-audio packet immediately, then advances through caption segments
-with the scheduled ISL signs once a playback plan arrives. The interpreter window can be dragged,
-minimized while retaining its caption strip, closed, and restored with keyboard-accessible controls.
+with the scheduled ISL signs once a playback plan arrives. The window uses an accessibility-first
+reading order: synchronized caption, large avatar stage, then the current sign and sequence
+position. A live status indicator distinguishes waiting, interpreting, playing, paused, and error
+states. The interpreter can be dragged with a pointer or keyboard, resized responsively, minimized
+while retaining its caption strip, closed, and restored. Position and border-box size are saved in
+extension-local storage and clamped back into the viewport when the browser window changes.
 
 The Malayalam Translation card is independently collapsible and scrollable, identifies its
 content as Malayalam for assistive technology, and provides an accessible copy action with
@@ -79,7 +83,9 @@ The interface uses visible focus states, semantic landmarks, ARIA live regions, 
 media queries, and reduced-motion behavior. Backend failures distinguish offline, timeout,
 configuration, unavailable, and invalid-response states and provide a local retry action.
 Developer diagnostics are excluded from the normal UI. Local development builds may opt in with
-`VITE_SIGNVERSE_ENABLE_DEVELOPER_CONTROLS=true`; production builds ignore that switch.
+`VITE_SIGNVERSE_ENABLE_DEVELOPER_CONTROLS=true`; production builds ignore that switch. In an
+eligible development build, ISL diagnostics remain hidden inside the collapsed
+**Advanced Developer** section until explicitly opened and enabled.
 
 Website extraction runs in the generic-web content adapter and follows the user's reading context. A visible text selection has highest priority. Otherwise, the adapter resolves the nearest readable paragraph, heading, list item, caption, or article section at the current pointer, click, or caret position. Context changes are debounced for 400 ms and identical blocks are deduplicated, so moving within one paragraph does not produce repeated interpretations. Hidden content, scripts, styles, the SignVerse widget, and common advertisement containers are excluded. Only the localized normalized packet is sent to the configured backend; it is not persisted by the extension.
 

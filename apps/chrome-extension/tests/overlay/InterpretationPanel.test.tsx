@@ -112,6 +112,10 @@ describe('InterpretationPanel', () => {
     expect(container.textContent).toContain('Hello there.');
     expect(container.textContent).toContain('dataset-hello');
     expect(container.textContent).toContain('90%');
+    const developerSection = container.querySelector<HTMLDetailsElement>('.sv-developer-section');
+    expect(developerSection?.open).toBe(false);
+    expect(developerSection?.querySelector('summary')?.textContent)
+      .toContain('Advanced Developer');
     const toggle = container.querySelector<HTMLInputElement>('input[type="checkbox"]');
     act(() => toggle?.click());
     expect(onDebugChange).toHaveBeenCalledWith(false);

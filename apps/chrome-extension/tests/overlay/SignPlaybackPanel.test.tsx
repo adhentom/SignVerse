@@ -83,6 +83,15 @@ describe('SignPlaybackPanel', () => {
     });
 
     const minimize = portal.querySelector<HTMLButtonElement>('[aria-label="Minimize interpreter"]');
+    const caption = portal.querySelector('.sv-floating-caption');
+    const avatar = portal.querySelector('.sv-interpreter-avatar-area');
+    const currentSign = portal.querySelector('.sv-current-sign');
+    expect(caption).not.toBeNull();
+    expect(avatar).not.toBeNull();
+    expect(currentSign).not.toBeNull();
+    expect(caption!.compareDocumentPosition(avatar!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(avatar!.compareDocumentPosition(currentSign!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(portal.querySelector('.sv-interpreter-status')?.textContent).toContain('Interpreting');
     act(() => minimize?.click());
     expect(portal.querySelector('.sv-interpreter-overlay--minimized')).not.toBeNull();
     expect(portal.querySelector('.sv-floating-caption')?.textContent).toContain('Speech remains visible');
@@ -188,6 +197,41 @@ describe('SignPlaybackPanel', () => {
     expect(set).toHaveBeenCalledWith(expect.objectContaining({
       'signverse.interpreterGeometry': expect.objectContaining({ x: 34 }),
     }));
+  });
+
+  it('restores the saved interpreter position and size', async () => {
+    vi.stubGlobal('chrome', {
+      runtime: { getURL: (path: string) => path },
+      storage: {
+        local: {
+          get: vi.fn().mockResolvedValue({
+            'signverse.interpreterGeometry': {
+              x: 48,
+              y: 36,
+              width: 420,
+              height: 620,
+            },
+          }),
+          set: vi.fn().mockResolvedValue(undefined),
+        },
+      },
+    });
+    await act(async () => {
+      root.render(<SignPlaybackPanel state={{
+        status: 'ready',
+        response: {
+          summary: '', malayalam_translation: '', key_points: [], keywords: [], glossary: [],
+          isl_gloss: [], confidence: 0, playback: { items: [], unsupported_tokens: [] },
+        },
+      }} />);
+      await Promise.resolve();
+    });
+
+    const overlay = container.querySelector<HTMLElement>('.sv-interpreter-overlay');
+    expect(overlay?.style.left).toBe('48px');
+    expect(overlay?.style.top).toBe('36px');
+    expect(overlay?.style.width).toBe('420px');
+    expect(overlay?.style.height).toBe('620px');
   });
 
   it('reads resized border-box dimensions instead of the smaller content box', () => {

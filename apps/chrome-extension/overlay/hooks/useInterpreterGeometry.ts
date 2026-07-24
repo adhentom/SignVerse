@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 
 const STORAGE_KEY = 'signverse.interpreterGeometry';
-const DEFAULT_GEOMETRY = { x: 24, y: 80, width: 300, height: 440 };
+const DEFAULT_GEOMETRY = { x: 24, y: 80, width: 360, height: 580 };
 
 interface Geometry {
   x: number;

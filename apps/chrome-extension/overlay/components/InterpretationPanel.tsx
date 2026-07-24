@@ -130,10 +130,7 @@ function DiagnosticCard({ response }: { response: InterpretationResponse }) {
   );
 }
 
-function InterpretationResult({ debugEnabled, response }: {
-  debugEnabled: boolean;
-  response: InterpretationResponse;
-}) {
+function InterpretationResult({ response }: { response: InterpretationResponse }) {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
   useEffect(() => setCopyStatus('idle'), [response.malayalam_translation]);
@@ -200,8 +197,38 @@ function InterpretationResult({ debugEnabled, response }: {
           </ul>
         ) : <EmptyCopy>No glossary entries were returned.</EmptyCopy>}
       </CollapsibleCard>
-      {debugEnabled && <DiagnosticCard response={response} />}
     </div>
+  );
+}
+
+function AdvancedDeveloperSection({
+  debugEnabled,
+  onDebugChange,
+  response,
+}: {
+  debugEnabled: boolean;
+  onDebugChange: (enabled: boolean) => void;
+  response?: InterpretationResponse;
+}) {
+  return (
+    <details className="sv-developer-section">
+      <summary>
+        <span>Advanced Developer</span>
+        <small>Diagnostics and ISL inspection</small>
+      </summary>
+      <div className="sv-developer-section-content">
+        <p>Developer diagnostics can expose internal gloss and asset-planning data.</p>
+        <label className="sv-debug-toggle">
+          <input
+            checked={debugEnabled}
+            onChange={(event) => onDebugChange(event.target.checked)}
+            type="checkbox"
+          />
+          <span>Enable ISL debugging</span>
+        </label>
+        {debugEnabled && response && <DiagnosticCard response={response} />}
+      </div>
+    </details>
   );
 }
 
@@ -211,20 +238,16 @@ export function InterpretationPanel({
   onRetry,
   state,
 }: InterpretationPanelProps) {
-  const debugControl = onDebugChange && (
-    <label className="sv-debug-toggle">
-      <input
-        checked={debugEnabled}
-        onChange={(event) => onDebugChange(event.target.checked)}
-        type="checkbox"
-      />
-      <span>ISL debugging</span>
-    </label>
+  const developerSection = onDebugChange && (
+    <AdvancedDeveloperSection
+      debugEnabled={debugEnabled}
+      onDebugChange={onDebugChange}
+      response={state.status === 'ready' ? state.response : undefined}
+    />
   );
   if (state.status === 'idle') {
     return (
       <>
-        {debugControl}
         <div aria-live="polite" className="sv-state-card">
           <span className="sv-state-icon"><UIIcon name="clock" /></span>
           <div>
@@ -232,6 +255,7 @@ export function InterpretationPanel({
             <span>SignVerse will begin when readable text or captions are available.</span>
           </div>
         </div>
+        {developerSection}
       </>
     );
   }
@@ -270,5 +294,10 @@ export function InterpretationPanel({
     );
   }
 
-  return <>{debugControl}<InterpretationResult debugEnabled={debugEnabled} response={state.response} /></>;
+  return (
+    <>
+      <InterpretationResult response={state.response} />
+      {developerSection}
+    </>
+  );
 }
