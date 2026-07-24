@@ -1,0 +1,15 @@
+export { InterpretationEngine } from './InterpretationEngine';
+export { defaultInterpretationDatabases } from './databases/defaultDatabases';
+export { FingerSpeller } from './fallback/FingerSpeller';
+export { UnknownWordHandler } from './fallback/UnknownWordHandler';
+export { ContextNormalizer } from './normalization/ContextNormalizer';
+export { GrammarNormalizer } from './normalization/GrammarNormalizer';
+export { GlossOptimizer } from './optimization/GlossOptimizer';
+export { AnimationPlanner } from './planning/AnimationPlanner';
+export { PlaybackPlanner } from './planning/PlaybackPlanner';
+export type { ISLGlossProvider } from './providers/ISLGlossProvider';
+export { GlossProviderRegistry } from './providers/ISLGlossProvider';
+export { MappingGlossProvider } from './providers/MappingGlossProvider';
+export { SentenceSegmenter } from './segmentation/SentenceSegmenter';
+export type * from './types';
+export { VocabularyLookup } from './vocabulary/VocabularyLookup';

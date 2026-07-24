@@ -20,6 +20,7 @@
   "include": [
     "background",
     "content",
+    "isl",
     "overlay",
     "popup",
     "shared",
