@@ -29,9 +29,9 @@ describe('backend configuration', () => {
       }]);
   });
 
-  it('declares the MV3 capabilities required for user-authorized tab audio', () => {
+  it('grants tab audio capture for automatic caption fallback', () => {
     expect(createManifest('https://api.signverse.test').permissions).toEqual(
-      expect.arrayContaining(['offscreen', 'tabCapture']),
+      expect.arrayContaining(['activeTab', 'offscreen', 'storage', 'tabCapture']),
     );
   });
 

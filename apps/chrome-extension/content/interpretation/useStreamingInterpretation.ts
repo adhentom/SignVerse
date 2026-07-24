@@ -191,6 +191,12 @@ export function useStreamingInterpretation(
           textLength: item.text.length,
           generation,
         });
+        console.info('[SignVerse] packet_sent', {
+          sequence,
+          platform: item.platform,
+          source: String(item.metadata.transcriptionSource ?? 'official'),
+          textLength: item.text.length,
+        });
         if (streamStatus.current === 'connected') return;
         const timer = window.setTimeout(() => {
           fallbackTimers.current.delete(sequence);

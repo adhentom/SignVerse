@@ -91,7 +91,8 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
     if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
     if (event.key === ' ') {
       event.preventDefault();
-      snapshot.state === 'Playing' ? controller.pause() : controller.play();
+      if (snapshot.state === 'Playing') controller.pause();
+      else controller.play();
     } else if (event.key === 'ArrowRight') controller.seek(snapshot.elapsed + 0.5);
     else if (event.key === 'ArrowLeft') controller.seek(snapshot.elapsed - 0.5);
     else if (event.key === 'Home') controller.restart();

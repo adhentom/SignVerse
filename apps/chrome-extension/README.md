@@ -25,7 +25,9 @@ Run from the repository root:
 ```text
 npm install
 cp apps/chrome-extension/.env.example apps/chrome-extension/.env.local
+npm run lint
 npm run typecheck
+npm test
 npm run build
 ```
 
@@ -96,23 +98,24 @@ On `youtube.com/watch` pages, the YouTube adapter creates a local live-content s
 - emits unified `ContentPacket<YouTubePacketMetadata>` values; and
 - maintains a duplicate-free history of the last 10 captions.
 
-The session is stopped automatically when the content-script React effect unmounts. The adapter itself performs no network requests; current packets pass through the generic background-service integration and are not persisted by the extension.
+The session starts automatically on YouTube watch pages and stops when the content-script React
+effect unmounts. Current packets pass through the generic background-service integration and are
+not persisted by the extension.
 
 ### Captions from tab audio
 
-Official YouTube captions are optional. After showing SignVerse, open the extension popup and
-choose **Listen to video audio**. Chrome requires this explicit user gesture before `tabCapture`
-can begin. A Manifest V3 offscreen document records short, self-contained audio segments while
-routing the captured sound back to the speakers so the video remains audible. The configured
-backend transcribes those segments into English, and the content script converts each transcript
-into the same YouTube `ContentPacket` used by official captions. The floating interpreter therefore
-shows the transcribed English source and sends it through the unchanged semantic, Malayalam, ISL,
-asset-lookup, and playback pipeline.
+Official YouTube captions remain the preferred low-latency source. If no caption cue arrives within
+`VITE_SIGNVERSE_CAPTION_TIMEOUT_MS` (2.5 seconds by default), the content script asks the service
+worker to start `tabCapture`; no popup action is required. A Manifest V3 offscreen document records
+short, self-contained audio segments while routing captured sound back to the speakers. The
+configured backend transcribes each segment through `/transcribe`, and the content script converts
+the result into the same YouTube `ContentPacket` used by official captions.
 
-Listening stops when the user presses the popup control again, hides SignVerse, the captured track
-ends, or transcription fails. Audio is sent only to the configured SignVerse backend, is bounded to
-short segments, and is not persisted by the extension. The backend requires `OPENAI_API_KEY` for
-speech transcription.
+When official captions reappear, SignVerse immediately stops audio fallback, rejects late audio
+responses, and returns caption packets to the interpretation pipeline. Normalized repeated
+transcriptions are suppressed. Capture also stops when SignVerse unmounts, the captured track ends,
+or transcription fails. Audio is sent only to the configured SignVerse backend and is not persisted
+by the extension. The backend requires a configured speech-transcription provider.
 
 ## Google Meet live captions
 

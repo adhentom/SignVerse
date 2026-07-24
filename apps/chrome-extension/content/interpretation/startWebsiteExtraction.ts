@@ -35,7 +35,6 @@ export function startWebsiteExtraction(
 ): () => void {
   let stopped = false;
   let timer = 0;
-  let observer: MutationObserver | undefined;
   let anchor: Node | null = null;
   let point: { x: number; y: number } | undefined;
   let lastBlock: HTMLElement | null = null;
@@ -102,7 +101,7 @@ export function startWebsiteExtraction(
     schedule();
   };
 
-  observer = new context.MutationObserver(() => schedule());
+  const observer = new context.MutationObserver(() => schedule());
   if (context.document.body) {
     observer.observe(context.document.body, { childList: true, subtree: true, characterData: true });
   }
@@ -114,7 +113,7 @@ export function startWebsiteExtraction(
   return () => {
     stopped = true;
     context.clearTimeout(timer);
-    observer?.disconnect();
+    observer.disconnect();
     context.document.removeEventListener('pointermove', updatePointerContext);
     context.document.removeEventListener('click', updatePointerContext);
     context.document.removeEventListener('selectionchange', updateSelectionContext);

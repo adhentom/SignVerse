@@ -53,7 +53,11 @@ async function transcribe(blob: Blob, tabId: number): Promise<void> {
     if (!text || activeTabId !== tabId) return;
 
     sequence += 1;
-    console.info('[SignVerse] audio_transcript_received', { sequence, textLength: text.length });
+    console.info('[SignVerse] transcription_received', {
+      sequence,
+      source: 'tab-audio',
+      textLength: text.length,
+    });
     await chrome.runtime.sendMessage({
       type: 'SIGNVERSE_AUDIO_TRANSCRIPT',
       target: 'background',

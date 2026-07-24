@@ -15,7 +15,7 @@ export function createManifest(backendUrl?: string) {
   return {
     manifest_version: 3,
     name: 'SignVerse AI',
-    version: '0.1.0',
+    version: '0.1.1',
     description: 'Accessible website and live-caption interpretation through SignVerse AI.',
     permissions: ['activeTab', 'offscreen', 'storage', 'tabCapture'],
     host_permissions: getBackendHostPermissions(backendUrl),

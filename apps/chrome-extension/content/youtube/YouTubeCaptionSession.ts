@@ -13,6 +13,12 @@ import {
   getYouTubeVideoId,
   isYouTubeWatchPage,
 } from './youtubeUtils';
+import {
+  findYouTubeTranscriptTrackInDocument,
+  loadYouTubeTranscript,
+  transcriptCueAt,
+  type YouTubeTranscriptCue,
+} from './YouTubeTranscriptTrack';
 
 const HISTORY_LIMIT = 10;
 const VIDEO_EVENTS = [
@@ -58,6 +64,11 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
   private observedVideo: HTMLVideoElement | null = null;
   private readScheduled = false;
   private stopped = true;
+  private transcriptAbort: AbortController | null = null;
+  private transcriptCues: YouTubeTranscriptCue[] = [];
+  private transcriptLanguage = 'und';
+  private transcriptState: 'idle' | 'loading' | 'ready' | 'unavailable' = 'idle';
+  private transcriptVideoId = '';
 
   constructor(
     private readonly document: Document,
@@ -79,6 +90,7 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
 
   private readonly handleNavigation = () => {
     this.disconnectObservers();
+    this.resetTranscript();
     this.snapshot = initialSnapshot();
     this.connectToPage();
     this.readAndEmit();
@@ -201,10 +213,13 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
     const title = getVideoTitle(this.document);
     const channel = getChannelName(this.document);
     const videoId = getYouTubeVideoId(url);
+    this.ensureTranscript(videoId);
     const timestamp = formatPlaybackTimestamp(video?.currentTime ?? 0, isLive);
+    const transcriptText = transcriptCueAt(this.transcriptCues, video?.currentTime ?? 0)?.text ?? '';
     const metadata: YouTubePacketMetadata = {
       channel,
       language: this.document.querySelector(YOUTUBE_SELECTORS.captionSegments)?.getAttribute('lang') ||
+        (transcriptText ? this.transcriptLanguage : '') ||
         this.document.documentElement.lang || 'und',
       videoId,
       captionsEnabled,
@@ -238,17 +253,31 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       return;
     }
 
-    const captionText = this.readCaptionText();
+    const domCaptionText = this.readCaptionText();
+    const captionText = domCaptionText || transcriptText;
     const captionUnavailable =
       !captionsButton ||
       captionsButton.disabled ||
       captionsButton.getAttribute('aria-disabled') === 'true';
 
+    if (!captionText && this.transcriptState === 'loading') {
+      this.emit({
+        ...this.snapshot,
+        status: 'loading',
+        statusMessage: 'Loading the available YouTube transcript…',
+        title,
+        timestamp,
+        metadata,
+        currentPacket: null,
+      });
+      return;
+    }
+
     if (!captionText && captionUnavailable) {
       this.emit({
         ...this.snapshot,
         status: 'no-captions',
-        statusMessage: 'No official captions are available for this video.',
+        statusMessage: 'No transcript is available. Preparing video-audio transcription…',
         title,
         timestamp,
         metadata,
@@ -261,7 +290,9 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       this.emit({
         ...this.snapshot,
         status: 'captions-disabled',
-        statusMessage: 'Turn on YouTube captions to begin extraction.',
+        statusMessage: this.transcriptState === 'ready'
+          ? 'Waiting for the next transcript segment…'
+          : 'Waiting briefly before using video-audio transcription…',
         title,
         timestamp,
         metadata,
@@ -284,7 +315,9 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       statusMessage: video.paused
         ? 'Video paused. Captions will resume with playback.'
         : captionText
-          ? 'Reading official YouTube captions.'
+          ? domCaptionText
+            ? 'Reading official YouTube captions.'
+            : 'Reading the YouTube transcript without displaying captions.'
           : 'Waiting for the next caption…',
       title,
       timestamp,
@@ -301,6 +334,43 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       .join(' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private ensureTranscript(videoId: string): void {
+    if (!videoId || this.transcriptVideoId === videoId) return;
+    this.resetTranscript();
+    this.transcriptVideoId = videoId;
+    const track = findYouTubeTranscriptTrackInDocument(this.document, videoId);
+    if (!track) {
+      this.transcriptState = 'unavailable';
+      return;
+    }
+    this.transcriptState = 'loading';
+    this.transcriptLanguage = track.language;
+    const abort = new AbortController();
+    this.transcriptAbort = abort;
+    void loadYouTubeTranscript(track, abort.signal)
+      .then((cues) => {
+        if (abort.signal.aborted || this.transcriptVideoId !== videoId) return;
+        this.transcriptCues = cues;
+        this.transcriptState = cues.length > 0 ? 'ready' : 'unavailable';
+        this.scheduleRead();
+      })
+      .catch((error: unknown) => {
+        if (abort.signal.aborted) return;
+        console.warn('[SignVerse] youtube_transcript_unavailable', error);
+        this.transcriptState = 'unavailable';
+        this.scheduleRead();
+      });
+  }
+
+  private resetTranscript(): void {
+    this.transcriptAbort?.abort();
+    this.transcriptAbort = null;
+    this.transcriptCues = [];
+    this.transcriptLanguage = 'und';
+    this.transcriptState = 'idle';
+    this.transcriptVideoId = '';
   }
 
   private getPlaybackState(
@@ -364,6 +434,7 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
   private stop(): void {
     this.stopped = true;
     this.disconnectObservers();
+    this.resetTranscript();
     this.window.removeEventListener('yt-navigate-finish', this.handleNavigation);
     this.window.removeEventListener('popstate', this.handleNavigation);
     this.listener = null;

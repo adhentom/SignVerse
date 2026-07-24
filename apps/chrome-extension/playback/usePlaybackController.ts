@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PlaybackSequence } from '../shared/interpretation';
 import { AnimationScheduler } from './AnimationScheduler';
 import { transitionRendererState } from './stateMachine';
-import type { PlaybackSnapshot, RendererState } from './types';
+import type { PlaybackSnapshot } from './types';
 
 export function usePlaybackController(sequence: PlaybackSequence) {
   const sequenceKey = sequence.items.map((item) => `${item.token_id}:${item.asset_id}:${item.duration}`).join('|');

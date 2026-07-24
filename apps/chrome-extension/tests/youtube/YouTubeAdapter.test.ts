@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { YouTubeLiveSnapshot } from '../../shared/youtube';
 import { YouTubeAdapter } from '../../content/youtube/YouTubeAdapter';
 import { YouTubeCaptionSession } from '../../content/youtube/YouTubeCaptionSession';
@@ -86,6 +86,8 @@ describe('YouTubeCaptionSession', () => {
     stopSession?.();
     stopSession = null;
     document.body.innerHTML = '';
+    document.head.innerHTML = '';
+    vi.unstubAllGlobals();
   });
 
   function startSession(): {
@@ -129,6 +131,34 @@ describe('YouTubeCaptionSession', () => {
       },
     });
     expect(snapshot.history).toHaveLength(1);
+  });
+
+  it('reads an official transcript track while the YouTube CC button remains off', async () => {
+    const playerResponse = {
+      videoDetails: { videoId: 'video-1' },
+      captions: {
+        playerCaptionsTracklistRenderer: {
+          captionTracks: [{
+            baseUrl: 'https://www.youtube.com/api/timedtext?v=video-1&lang=en',
+            languageCode: 'en',
+          }],
+        },
+      },
+    };
+    document.head.innerHTML = `<script>var ytInitialPlayerResponse = ${JSON.stringify(playerResponse)};</script>`;
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      events: [{ tStartMs: 64_000, dDurationMs: 3_000, segs: [{ utf8: 'Transcript without visible captions' }] }],
+    }), { status: 200 })));
+    renderYouTubePlayer({ caption: '', captionsPressed: false });
+    const { latest } = startSession();
+
+    await flushObservers();
+    await flushObservers();
+
+    expect(latest().status).toBe('playing');
+    expect(latest().metadata.captionsEnabled).toBe(false);
+    expect(latest().currentPacket?.text).toBe('Transcript without visible captions');
+    expect(latest().statusMessage).toContain('without displaying captions');
   });
 
   it('observes caption updates, suppresses duplicates, and keeps the last 10 entries', async () => {

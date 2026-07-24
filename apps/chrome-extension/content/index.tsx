@@ -16,9 +16,16 @@ import { useStreamingInterpretation } from './interpretation/useStreamingInterpr
 import { useBackendHealth } from './interpretation/useBackendHealth';
 import { startWebsiteExtraction } from './interpretation/startWebsiteExtraction';
 import { getSignVerseVisible, VISIBILITY_STORAGE_KEY } from '../shared/visibility';
-import { isAudioCaptureMessage } from '../shared/audioCapture';
+import {
+  isAudioCaptureMessage,
+  type AudioCaptureMessage,
+} from '../shared/audioCapture';
 import type { YouTubeLiveSnapshot } from '../shared/youtube';
 import { appendAudioTranscript, audioStatusSnapshot } from './youtube/audioTranscript';
+import {
+  captionTimeoutMs,
+  YouTubeAudioFallback,
+} from './youtube/YouTubeAudioFallback';
 import {
   getIslDebugMode,
   ISL_DEBUG_STORAGE_KEY,
@@ -34,15 +41,41 @@ declare global {
 const MOCK_TEXT = 'Mock interpretation ready — no AI or external services are connected.';
 let mockEnabled = false;
 const platformAdapter = adapterFactory.create(window.location.href);
+const startsAutomatically = platformAdapter.platform.id === 'youtube';
 
 function WidgetContainer() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(startsAutomatically);
   const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
   const [liveState, setLiveState] = useState<LiveContentSnapshot | null>(null);
   const [audioLiveState, setAudioLiveState] = useState<YouTubeLiveSnapshot | null>(null);
   const [websitePacket, setWebsitePacket] = useState<ContentPacket | null>(null);
   const [debugEnabled, setDebugEnabled] = useState(false);
   const liveStateRef = useRef<LiveContentSnapshot | null>(null);
+  const audioFallbackRef = useRef<YouTubeAudioFallback | null>(null);
+
+  if (platformAdapter.platform.id === 'youtube' && !audioFallbackRef.current) {
+    audioFallbackRef.current = new YouTubeAudioFallback({
+      timeoutMs: captionTimeoutMs(import.meta.env.VITE_SIGNVERSE_CAPTION_TIMEOUT_MS),
+      startCapture: async () => {
+        const response = await chrome.runtime.sendMessage({
+          type: 'SIGNVERSE_AUDIO_FALLBACK_START',
+          target: 'background',
+        } satisfies AudioCaptureMessage) as { error?: string; ok: boolean };
+        if (!response.ok) {
+          console.warn('[SignVerse] audio_fallback_start_failed', {
+            error: response.error ?? 'Automatic audio capture could not start.',
+          });
+        }
+        return response.ok;
+      },
+      stopCapture: async () => {
+        await chrome.runtime.sendMessage({
+          type: 'SIGNVERSE_AUDIO_FALLBACK_STOP',
+          target: 'background',
+        } satisfies AudioCaptureMessage);
+      },
+    });
+  }
 
   useEffect(() => {
     liveStateRef.current = liveState;
@@ -69,16 +102,17 @@ function WidgetContainer() {
       }
 
       if (message.type === 'SIGNVERSE_AUDIO_TRANSCRIPT') {
+        const official = liveStateRef.current as YouTubeLiveSnapshot | null;
+        if (!audioFallbackRef.current?.acceptTranscription(message, official)) return false;
         setAudioLiveState((previous) => {
-          console.info('[SignVerse] youtube_audio_packet_ready', {
+          const next = appendAudioTranscript(previous, official, message);
+          console.info('[SignVerse] content_packet_created', {
+            source: 'tab-audio',
             sequence: message.sequence,
-            textLength: message.text.length,
+            textLength: next.currentPacket?.text.length ?? 0,
+            videoId: String(next.metadata.videoId ?? ''),
           });
-          return appendAudioTranscript(
-            previous,
-            liveStateRef.current as YouTubeLiveSnapshot | null,
-            message,
-          );
+          return next;
         });
       }
       return false;
@@ -88,13 +122,25 @@ function WidgetContainer() {
   }, []);
 
   useEffect(() => {
+    if (platformAdapter.platform.id !== 'youtube') return;
+    if (!visible) {
+      audioFallbackRef.current?.dispose();
+      setAudioLiveState(null);
+      return;
+    }
+    const official = liveState as YouTubeLiveSnapshot | null;
+    audioFallbackRef.current?.observe(official);
+    if (official?.currentPacket) setAudioLiveState(null);
+  }, [liveState, visible]);
+
+  useEffect(() => {
     let active = true;
     void getSignVerseVisible().then((value) => {
-      if (active) setVisible(value);
+      if (active) setVisible(startsAutomatically || value);
     });
     const handleStorage = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       if (area === 'local' && changes[VISIBILITY_STORAGE_KEY]) {
-        setVisible(changes[VISIBILITY_STORAGE_KEY].newValue === true);
+        setVisible(startsAutomatically || changes[VISIBILITY_STORAGE_KEY].newValue === true);
       }
     };
     chrome.storage.onChanged.addListener(handleStorage);
@@ -169,8 +215,10 @@ function WidgetContainer() {
     };
   }, [visible]);
 
-  const effectiveLiveState = platformAdapter.platform.id === 'youtube' && audioLiveState
-    ? audioLiveState
+  const effectiveLiveState = platformAdapter.platform.id === 'youtube'
+    ? liveState?.currentPacket
+      ? liveState
+      : audioLiveState ?? liveState
     : liveState;
   const extractedPacket = !visible
     ? null

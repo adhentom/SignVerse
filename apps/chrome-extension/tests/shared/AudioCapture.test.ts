@@ -5,6 +5,10 @@ import { isAudioCaptureMessage } from '../../shared/audioCapture';
 describe('audio capture messaging', () => {
   it('accepts typed capture events and rejects unrelated runtime messages', () => {
     expect(isAudioCaptureMessage({
+      type: 'SIGNVERSE_AUDIO_FALLBACK_START',
+      target: 'background',
+    })).toBe(true);
+    expect(isAudioCaptureMessage({
       type: 'SIGNVERSE_AUDIO_TRANSCRIPT',
       target: 'content',
       tabId: 7,

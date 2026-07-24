@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react';
 import { getSignVerseVisible, setSignVerseVisible } from '../shared/visibility';
-import {
-  AUDIO_CAPTURE_STORAGE_KEY,
-  type AudioCaptureMessage,
-  type AudioCaptureStatus,
-} from '../shared/audioCapture';
 
 type ViewState =
   | { kind: 'loading' }
-  | { kind: 'ready'; enabled: boolean; pageTitle: string; tabId: number }
+  | { kind: 'ready'; automatic: boolean; enabled: boolean; pageTitle: string }
   | { kind: 'error'; message: string };
 
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
@@ -25,19 +20,19 @@ async function getActiveTab(): Promise<chrome.tabs.Tab> {
   return tab;
 }
 
-async function loadPageState(): Promise<{ enabled: boolean; pageTitle: string; tabId: number }> {
+async function loadPageState(): Promise<{ automatic: boolean; enabled: boolean; pageTitle: string }> {
   const tab = await getActiveTab();
+  const hostname = new URL(tab.url!).hostname.toLowerCase();
+  const automatic = hostname === 'youtube.com' || hostname.endsWith('.youtube.com');
   return {
-    enabled: await getSignVerseVisible(),
+    automatic,
+    enabled: automatic || await getSignVerseVisible(),
     pageTitle: tab.title || 'Untitled page',
-    tabId: tab.id!,
   };
 }
 
 export function PopupApp() {
   const [view, setView] = useState<ViewState>({ kind: 'loading' });
-  const [audioStatus, setAudioStatus] = useState<AudioCaptureStatus>('idle');
-  const [audioError, setAudioError] = useState('');
 
   function connectToPage() {
     setView({ kind: 'loading' });
@@ -53,39 +48,7 @@ export function PopupApp() {
 
   useEffect(() => {
     connectToPage();
-    void chrome.storage.local.get(AUDIO_CAPTURE_STORAGE_KEY).then((stored) => {
-      if (typeof stored[AUDIO_CAPTURE_STORAGE_KEY] === 'number') setAudioStatus('listening');
-    });
   }, []);
-
-  async function toggleAudioCapture(tabId: number): Promise<void> {
-    setAudioError('');
-    if (audioStatus === 'listening') {
-      await chrome.runtime.sendMessage({
-        type: 'SIGNVERSE_AUDIO_CAPTURE_STOP',
-        target: 'background',
-        tabId,
-      } satisfies AudioCaptureMessage);
-      setAudioStatus('stopped');
-      return;
-    }
-
-    try {
-      setAudioStatus('starting');
-      const streamId = await chrome.tabCapture.getMediaStreamId({ targetTabId: tabId });
-      const response = await chrome.runtime.sendMessage({
-        type: 'SIGNVERSE_AUDIO_CAPTURE_START',
-        target: 'background',
-        streamId,
-        tabId,
-      } satisfies AudioCaptureMessage) as { error?: string; ok: boolean };
-      if (!response.ok) throw new Error(response.error || 'Tab audio capture could not start.');
-      setAudioStatus('listening');
-    } catch (error) {
-      setAudioStatus('error');
-      setAudioError(error instanceof Error ? error.message : 'Tab audio capture could not start.');
-    }
-  }
 
   return (
     <main className="min-h-[520px] w-[360px] bg-slate-950 text-slate-100">
@@ -151,51 +114,32 @@ export function PopupApp() {
                 </span>
               </div>
 
-              <button
-                aria-pressed={view.enabled}
-                className="mt-5 w-full rounded-xl bg-violet-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300"
-                onClick={() => {
-                  const enabled = !view.enabled;
-                  void setSignVerseVisible(enabled).then(async () => {
-                    if (!enabled && audioStatus === 'listening') {
-                      await toggleAudioCapture(view.tabId);
-                    }
-                    setView({ ...view, enabled });
-                  });
-                }}
-                type="button"
-              >
-                {view.enabled ? 'Hide SignVerse on pages' : 'Show SignVerse on pages'}
-              </button>
-
-              {view.enabled && (
+              {view.automatic ? (
+                <div className="mt-5 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-4 py-3 text-sm leading-6 text-cyan-100">
+                  SignVerse starts automatically on YouTube. Official captions are preferred;
+                  video audio is transcribed automatically when captions are unavailable.
+                </div>
+              ) : (
                 <button
-                  aria-pressed={audioStatus === 'listening'}
-                  className="mt-3 w-full rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 disabled:cursor-wait disabled:opacity-60"
-                  disabled={audioStatus === 'starting'}
-                  onClick={() => void toggleAudioCapture(view.tabId)}
+                  aria-pressed={view.enabled}
+                  className="mt-5 w-full rounded-xl bg-violet-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300"
+                  onClick={() => {
+                    const enabled = !view.enabled;
+                    void setSignVerseVisible(enabled).then(() => {
+                      setView({ ...view, enabled });
+                    });
+                  }}
                   type="button"
                 >
-                  {audioStatus === 'listening'
-                    ? 'Stop listening to tab audio'
-                    : audioStatus === 'starting'
-                      ? 'Connecting to tab audio…'
-                      : 'Listen to video audio'}
+                  {view.enabled ? 'Hide SignVerse on pages' : 'Show SignVerse on pages'}
                 </button>
-              )}
-
-              {audioError && (
-                <p aria-live="assertive" className="mt-3 text-sm leading-5 text-rose-300" role="alert">
-                  {audioError}
-                </p>
               )}
 
               <div className="mt-5 rounded-xl bg-slate-900/80 p-4">
                 <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">How to use</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Use this control whenever you need the interpreter. On YouTube or Google Meet,
-                  choose “Listen to video audio” for speech transcription when official captions
-                  are unavailable. Chrome shows a capture indicator while listening is active.
+                  Open a YouTube video and SignVerse starts automatically. On other supported
+                  pages, use the visibility control above when you need the interpreter.
                 </p>
               </div>
             </div>

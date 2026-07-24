@@ -55,17 +55,26 @@ async function ensureOffscreenDocument(): Promise<void> {
   });
 }
 
+async function startAudioCapture(tabId: number, streamId: string): Promise<void> {
+  await ensureOffscreenDocument();
+  await chrome.storage.local.set({ [AUDIO_CAPTURE_STORAGE_KEY]: tabId });
+  await chrome.runtime.sendMessage({
+    type: 'SIGNVERSE_AUDIO_CAPTURE_START',
+    target: 'offscreen',
+    streamId,
+    tabId,
+  } satisfies AudioCaptureMessage);
+}
+
 chrome.runtime.onMessage.addListener(
-  (message: unknown, _sender, sendResponse: (response: { ok: boolean; error?: string }) => void) => {
+  (message: unknown, sender, sendResponse: (
+    response: { ok: boolean; error?: string; tabId?: number },
+  ) => void) => {
     if (!isAudioCaptureMessage(message) || message.target !== 'background') return false;
 
     if (message.type === 'SIGNVERSE_AUDIO_CAPTURE_START') {
-      void ensureOffscreenDocument()
-        .then(async () => {
-          await chrome.storage.local.set({ [AUDIO_CAPTURE_STORAGE_KEY]: message.tabId });
-          await chrome.runtime.sendMessage({ ...message, target: 'offscreen' } satisfies AudioCaptureMessage);
-          sendResponse({ ok: true });
-        })
+      void startAudioCapture(message.tabId, message.streamId)
+        .then(() => sendResponse({ ok: true, tabId: message.tabId }))
         .catch((error: unknown) => {
           console.error('[SignVerse] audio_capture_start_failed', error);
           sendResponse({
@@ -74,6 +83,41 @@ chrome.runtime.onMessage.addListener(
           });
         });
       return true;
+    }
+
+    if (message.type === 'SIGNVERSE_AUDIO_FALLBACK_START') {
+      const tabId = sender.tab?.id;
+      if (tabId === undefined) {
+        sendResponse({ ok: false, error: 'Automatic audio capture requires a browser tab.' });
+        return false;
+      }
+      void chrome.tabCapture.getMediaStreamId({ targetTabId: tabId })
+        .then((streamId) => startAudioCapture(tabId, streamId))
+        .then(() => sendResponse({ ok: true, tabId }))
+        .catch((error: unknown) => {
+          console.error('[SignVerse] audio_fallback_start_failed', error);
+          sendResponse({
+            ok: false,
+            error: error instanceof Error ? error.message : 'Automatic audio capture could not start.',
+          });
+        });
+      return true;
+    }
+
+    if (message.type === 'SIGNVERSE_AUDIO_FALLBACK_STOP') {
+      const tabId = sender.tab?.id;
+      if (tabId === undefined) {
+        sendResponse({ ok: false, error: 'Automatic audio capture requires a browser tab.' });
+        return false;
+      }
+      void chrome.storage.local.remove(AUDIO_CAPTURE_STORAGE_KEY);
+      void chrome.runtime.sendMessage({
+        type: 'SIGNVERSE_AUDIO_CAPTURE_STOP',
+        target: 'offscreen',
+        tabId,
+      } satisfies AudioCaptureMessage);
+      sendResponse({ ok: true, tabId });
+      return false;
     }
 
     if (message.type === 'SIGNVERSE_AUDIO_CAPTURE_STOP') {

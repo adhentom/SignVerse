@@ -9,6 +9,16 @@ export interface AudioCaptureStartMessage {
   tabId: number;
 }
 
+export interface AudioFallbackStartMessage {
+  type: 'SIGNVERSE_AUDIO_FALLBACK_START';
+  target: 'background';
+}
+
+export interface AudioFallbackStopMessage {
+  type: 'SIGNVERSE_AUDIO_FALLBACK_STOP';
+  target: 'background';
+}
+
 export interface AudioCaptureStopMessage {
   type: 'SIGNVERSE_AUDIO_CAPTURE_STOP';
   target: 'background' | 'offscreen';
@@ -34,6 +44,8 @@ export interface AudioTranscriptMessage {
 
 export type AudioCaptureMessage =
   | AudioCaptureStartMessage
+  | AudioFallbackStartMessage
+  | AudioFallbackStopMessage
   | AudioCaptureStopMessage
   | AudioCaptureStatusMessage
   | AudioTranscriptMessage;
@@ -41,7 +53,14 @@ export type AudioCaptureMessage =
 export function isAudioCaptureMessage(value: unknown): value is AudioCaptureMessage {
   if (!value || typeof value !== 'object') return false;
   const candidate = value as Partial<AudioCaptureMessage>;
-  if (typeof candidate.type !== 'string' || typeof candidate.tabId !== 'number') return false;
+  if (typeof candidate.type !== 'string') return false;
+  if (
+    candidate.type === 'SIGNVERSE_AUDIO_FALLBACK_START' ||
+    candidate.type === 'SIGNVERSE_AUDIO_FALLBACK_STOP'
+  ) {
+    return candidate.target === 'background';
+  }
+  if (!('tabId' in candidate) || typeof candidate.tabId !== 'number') return false;
   if (candidate.type === 'SIGNVERSE_AUDIO_CAPTURE_START') {
     return typeof candidate.streamId === 'string' && ['background', 'offscreen'].includes(candidate.target ?? '');
   }
