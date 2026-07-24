@@ -20,6 +20,8 @@
   "include": [
     "background",
     "content",
+    "evaluation",
+    "governance",
     "isl",
     "overlay",
     "popup",
