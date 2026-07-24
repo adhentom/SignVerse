@@ -42,6 +42,8 @@ const MOCK_TEXT = 'Mock interpretation ready — no AI or external services are 
 let mockEnabled = false;
 const platformAdapter = adapterFactory.create(window.location.href);
 const startsAutomatically = platformAdapter.platform.id === 'youtube';
+const developerControlsEnabled =
+  import.meta.env.DEV && import.meta.env.VITE_SIGNVERSE_ENABLE_DEVELOPER_CONTROLS === 'true';
 
 function WidgetContainer() {
   const [visible, setVisible] = useState(startsAutomatically);
@@ -225,7 +227,7 @@ function WidgetContainer() {
     : platformAdapter.platform.id === 'website'
       ? websitePacket
       : effectiveLiveState?.currentPacket ?? null;
-  const activePacket = extractedPacket && debugEnabled
+  const activePacket = extractedPacket && developerControlsEnabled && debugEnabled
     ? { ...extractedPacket, metadata: { ...extractedPacket.metadata, debug: true } }
     : extractedPacket;
   const displaySourceText = activePacket?.text ?? (
@@ -262,7 +264,7 @@ function WidgetContainer() {
       sourceText={displaySourceText}
       interpretationState={interpretationState}
       backendHealthState={backendHealthState}
-      debugEnabled={debugEnabled}
+      debugEnabled={developerControlsEnabled && debugEnabled}
       onRetry={() => {
         console.info('[SignVerse] retry_requested');
         if (
@@ -275,10 +277,12 @@ function WidgetContainer() {
         retryHealth();
         retry();
       }}
-      onDebugChange={(next) => {
-        setDebugEnabled(next);
-        void setIslDebugMode(next);
-      }}
+      onDebugChange={developerControlsEnabled
+        ? (next) => {
+            setDebugEnabled(next);
+            void setIslDebugMode(next);
+          }
+        : undefined}
     />
   );
 }

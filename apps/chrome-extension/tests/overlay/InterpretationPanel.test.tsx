@@ -48,6 +48,7 @@ describe('InterpretationPanel', () => {
     expect(container.textContent).toContain('Glossary');
     expect(container.querySelector('button[aria-expanded="true"]')).not.toBeNull();
     expect(container.textContent).toContain('0%');
+    expect(container.textContent).not.toContain('ISL debugging');
 
     const copyButton = container.querySelector<HTMLButtonElement>(
       'button[aria-label="Copy Malayalam translation"]',

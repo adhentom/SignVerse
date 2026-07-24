@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 
-function segmentCaption(caption: string, count: number): string[] {
+export function segmentCaption(caption: string, count: number): string[] {
   if (!caption.trim() || count === 0) return [];
   const words = caption.trim().split(/\s+/u);
   return Array.from({ length: count }, (_, index) => {
@@ -8,6 +8,28 @@ function segmentCaption(caption: string, count: number): string[] {
     const end = Math.floor(((index + 1) * words.length) / count);
     return words.slice(start, Math.max(start + 1, end)).join(' ');
   });
+}
+
+export function FloatingCaption({
+  caption,
+  currentIndex,
+  emptyMessage,
+  signCount,
+}: {
+  caption: string;
+  currentIndex: number;
+  emptyMessage: string;
+  signCount: number;
+}) {
+  const segments = useMemo(() => segmentCaption(caption, signCount), [caption, signCount]);
+  const synchronized = (segments[currentIndex] ?? caption.trim()) || emptyMessage;
+
+  return (
+    <div aria-live="polite" className="sv-floating-caption" lang="en">
+      <span>Live caption</span>
+      <p>{synchronized}</p>
+    </div>
+  );
 }
 
 export function EnglishCaptionTrack({

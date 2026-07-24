@@ -2,6 +2,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignPlaybackPanel } from '../../overlay/components/SignPlaybackPanel';
+import { segmentCaption } from '../../overlay/components/EnglishCaptionTrack';
 import { readBorderBox } from '../../overlay/hooks/useInterpreterGeometry';
 
 describe('SignPlaybackPanel', () => {
@@ -50,6 +51,9 @@ describe('SignPlaybackPanel', () => {
     expect(container.querySelector('button[aria-label="Dock interpreter left"]')).toBeNull();
     expect(container.querySelector('input[aria-label="Floating interpreter opacity"]')).toBeNull();
     expect(container.querySelector('[aria-label="Move interpreter; use arrow keys or drag"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Minimize interpreter"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Close interpreter"]')).not.toBeNull();
+    expect(container.querySelector('.sv-floating-caption')?.textContent).toContain('Welcome');
     expect(container.textContent).toContain('object-water');
     expect(container.querySelector('input[aria-label="Playback timeline"]')).not.toBeNull();
     expect(container.textContent).toContain('English source');
@@ -61,11 +65,62 @@ describe('SignPlaybackPanel', () => {
     expect(container.querySelector('[aria-label="ISL avatar playback controller"]')?.getAttribute('tabindex')).toBe('0');
   });
 
+  it('minimizes, closes, and restores the floating interpreter while retaining captions', () => {
+    const portal = document.createElement('div');
+    document.body.append(portal);
+    act(() => {
+      root.render(<SignPlaybackPanel
+        portalTarget={portal}
+        sourceText="Speech remains visible"
+        state={{
+          status: 'ready',
+          response: {
+            summary: '', malayalam_translation: '', key_points: [], keywords: [], glossary: [],
+            isl_gloss: [], confidence: 0, playback: { items: [], unsupported_tokens: [] },
+          },
+        }}
+      />);
+    });
+
+    const minimize = portal.querySelector<HTMLButtonElement>('[aria-label="Minimize interpreter"]');
+    act(() => minimize?.click());
+    expect(portal.querySelector('.sv-interpreter-overlay--minimized')).not.toBeNull();
+    expect(portal.querySelector('.sv-floating-caption')?.textContent).toContain('Speech remains visible');
+
+    const close = portal.querySelector<HTMLButtonElement>('[aria-label="Close interpreter"]');
+    act(() => close?.click());
+    expect(portal.querySelector('.sv-interpreter-overlay')).toBeNull();
+
+    const restore = portal.querySelector<HTMLButtonElement>('[aria-label="Show SignVerse interpreter"]');
+    act(() => restore?.click());
+    expect(portal.querySelector('.sv-interpreter-overlay')).not.toBeNull();
+    portal.remove();
+  });
+
+  it('segments floating captions in playback order', () => {
+    expect(segmentCaption('one two three four', 2)).toEqual(['one two', 'three four']);
+  });
+
   it('announces loading state', () => {
     act(() => root.render(<SignPlaybackPanel state={{ status: 'loading' }} />));
 
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull();
     expect(container.textContent).toContain('Preparing ISL playback');
+  });
+
+  it('shows the floating audio caption while interpretation is still loading', () => {
+    const portal = document.createElement('div');
+    document.body.append(portal);
+    act(() => root.render(<SignPlaybackPanel
+      portalTarget={portal}
+      sourceText="Audio transcription is ready."
+      state={{ status: 'loading' }}
+    />));
+
+    expect(portal.querySelector('.sv-floating-caption')?.textContent)
+      .toContain('Audio transcription is ready.');
+    expect(portal.querySelector('[aria-label="Floating SignVerse interpreter"]')).not.toBeNull();
+    portal.remove();
   });
 
   it('explains when YouTube has no official caption track', () => {
@@ -129,7 +184,7 @@ describe('SignPlaybackPanel', () => {
     act(() => handle?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowRight' })));
 
     expect(container.querySelector<HTMLElement>('.sv-interpreter-overlay')?.style.left).toBe('34px');
-    expect(document.body.textContent).toContain('Sign unavailable');
+    expect(document.body.textContent).toContain('Preparing interpretation');
     expect(set).toHaveBeenCalledWith(expect.objectContaining({
       'signverse.interpreterGeometry': expect.objectContaining({ x: 34 }),
     }));

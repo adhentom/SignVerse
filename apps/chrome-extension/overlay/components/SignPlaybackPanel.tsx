@@ -5,7 +5,7 @@ import { usePlaybackController } from '../../playback/usePlaybackController';
 import type { InterpretationState, PlaybackSequence } from '../../shared/interpretation';
 import { AvatarRenderer } from './AvatarRenderer';
 import { CollapsibleCard } from './CollapsibleCard';
-import { EnglishCaptionTrack } from './EnglishCaptionTrack';
+import { EnglishCaptionTrack, FloatingCaption } from './EnglishCaptionTrack';
 import { UIIcon } from './UIIcon';
 import { useInterpreterGeometry } from '../hooks/useInterpreterGeometry';
 import { DEFAULT_AVATAR, type AvatarProfile } from '../../playback/avatarProfiles';
@@ -26,7 +26,7 @@ function resolveAsset(item: PlaybackSequence['items'][number] | undefined) {
   return signAssetRegistry.lookup(item.asset_id);
 }
 
-function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile }) {
+function PlaybackController({ sequence, sourceStatus, sourceText, paused, portalTarget, profile, floatingOnly = false }: { sequence: PlaybackSequence; sourceStatus: string; sourceText: string; paused: boolean; portalTarget: HTMLDivElement | null; profile: AvatarProfile; floatingOnly?: boolean }) {
   const controller = usePlaybackController(sequence);
   const { scheduled, snapshot, totalDuration } = controller;
   const current = scheduled?.item;
@@ -45,6 +45,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
   const completion = totalDuration > 0 ? Math.min(100, (snapshot.elapsed / totalDuration) * 100) : 0;
   const [reducedMotion, setReducedMotion] = useState(false);
   const [rendererAttempt, setRendererAttempt] = useState(0);
+  const [overlayState, setOverlayState] = useState<'closed' | 'minimized' | 'visible'>('visible');
   const { geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
 
   useEffect(() => {
@@ -98,15 +99,23 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
     else if (event.key === 'Home') controller.restart();
   }
 
-  return (
-    <div
-      aria-label="ISL avatar playback controller"
-      className="sv-player"
-      onKeyDown={handleKeyboard}
-      tabIndex={0}
-    >
-      {portalTarget && createPortal(<div
-        className="sv-player-stage sv-interpreter-overlay"
+  const floatingInterpreter = portalTarget && createPortal(
+    overlayState === 'closed' ? (
+      <button
+        aria-label="Show SignVerse interpreter"
+        className="sv-restore-interpreter"
+        onClick={() => setOverlayState('visible')}
+        type="button"
+      >
+        <UIIcon name="accessibility" />
+        Show interpreter
+      </button>
+    ) : (
+      <div
+        aria-label="Floating SignVerse interpreter"
+        className={`sv-player-stage sv-interpreter-overlay ${
+          overlayState === 'minimized' ? 'sv-interpreter-overlay--minimized' : ''
+        }`}
         ref={stageRef}
         style={{ left: geometry.x, top: geometry.y, width: geometry.width, height: geometry.height }}
       >
@@ -117,30 +126,71 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
           onPointerDown={startDrag}
           type="button"
         >SignVerse Interpreter · drag</button>
-        <AvatarRenderer
-          asset={currentAsset}
-          cue={current}
-          cueIndex={scheduled?.index ?? -1}
-          nextAsset={nextAsset}
-          onError={controller.fail}
-          playing={snapshot.state === 'Playing'}
-          progress={scheduled?.localProgress ?? 0}
-          profile={profile}
-          reducedMotion={reducedMotion}
-          retryKey={rendererAttempt}
-          speed={snapshot.speed}
-        />
-        <div className="sv-current-sign" aria-live="polite">
-          <span>Current sign</span>
-          <strong>{current?.source_gloss ?? current?.token_id ?? 'Sign unavailable'}</strong>
-          <small>{currentAsset
-            ? `${currentAsset.display_name} · ISL sign`
-            : current ? 'Dataset asset unavailable' : firstMiss
-              ? `${firstMiss.token || '(blank)'} — ${firstMiss.detail}`
-              : 'No gloss has been received for playback'}</small>
-          <p lang="en">{sourceText || sourceStatus || 'English source text is unavailable.'}</p>
+        <div aria-label="Interpreter window controls" className="sv-floating-controls">
+          <button
+            aria-label={overlayState === 'minimized' ? 'Expand interpreter' : 'Minimize interpreter'}
+            onClick={() => setOverlayState((currentState) => (
+              currentState === 'minimized' ? 'visible' : 'minimized'
+            ))}
+            type="button"
+          >
+            <UIIcon name={overlayState === 'minimized' ? 'accessibility' : 'minimize'} />
+          </button>
+          <button
+            aria-label="Close interpreter"
+            onClick={() => setOverlayState('closed')}
+            type="button"
+          >
+            <UIIcon name="close" />
+          </button>
         </div>
-      </div>, portalTarget)}
+        {overlayState === 'visible' && (
+          <>
+            <AvatarRenderer
+              asset={currentAsset}
+              cue={current}
+              cueIndex={scheduled?.index ?? -1}
+              nextAsset={nextAsset}
+              onError={controller.fail}
+              playing={snapshot.state === 'Playing'}
+              progress={scheduled?.localProgress ?? 0}
+              profile={profile}
+              reducedMotion={reducedMotion}
+              retryKey={rendererAttempt}
+              speed={snapshot.speed}
+            />
+            <div className="sv-current-sign" aria-live="polite">
+              <span>Current sign</span>
+              <strong>{current?.source_gloss ?? current?.token_id ?? 'Preparing interpretation'}</strong>
+              <small>{currentAsset
+                ? `${currentAsset.display_name} · ISL sign`
+                : current ? 'Dataset asset unavailable' : firstMiss
+                  ? `${firstMiss.token || '(blank)'} — ${firstMiss.detail}`
+                  : 'Waiting for an ISL playback plan'}</small>
+            </div>
+          </>
+        )}
+        <FloatingCaption
+          caption={sourceText}
+          currentIndex={scheduled?.index ?? 0}
+          emptyMessage={sourceStatus || 'Waiting for speech or captions…'}
+          signCount={sequence.items.length}
+        />
+      </div>
+    ),
+    portalTarget,
+  );
+
+  if (floatingOnly) return floatingInterpreter;
+
+  return (
+    <div
+      aria-label="ISL avatar playback controller"
+      className="sv-player"
+      onKeyDown={handleKeyboard}
+      tabIndex={0}
+    >
+      {floatingInterpreter}
 
       {snapshot.state === 'Error' && (
         <div className="sv-playback-error" role="alert">
@@ -238,11 +288,22 @@ export function SignPlaybackPanel({ state, paused = false, portalTarget = null, 
   const [fallbackPortalTarget, setFallbackPortalTarget] = useState<HTMLDivElement | null>(null);
   if (state.status === 'loading') {
     return (
-      <section aria-busy="true" aria-live="polite" className="sv-card sv-player-skeleton">
-        <span className="sv-visually-hidden">Preparing ISL playback</span>
-        <div className="sv-skeleton-player" />
-        <div className="sv-skeleton-controls" />
-      </section>
+      <>
+        <section aria-busy="true" aria-live="polite" className="sv-card sv-player-skeleton">
+          <span className="sv-visually-hidden">Preparing ISL playback</span>
+          <div className="sv-skeleton-player" />
+          <div className="sv-skeleton-controls" />
+        </section>
+        <PlaybackController
+          floatingOnly
+          paused={paused}
+          portalTarget={portalTarget}
+          profile={profile}
+          sequence={EMPTY_SEQUENCE}
+          sourceStatus={sourceStatus}
+          sourceText={sourceText}
+        />
+      </>
     );
   }
 

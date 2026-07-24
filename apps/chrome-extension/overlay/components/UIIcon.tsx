@@ -5,6 +5,7 @@ type IconName =
   | 'check'
   | 'chevron'
   | 'clock'
+  | 'close'
   | 'code'
   | 'copy'
   | 'globe'
@@ -27,6 +28,7 @@ export function UIIcon({ name }: { name: IconName }) {
     check: <path d="m5 12.5 4 4L19 7.5" />,
     chevron: <path d="m8 10 4 4 4-4" />,
     clock: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>,
+    close: <path d="m6 6 12 12M18 6 6 18" />,
     code: <><path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16" /></>,
     copy: <><rect x="8" y="8" width="11" height="11" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></>,
     globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 3.5 5.5 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-5.5-3.5-9s1-6.5 3.5-9Z" /></>,
