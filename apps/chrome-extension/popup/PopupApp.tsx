@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { getSignVerseVisible, setSignVerseVisible } from '../shared/visibility';
 
 type ViewState =
   | { kind: 'loading' }
-  | { kind: 'ready'; automatic: boolean; enabled: boolean; pageTitle: string }
+  | { kind: 'ready'; pageTitle: string }
   | { kind: 'error'; message: string };
 
 async function getActiveTab(): Promise<chrome.tabs.Tab> {
@@ -20,13 +19,9 @@ async function getActiveTab(): Promise<chrome.tabs.Tab> {
   return tab;
 }
 
-async function loadPageState(): Promise<{ automatic: boolean; enabled: boolean; pageTitle: string }> {
+async function loadPageState(): Promise<{ pageTitle: string }> {
   const tab = await getActiveTab();
-  const hostname = new URL(tab.url!).hostname.toLowerCase();
-  const automatic = hostname === 'youtube.com' || hostname.endsWith('.youtube.com');
   return {
-    automatic,
-    enabled: automatic || await getSignVerseVisible(),
     pageTitle: tab.title || 'Untitled page',
   };
 }
@@ -68,10 +63,10 @@ export function PopupApp() {
         <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
             <span className="size-2 rounded-full bg-emerald-400" />
-            User controlled
+            Automatic mode
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-300">
-            SignVerse stays hidden until you choose to show it.
+            SignVerse starts automatically on supported pages. No popup action is required.
           </p>
         </div>
 
@@ -110,36 +105,21 @@ export function PopupApp() {
                   </p>
                 </div>
                 <span className="shrink-0 rounded-full bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-300">
-                  {view.enabled ? 'Visible' : 'Hidden'}
+                  Running
                 </span>
               </div>
 
-              {view.automatic ? (
-                <div className="mt-5 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-4 py-3 text-sm leading-6 text-cyan-100">
-                  SignVerse starts automatically on YouTube. Official captions are preferred;
-                  video audio is transcribed automatically when captions are unavailable.
-                </div>
-              ) : (
-                <button
-                  aria-pressed={view.enabled}
-                  className="mt-5 w-full rounded-xl bg-violet-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-violet-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-300"
-                  onClick={() => {
-                    const enabled = !view.enabled;
-                    void setSignVerseVisible(enabled).then(() => {
-                      setView({ ...view, enabled });
-                    });
-                  }}
-                  type="button"
-                >
-                  {view.enabled ? 'Hide SignVerse on pages' : 'Show SignVerse on pages'}
-                </button>
-              )}
+              <div className="mt-5 rounded-xl border border-cyan-300/30 bg-cyan-400/10 px-4 py-3 text-sm leading-6 text-cyan-100">
+                The interpreter, backend connection, and supported caption or content pipeline
+                start with the page. On YouTube, official captions are preferred and audio
+                transcription starts when captions are unavailable.
+              </div>
 
               <div className="mt-5 rounded-xl bg-slate-900/80 p-4">
                 <p className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500">How to use</p>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Open a YouTube video and SignVerse starts automatically. On other supported
-                  pages, use the visibility control above when you need the interpreter.
+                  Open a website, YouTube video, or Google Meet session. SignVerse detects the
+                  platform and starts automatically; this popup is status-only.
                 </p>
               </div>
             </div>

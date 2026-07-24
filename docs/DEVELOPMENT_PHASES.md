@@ -18,7 +18,8 @@ Add caption timing, incremental segmentation, playback buffering, synchronizatio
 
 ## Phase 4 — Google Meet pilot
 
-Prioritize visible live captions, then assess opt-in tab audio. Add streaming recovery, context handling, participant consent, and platform-policy review.
+Prioritize visible live captions, then use automatic tab audio when captions remain unavailable.
+Add streaming recovery, context handling, participant consent, and platform-policy review.
 
 ## Phase 5 — Coverage and model improvement
 

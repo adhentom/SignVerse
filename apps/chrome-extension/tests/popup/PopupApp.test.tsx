@@ -21,12 +21,6 @@ describe('PopupApp production controls', () => {
 
   function installChrome(url: string) {
     vi.stubGlobal('chrome', {
-      storage: {
-        local: {
-          get: vi.fn(async () => ({ signverseVisible: false })),
-          set: vi.fn(async () => undefined),
-        },
-      },
       tabs: {
         query: vi.fn(async () => [{
           id: 9,
@@ -46,17 +40,30 @@ describe('PopupApp production controls', () => {
     installChrome('https://www.youtube.com/watch?v=test');
     await renderPopup();
 
-    expect(container.textContent).toContain('SignVerse starts automatically on YouTube');
+    expect(container.textContent).toContain('SignVerse starts automatically on supported pages');
+    expect(container.textContent).toContain('official captions are preferred');
+    expect(container.textContent).toContain('status-only');
     expect(container.textContent).not.toContain('Listen to video audio');
     expect(container.textContent).not.toContain('Start listening');
     expect(container.textContent).not.toContain('Allow video audio');
   });
 
-  it('retains the visibility control for non-YouTube pages', async () => {
+  it('requires no popup interaction on generic websites', async () => {
     installChrome('https://example.com/article');
     await renderPopup();
 
-    expect(container.textContent).toContain('Show SignVerse on pages');
-    expect(container.textContent).not.toContain('SignVerse starts automatically on YouTube');
+    expect(container.textContent).toContain('Automatic mode');
+    expect(container.textContent).toContain('Running');
+    expect(container.textContent).toContain('No popup action is required');
+    expect(container.querySelector('button')).toBeNull();
+  });
+
+  it('reports automatic startup on Google Meet', async () => {
+    installChrome('https://meet.google.com/abc-defg-hij');
+    await renderPopup();
+
+    expect(container.textContent).toContain('website, YouTube video, or Google Meet');
+    expect(container.textContent).toContain('starts automatically');
+    expect(container.querySelector('button')).toBeNull();
   });
 });

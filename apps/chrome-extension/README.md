@@ -38,13 +38,19 @@ The build derives `host_permissions` from that URL, so each environment grants n
 ## Current communication flow
 
 1. Chrome injects the packaged generic-web content script into HTTP and HTTPS pages.
-2. The content script mounts the floating React widget inside an isolated Shadow DOM.
-3. The content script requests backend health from the background service worker when production mode starts and on widget retries. The worker makes no unsolicited startup request.
+2. The content script detects the platform and mounts the floating React widget inside an isolated
+   Shadow DOM without waiting for a popup action.
+3. It immediately opens the backend streaming channel, requests backend health, and starts the
+   platform source session.
 4. The content script normalizes website text or the current YouTube/Meet caption into sentence-sized `ContentPacket` values.
 5. A long-lived runtime port sends ordered packets to the background service worker.
 6. The service worker validates packets and owns one reconnecting WebSocket to `/stream`.
 7. The worker validates streamed responses and returns them to the content script in sequence.
-8. The widget renders connectivity, interpretation, and sign-playback planning states.
+8. The widget renders connectivity and interpretation state; validated playback plans start the
+   avatar scheduler automatically.
+
+The popup is a status-only surface. Generic websites, YouTube, and Google Meet all start through
+the same content-script lifecycle and do not depend on the extension action.
 
 Content is segmented before transport. Website paragraphs and stable live-caption sentences enter
 an ordered request queue, and each validated response appends to the active Malayalam, gloss, and

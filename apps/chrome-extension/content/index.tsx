@@ -15,7 +15,6 @@ import { supportsLiveContent } from './adapters/PlatformAdapter';
 import { useStreamingInterpretation } from './interpretation/useStreamingInterpretation';
 import { useBackendHealth } from './interpretation/useBackendHealth';
 import { startWebsiteExtraction } from './interpretation/startWebsiteExtraction';
-import { getSignVerseVisible, VISIBILITY_STORAGE_KEY } from '../shared/visibility';
 import {
   isAudioCaptureMessage,
   type AudioCaptureMessage,
@@ -41,12 +40,10 @@ declare global {
 const MOCK_TEXT = 'Mock interpretation ready — no AI or external services are connected.';
 let mockEnabled = false;
 const platformAdapter = adapterFactory.create(window.location.href);
-const startsAutomatically = platformAdapter.platform.id === 'youtube';
 const developerControlsEnabled =
   import.meta.env.DEV && import.meta.env.VITE_SIGNVERSE_ENABLE_DEVELOPER_CONTROLS === 'true';
 
 function WidgetContainer() {
-  const [visible, setVisible] = useState(startsAutomatically);
   const [contentState, setContentState] = useState<WebsiteContentState>({ status: 'loading' });
   const [liveState, setLiveState] = useState<LiveContentSnapshot | null>(null);
   const [audioLiveState, setAudioLiveState] = useState<YouTubeLiveSnapshot | null>(null);
@@ -54,6 +51,7 @@ function WidgetContainer() {
   const [debugEnabled, setDebugEnabled] = useState(false);
   const liveStateRef = useRef<LiveContentSnapshot | null>(null);
   const audioFallbackRef = useRef<YouTubeAudioFallback | null>(null);
+  const visible = true;
 
   if (platformAdapter.platform.id === 'youtube' && !audioFallbackRef.current) {
     audioFallbackRef.current = new YouTubeAudioFallback({
@@ -136,20 +134,10 @@ function WidgetContainer() {
   }, [liveState, visible]);
 
   useEffect(() => {
-    let active = true;
-    void getSignVerseVisible().then((value) => {
-      if (active) setVisible(startsAutomatically || value);
+    console.info('[SignVerse] automatic_interpretation_started', {
+      platform: platformAdapter.platform.id,
+      mode: platformAdapter.platform.modeLabel,
     });
-    const handleStorage = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
-      if (area === 'local' && changes[VISIBILITY_STORAGE_KEY]) {
-        setVisible(startsAutomatically || changes[VISIBILITY_STORAGE_KEY].newValue === true);
-      }
-    };
-    chrome.storage.onChanged.addListener(handleStorage);
-    return () => {
-      active = false;
-      chrome.storage.onChanged.removeListener(handleStorage);
-    };
   }, []);
 
   useEffect(() => {

@@ -133,8 +133,10 @@ caption and interpreter appear without a popup action; if official captions late
 audio capture stops and duplicate packets are rejected. Tab-audio transcription requires a
 configured backend transcription provider.
 
-On ordinary websites, select text or click near a readable paragraph and use the extension action.
-Google Meet continues to consume its live-caption surface.
+On ordinary websites, SignVerse opens automatically and interprets the first readable viewport
+context; selecting text or moving to another readable paragraph updates that context. Google Meet
+starts its live-caption session automatically. The extension popup is status-only and is not
+required to start any supported pipeline.
 
 Useful endpoints:
 
