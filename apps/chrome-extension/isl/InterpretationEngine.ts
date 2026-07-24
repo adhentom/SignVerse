@@ -95,6 +95,12 @@ export class InterpretationEngine {
       context,
       grammar,
       glosses,
+      provider: Object.freeze({
+        id: this.provider.id,
+        confidence: providerOutput.confidence,
+        diagnostics: providerOutput.diagnostics,
+        segments: Object.freeze([...(providerOutput.segmentDiagnostics ?? [])]),
+      }),
       animationPlan,
       playback: this.playbackPlanner.plan(animationPlan),
     });

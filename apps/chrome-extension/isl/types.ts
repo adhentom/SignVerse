@@ -71,6 +71,20 @@ export interface GlossProviderOutput {
   candidates: readonly GlossCandidate[];
   confidence: number;
   diagnostics?: Readonly<Record<string, unknown>>;
+  segmentDiagnostics?: readonly SegmentInterpretationDiagnostics[];
+}
+
+export interface SegmentInterpretationDiagnostics {
+  segmentId: string;
+  confidence: number;
+  receivedGlosses: readonly string[];
+  acceptedGlosses: readonly string[];
+  fingerspelledGlosses: readonly string[];
+  rejectedGlosses: readonly {
+    gloss: string;
+    reason: string;
+  }[];
+  backendDiagnostics?: Readonly<Record<string, unknown>>;
 }
 
 export interface GlossMapping {
@@ -142,6 +156,12 @@ export interface ISLInterpretationResult {
   context: NormalizedContext;
   grammar: readonly GrammarUnit[];
   glosses: readonly GlossCandidate[];
+  provider: {
+    id: string;
+    confidence: number;
+    diagnostics?: Readonly<Record<string, unknown>>;
+    segments: readonly SegmentInterpretationDiagnostics[];
+  };
   animationPlan: AnimationPlan;
   playback: PlaybackSequence;
 }
