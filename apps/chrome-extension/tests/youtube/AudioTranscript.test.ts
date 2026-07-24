@@ -15,6 +15,7 @@ const official: YouTubeLiveSnapshot = {
     captionsEnabled: false,
     isAdvertisement: false,
     isLive: false,
+    playbackTimeMs: 84_000,
     playbackState: 'playing',
   },
   currentPacket: null,
@@ -30,6 +31,7 @@ describe('YouTube tab-audio transcripts', () => {
       sequence: 1,
       text: '  Spoken   English from the video. ',
       language: 'en',
+      durationMs: 2_000,
     });
 
     expect(snapshot.currentPacket).toMatchObject({
@@ -37,7 +39,14 @@ describe('YouTube tab-audio transcripts', () => {
       title: 'Accessible video',
       timestamp: '01:24',
       text: 'Spoken English from the video.',
-      metadata: { transcriptionSource: 'tab-audio', videoId: 'video-1' },
+      metadata: {
+        captionEndMs: 84_000,
+        captionSource: 'tab-audio',
+        captionStartMs: 82_000,
+        cueId: 'video-1:tab-audio:1:82000',
+        transcriptionSource: 'tab-audio',
+        videoId: 'video-1',
+      },
     });
     expect(snapshot.history).toHaveLength(1);
   });

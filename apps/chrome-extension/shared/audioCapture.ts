@@ -34,6 +34,7 @@ export interface AudioCaptureStatusMessage {
 }
 
 export interface AudioTranscriptMessage {
+  durationMs?: number;
   type: 'SIGNVERSE_AUDIO_TRANSCRIPT';
   target: 'background' | 'content';
   tabId: number;
@@ -79,7 +80,11 @@ export function isAudioCaptureMessage(value: unknown): value is AudioCaptureMess
       ['background', 'content'].includes(candidate.target ?? '') &&
       typeof candidate.sequence === 'number' &&
       typeof candidate.text === 'string' &&
-      typeof candidate.language === 'string'
+      typeof candidate.language === 'string' &&
+      (candidate.durationMs === undefined ||
+        (typeof candidate.durationMs === 'number' &&
+          Number.isFinite(candidate.durationMs) &&
+          candidate.durationMs >= 0))
     );
   }
   return false;

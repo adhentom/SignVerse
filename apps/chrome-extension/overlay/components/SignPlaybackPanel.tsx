@@ -181,7 +181,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
           caption={sourceText}
           currentIndex={scheduled?.index ?? 0}
           emptyMessage={sourceStatus || 'Waiting for speech or captions…'}
-          signCount={sequence.items.length}
+          signDurations={sequence.items.map((item) => item.duration)}
         />
         {overlayState === 'visible' && (
           <>
@@ -293,7 +293,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
         caption={sourceText}
         currentIndex={scheduled?.index ?? 0}
         emptyMessage={sourceStatus || 'English source text is unavailable.'}
-        signCount={sequence.items.length}
+        signDurations={sequence.items.map((item) => item.duration)}
       />
 
       <div className="sv-token-queue">

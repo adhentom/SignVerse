@@ -116,6 +116,7 @@ describe('YouTubeAudioFallback', () => {
 
     expect(fallback.acceptTranscription(transcript(1, 'Repeated speech.'), snapshot())).toBe(true);
     expect(fallback.acceptTranscription(transcript(2, ' Repeated   speech. '), snapshot())).toBe(false);
+    expect(fallback.acceptTranscription(transcript(4, 'Repeated speech.'), snapshot())).toBe(true);
     expect(logger).toHaveBeenCalledWith('transcription_received', expect.objectContaining({
       textLength: 16,
     }));

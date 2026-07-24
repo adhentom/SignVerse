@@ -39,6 +39,7 @@ function emptyMetadata(): YouTubePacketMetadata {
     captionsEnabled: false,
     isAdvertisement: false,
     isLive: false,
+    playbackTimeMs: 0,
     playbackState: 'paused',
   };
 }
@@ -69,6 +70,9 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
   private transcriptLanguage = 'und';
   private transcriptState: 'idle' | 'loading' | 'ready' | 'unavailable' = 'idle';
   private transcriptVideoId = '';
+  private domCueSequence = 0;
+  private domCueStartSeconds = 0;
+  private domCueText = '';
 
   constructor(
     private readonly document: Document,
@@ -91,12 +95,14 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
   private readonly handleNavigation = () => {
     this.disconnectObservers();
     this.resetTranscript();
+    this.resetDomCue(true);
     this.snapshot = initialSnapshot();
     this.connectToPage();
     this.readAndEmit();
   };
 
-  private readonly handleVideoEvent = () => {
+  private readonly handleVideoEvent = (event: Event) => {
+    if (event.type === 'seeking' || event.type === 'seeked') this.resetDomCue();
     this.scheduleRead();
   };
 
@@ -214,10 +220,36 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
     const channel = getChannelName(this.document);
     const videoId = getYouTubeVideoId(url);
     this.ensureTranscript(videoId);
-    const timestamp = formatPlaybackTimestamp(video?.currentTime ?? 0, isLive);
-    const transcriptText = transcriptCueAt(this.transcriptCues, video?.currentTime ?? 0)?.text ?? '';
+    const playbackTimeSeconds = Math.max(0, video?.currentTime ?? 0);
+    const timestamp = formatPlaybackTimestamp(playbackTimeSeconds, isLive);
+    const transcriptCue = transcriptCueAt(this.transcriptCues, playbackTimeSeconds);
+    const transcriptText = transcriptCue?.text ?? '';
+    const domCaptionText = this.readCaptionText();
+    this.updateDomCue(domCaptionText, playbackTimeSeconds);
+    const captionText = domCaptionText || transcriptText;
+    const captionSource = domCaptionText
+      ? 'youtube-dom' as const
+      : transcriptCue
+        ? 'youtube-track' as const
+        : undefined;
+    const captionStartMs = domCaptionText
+      ? Math.round(this.domCueStartSeconds * 1_000)
+      : transcriptCue
+        ? Math.round(transcriptCue.startSeconds * 1_000)
+        : undefined;
+    const captionEndMs = transcriptCue
+      ? Math.round(transcriptCue.endSeconds * 1_000)
+      : undefined;
     const metadata: YouTubePacketMetadata = {
+      captionEndMs,
+      captionSource,
+      captionStartMs,
       channel,
+      cueId: captionText && captionSource && captionStartMs !== undefined
+        ? `${videoId}:${captionSource}:${captionStartMs}${
+            captionSource === 'youtube-dom' ? `:${this.domCueSequence}` : ''
+          }`
+        : undefined,
       language: this.document.querySelector(YOUTUBE_SELECTORS.captionSegments)?.getAttribute('lang') ||
         (transcriptText ? this.transcriptLanguage : '') ||
         this.document.documentElement.lang || 'und',
@@ -225,6 +257,7 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       captionsEnabled,
       isAdvertisement,
       isLive,
+      playbackTimeMs: Math.round(playbackTimeSeconds * 1_000),
       playbackState,
     };
 
@@ -253,8 +286,6 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       return;
     }
 
-    const domCaptionText = this.readCaptionText();
-    const captionText = domCaptionText || transcriptText;
     const captionUnavailable =
       !captionsButton ||
       captionsButton.disabled ||
@@ -336,6 +367,24 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
       .trim();
   }
 
+  private updateDomCue(text: string, playbackTimeSeconds: number): void {
+    if (!text) {
+      this.resetDomCue();
+      return;
+    }
+    if (!this.domCueText || !text.startsWith(this.domCueText)) {
+      this.domCueStartSeconds = playbackTimeSeconds;
+      this.domCueSequence += 1;
+    }
+    this.domCueText = text;
+  }
+
+  private resetDomCue(resetSequence = false): void {
+    this.domCueStartSeconds = 0;
+    this.domCueText = '';
+    if (resetSequence) this.domCueSequence = 0;
+  }
+
   private ensureTranscript(videoId: string): void {
     if (!videoId || this.transcriptVideoId === videoId) return;
     this.resetTranscript();
@@ -407,11 +456,17 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
   ): ContentPacket<YouTubePacketMetadata>[] {
     const last = history.at(-1);
     if (
+      last?.metadata.cueId &&
+      packet.metadata.cueId &&
+      last.metadata.cueId === packet.metadata.cueId
+    ) {
+      return [...history.slice(0, -1), packet];
+    }
+    if (
+      !last?.metadata.cueId &&
       last?.text === packet.text &&
       last.metadata.videoId === packet.metadata.videoId
-    ) {
-      return history;
-    }
+    ) return history;
 
     return [...history, packet].slice(-HISTORY_LIMIT);
   }
@@ -435,6 +490,7 @@ export class YouTubeCaptionSession implements LiveContentSession<YouTubePacketMe
     this.stopped = true;
     this.disconnectObservers();
     this.resetTranscript();
+    this.resetDomCue(true);
     this.window.removeEventListener('yt-navigate-finish', this.handleNavigation);
     this.window.removeEventListener('popstate', this.handleNavigation);
     this.listener = null;

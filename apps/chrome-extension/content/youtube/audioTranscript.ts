@@ -8,14 +8,24 @@ import type { YouTubeLiveSnapshot, YouTubePacketMetadata } from '../../shared/yo
 function audioMetadata(
   official: YouTubeLiveSnapshot | null,
   language: string,
+  message?: AudioTranscriptMessage,
 ): YouTubePacketMetadata {
+  const playbackTimeMs = official?.metadata.playbackTimeMs ?? 0;
+  const durationMs = Math.max(0, message?.durationMs ?? 0);
+  const captionStartMs = Math.max(0, playbackTimeMs - durationMs);
+  const videoId = String(official?.metadata.videoId ?? '');
   return {
+    captionEndMs: message ? playbackTimeMs : undefined,
+    captionSource: message ? 'tab-audio' : undefined,
+    captionStartMs: message ? captionStartMs : undefined,
     channel: String(official?.metadata.channel ?? 'Unknown channel'),
+    cueId: message ? `${videoId}:tab-audio:${message.sequence}:${captionStartMs}` : undefined,
     language,
-    videoId: String(official?.metadata.videoId ?? ''),
+    videoId,
     captionsEnabled: false,
     isAdvertisement: Boolean(official?.metadata.isAdvertisement),
     isLive: Boolean(official?.metadata.isLive),
+    playbackTimeMs,
     playbackState: official?.metadata.playbackState === 'paused' ? 'paused' : 'playing',
     transcriptionSource: 'tab-audio',
   };
@@ -42,7 +52,7 @@ export function appendAudioTranscript(
   official: YouTubeLiveSnapshot | null,
   message: AudioTranscriptMessage,
 ): YouTubeLiveSnapshot {
-  const metadata = audioMetadata(official, message.language || 'en');
+  const metadata = audioMetadata(official, message.language || 'en', message);
   const packet: ContentPacket<YouTubePacketMetadata> = {
     platform: 'youtube',
     title: official?.title ?? 'YouTube',

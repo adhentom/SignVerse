@@ -16,7 +16,7 @@ function sourceIdentity(packet: ContentPacket): string {
 
 export function segmentIdentity(packet: ContentPacket, text = packet.text): string {
   const metadata = packet.metadata as Record<string, unknown>;
-  return `${sourceIdentity(packet)}:${metadata.language ?? ''}:${packet.speaker ?? ''}:${text}`;
+  return `${sourceIdentity(packet)}:${metadata.language ?? ''}:${packet.speaker ?? ''}:${metadata.cueId ?? ''}:${text}`;
 }
 
 export function incrementalLiveText(previous: string, current: string): string {
@@ -171,7 +171,7 @@ export function useStreamingInterpretation(
       websiteContext.current = '';
     }
     const timer = window.setTimeout(() => {
-      const liveKey = `${sourceIdentity(packet)}:${packet.speaker ?? ''}`;
+      const liveKey = `${sourceIdentity(packet)}:${packet.speaker ?? ''}:${metadata.cueId ?? ''}`;
       const previousText = lastLiveText.current.get(liveKey) ?? '';
       const incrementalText = packet.platform !== 'website'
         ? incrementalLiveText(previousText, packet.text)

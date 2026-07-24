@@ -163,7 +163,9 @@ clips remain pending until native ISL review is recorded. See
 [`docs/TWO_AVATAR_INTERPRETER.md`](../../docs/TWO_AVATAR_INTERPRETER.md).
 
 The scheduler is the single timing source for both the active avatar cue and highlighted English
-caption segment. Playback begins automatically when a validated sequence arrives. Sign changes use
-a bounded 120–500 ms cross-fade plus previous-pose interpolation; reduced-motion users receive an
-immediate transition. The next asset is preloaded before its cue, and streamed sequence appends do
-not restart completed signs.
+caption segment. Caption words are distributed using the actual duration of each scheduled sign,
+rather than equal-sized visual chunks. Playback begins automatically when a validated sequence
+arrives. Sign changes use a bounded 120–500 ms cross-fade plus previous-pose interpolation;
+reduced-motion users receive an immediate transition. The next asset is preloaded before its cue,
+and streamed sequence appends do not restart completed signs. See
+[`docs/CAPTION_ENGINE.md`](../../docs/CAPTION_ENGINE.md) for cue identity and timestamp semantics.

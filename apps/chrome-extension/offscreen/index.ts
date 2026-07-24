@@ -35,7 +35,7 @@ function chooseMimeType(): string {
     .find((type) => MediaRecorder.isTypeSupported(type)) ?? '';
 }
 
-async function transcribe(blob: Blob, tabId: number): Promise<void> {
+async function transcribe(blob: Blob, tabId: number, durationMs: number): Promise<void> {
   if (blob.size < MINIMUM_AUDIO_BYTES || !backendConfig.baseUrl) return;
 
   try {
@@ -52,6 +52,7 @@ async function transcribe(blob: Blob, tabId: number): Promise<void> {
       type: 'SIGNVERSE_AUDIO_TRANSCRIPT',
       target: 'background',
       tabId,
+      durationMs,
       sequence,
       text: transcript.text,
       language: transcript.language,
@@ -68,6 +69,7 @@ function startSegment(): void {
   const tabId = activeTabId;
   const generation = captureGeneration;
   const chunks: BlobPart[] = [];
+  const startedAt = performance.now();
   const mimeType = chooseMimeType();
   recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
   recorder.addEventListener('dataavailable', (event) => {
@@ -79,7 +81,8 @@ function startSegment(): void {
     const blob = new Blob(chunks, { type: recorder?.mimeType || mimeType || 'audio/webm' });
     if (generation !== captureGeneration) return;
     if (activeTabId === tabId && stream?.active) startSegment();
-    uploadChain = uploadChain.then(() => transcribe(blob, tabId));
+    const durationMs = Math.max(0, performance.now() - startedAt);
+    uploadChain = uploadChain.then(() => transcribe(blob, tabId, durationMs));
   }, { once: true });
   recorder.start();
   recorderTimer = window.setTimeout(() => {

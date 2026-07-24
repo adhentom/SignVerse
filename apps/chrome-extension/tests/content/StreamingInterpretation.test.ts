@@ -41,4 +41,21 @@ describe('real-time interpretation pipeline', () => {
       ...packet, metadata: { ...packet.metadata, debug: true },
     }));
   });
+
+  it('deduplicates updates within one cue but permits repeated speech at a new timestamp', () => {
+    const packet = {
+      platform: 'youtube' as const,
+      title: 'Video',
+      timestamp: '00:10',
+      text: 'Please continue.',
+      metadata: { cueId: 'video:youtube-dom:10000', language: 'en', videoId: 'video' },
+    };
+
+    expect(segmentIdentity(packet)).toBe(segmentIdentity({ ...packet }));
+    expect(segmentIdentity(packet)).not.toBe(segmentIdentity({
+      ...packet,
+      timestamp: '00:20',
+      metadata: { ...packet.metadata, cueId: 'video:youtube-dom:20000' },
+    }));
+  });
 });

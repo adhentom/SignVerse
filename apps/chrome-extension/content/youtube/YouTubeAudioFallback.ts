@@ -36,6 +36,7 @@ export class YouTubeAudioFallback {
   private fallbackActive = false;
   private fallbackStarting = false;
   private lastTranscriptIdentity = '';
+  private lastTranscriptSequence = 0;
   private timer: number | null = null;
 
   constructor(private readonly options: YouTubeAudioFallbackOptions) {
@@ -120,8 +121,13 @@ export class YouTubeAudioFallback {
     if (captionPacket(official)) return false;
     const text = message.text.replace(/\s+/gu, ' ').trim();
     const identity = `${official?.metadata.videoId ?? ''}:${text}`;
-    if (!text || identity === this.lastTranscriptIdentity) return false;
+    if (
+      !text ||
+      (identity === this.lastTranscriptIdentity &&
+        message.sequence <= this.lastTranscriptSequence + 1)
+    ) return false;
     this.lastTranscriptIdentity = identity;
+    this.lastTranscriptSequence = message.sequence;
     this.logger('transcription_received', {
       sequence: message.sequence,
       textLength: message.text.trim().length,

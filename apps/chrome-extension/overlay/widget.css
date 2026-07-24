@@ -1700,6 +1700,7 @@
   font-size: clamp(15px, 4.4cqw, 19px);
   font-weight: 680;
   line-height: 1.4;
+  animation: sv-caption-update 180ms ease-out;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
 }
@@ -1984,6 +1985,12 @@
 .sv-playback-captions .sv-caption--current {
   color: #fff;
   background: rgba(124, 108, 255, 0.34);
+  box-shadow: 0 0 0 1px rgba(169, 156, 255, 0.16);
+}
+
+@keyframes sv-caption-update {
+  from { opacity: 0.55; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .sv-playback-captions p {

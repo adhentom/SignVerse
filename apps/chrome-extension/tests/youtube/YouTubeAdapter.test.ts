@@ -115,7 +115,7 @@ describe('YouTubeCaptionSession', () => {
     expect(snapshot.status).toBe('playing');
     expect(snapshot.title).toBe('Test Video');
     expect(snapshot.timestamp).toBe('01:05');
-    expect(snapshot.currentPacket).toEqual({
+    expect(snapshot.currentPacket).toMatchObject({
       platform: 'youtube',
       title: 'Test Video',
       timestamp: '01:05',
@@ -127,6 +127,10 @@ describe('YouTubeCaptionSession', () => {
         captionsEnabled: true,
         isAdvertisement: false,
         isLive: false,
+        captionSource: 'youtube-dom',
+        captionStartMs: 65_000,
+        cueId: 'video-1:youtube-dom:65000:1',
+        playbackTimeMs: 65_000,
         playbackState: 'playing',
       },
     });
@@ -158,6 +162,12 @@ describe('YouTubeCaptionSession', () => {
     expect(latest().status).toBe('playing');
     expect(latest().metadata.captionsEnabled).toBe(false);
     expect(latest().currentPacket?.text).toBe('Transcript without visible captions');
+    expect(latest().currentPacket?.metadata).toMatchObject({
+      captionStartMs: 64_000,
+      captionEndMs: 67_000,
+      captionSource: 'youtube-track',
+      playbackTimeMs: 65_000,
+    });
     expect(latest().statusMessage).toContain('without displaying captions');
   });
 
@@ -177,6 +187,19 @@ describe('YouTubeCaptionSession', () => {
     expect(latest().history).toHaveLength(10);
     expect(latest().history[0]?.text).toBe('Caption 3');
     expect(latest().history.at(-1)?.text).toBe('Caption 12');
+  });
+
+  it('updates partial text in place while retaining one timestamped cue', async () => {
+    const { caption } = renderYouTubePlayer({ caption: 'A partial caption' });
+    const { latest } = startSession();
+    const cueId = latest().currentPacket?.metadata.cueId;
+
+    caption.textContent = 'A partial caption grows smoothly';
+    await flushObservers();
+
+    expect(latest().history).toHaveLength(1);
+    expect(latest().history[0]?.text).toBe('A partial caption grows smoothly');
+    expect(latest().currentPacket?.metadata.cueId).toBe(cueId);
   });
 
   it('reports disabled, unavailable, advertisement, paused, seeking, and live states', async () => {
