@@ -116,6 +116,67 @@ describe('FloatingWidget', () => {
     expect(retry).toHaveBeenCalledOnce();
   });
 
+  it('keeps translation in the sidebar and treats empty playback as attention, not an error', () => {
+    act(() => {
+      root.render(
+        <FloatingWidget
+          backendHealthState={{
+            status: 'connected',
+            health: {
+              status: 'ok',
+              service: 'signverse-api',
+              version: '0.1.0',
+              environment: 'test',
+            },
+          }}
+          contentState={{ status: 'loading' }}
+          interpretationState={{
+            status: 'ready',
+            response: {
+              summary: 'A short summary.',
+              malayalam_translation: 'ഇത് മലയാളം പരിഭാഷയാണ്.',
+              key_points: [],
+              keywords: [],
+              glossary: [],
+              isl_gloss: [],
+              confidence: 0.8,
+              playback: { items: [], unsupported_tokens: [] },
+            },
+          }}
+          liveState={null}
+          sourceText="This English source must not appear in the floating interpreter."
+          onRetry={vi.fn()}
+          platform={{
+            id: 'youtube',
+            displayName: 'YouTube',
+            modeLabel: 'YouTube Mode',
+            statusLabel: 'YouTube Interpretation',
+          }}
+        />,
+      );
+    });
+
+    const openButton = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Open SignVerse accessibility sidebar"]',
+    );
+    act(() => openButton?.click());
+
+    const sidebar = container.querySelector('aside');
+    const floatingInterpreter = container.querySelector('.sv-floating-interpreter-root');
+    expect(sidebar?.textContent).toContain('Malayalam Translation');
+    expect(sidebar?.textContent).toContain('ഇത് മലയാളം പരിഭാഷയാണ്.');
+    expect(floatingInterpreter?.textContent).not.toContain('ഇത് മലയാളം പരിഭാഷയാണ്.');
+    expect(floatingInterpreter?.textContent)
+      .not.toContain('This English source must not appear in the floating interpreter.');
+    expect(floatingInterpreter?.querySelector('.sv-floating-caption')).toBeNull();
+    const errorStatus = [...container.querySelectorAll('.sv-status-indicator')]
+      .find((status) => status.textContent === 'Error');
+    expect(errorStatus?.getAttribute('aria-current')).toBeNull();
+    expect(errorStatus?.classList.contains('sv-status-indicator--error')).toBe(false);
+    expect(floatingInterpreter?.querySelector('.sv-interpreter-status')?.textContent)
+      .toContain('Attention needed');
+  });
+
   it('announces transcript, backend, and processing states without hiding retry', () => {
     const retry = vi.fn();
     act(() => {

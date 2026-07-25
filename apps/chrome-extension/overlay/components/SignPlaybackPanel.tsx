@@ -5,7 +5,7 @@ import { usePlaybackController } from '../../playback/usePlaybackController';
 import type { InterpretationState, PlaybackSequence } from '../../shared/interpretation';
 import { AvatarRenderer } from './AvatarRenderer';
 import { CollapsibleCard } from './CollapsibleCard';
-import { EnglishCaptionTrack, FloatingCaption } from './EnglishCaptionTrack';
+import { EnglishCaptionTrack } from './EnglishCaptionTrack';
 import { UIIcon } from './UIIcon';
 import { useInterpreterGeometry } from '../hooks/useInterpreterGeometry';
 import { DEFAULT_AVATAR, type AvatarProfile } from '../../playback/avatarProfiles';
@@ -83,6 +83,7 @@ export function diagnosePlayback(state: InterpretationState): PlaybackDiagnostic
 
 export type InterpreterActivity =
   | 'Attention needed'
+  | 'Error'
   | 'Finished'
   | 'Idle'
   | 'Interpreting'
@@ -121,13 +122,15 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
   const { geometry, moveWithKeyboard, stageRef, startDrag } = useInterpreterGeometry();
   const playbackStatus = paused
     ? 'Paused'
-    : snapshot.state === 'Error' || activeDiagnostic
-      ? 'Attention needed'
-      : current
-        ? snapshot.state
-        : sourceText
-          ? 'Interpreting'
-          : 'Waiting';
+    : snapshot.state === 'Error'
+      ? 'Error'
+      : activeDiagnostic
+        ? 'Attention needed'
+        : current
+          ? snapshot.state
+          : sourceText
+            ? 'Interpreting'
+            : 'Waiting';
   const statusTone = snapshot.state === 'Error'
     ? 'error'
     : playbackStatus === 'Playing'
@@ -269,13 +272,6 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
             </button>
           </div>
         </header>
-        <FloatingCaption
-          caption={sourceText}
-          currentIndex={scheduled?.index ?? 0}
-          emptyMessage={sourceStatus || 'Waiting for speech or captions…'}
-          playbackItems={sequence.items}
-          signDurations={sequence.items.map((item) => item.duration)}
-        />
         {overlayState === 'visible' && (
           <>
             <div className="sv-interpreter-avatar-area">

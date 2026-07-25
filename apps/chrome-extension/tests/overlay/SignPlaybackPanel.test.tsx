@@ -54,7 +54,7 @@ describe('SignPlaybackPanel', () => {
     expect(container.querySelector('[aria-label="Move interpreter; use arrow keys or drag"]')).not.toBeNull();
     expect(container.querySelector('[aria-label="Minimize interpreter"]')).not.toBeNull();
     expect(container.querySelector('[aria-label="Close interpreter"]')).not.toBeNull();
-    expect(container.querySelector('.sv-floating-caption')?.textContent).toContain('Welcome');
+    expect(container.querySelector('.sv-floating-caption')).toBeNull();
     expect(container.textContent).toContain('object-water');
     expect(container.querySelector('input[aria-label="Playback timeline"]')).not.toBeNull();
     expect(container.textContent).toContain('English source');
@@ -66,7 +66,7 @@ describe('SignPlaybackPanel', () => {
     expect(container.querySelector('[aria-label="ISL avatar playback controller"]')?.getAttribute('tabindex')).toBe('0');
   });
 
-  it('minimizes, closes, and restores the floating interpreter while retaining captions', () => {
+  it('minimizes, closes, and restores the floating interpreter without source captions', () => {
     const portal = document.createElement('div');
     document.body.append(portal);
     act(() => {
@@ -84,19 +84,18 @@ describe('SignPlaybackPanel', () => {
     });
 
     const minimize = portal.querySelector<HTMLButtonElement>('[aria-label="Minimize interpreter"]');
-    const caption = portal.querySelector('.sv-floating-caption');
     const avatar = portal.querySelector('.sv-interpreter-avatar-area');
     const currentSign = portal.querySelector('.sv-current-sign');
-    expect(caption).not.toBeNull();
+    expect(portal.querySelector('.sv-floating-caption')).toBeNull();
+    expect(portal.textContent).not.toContain('Speech remains visible');
     expect(avatar).not.toBeNull();
     expect(currentSign).not.toBeNull();
-    expect(caption!.compareDocumentPosition(avatar!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(avatar!.compareDocumentPosition(currentSign!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(portal.querySelector('.sv-interpreter-status')?.textContent)
       .toContain('Attention needed');
     act(() => minimize?.click());
     expect(portal.querySelector('.sv-interpreter-overlay--minimized')).not.toBeNull();
-    expect(portal.querySelector('.sv-floating-caption')?.textContent).toContain('Speech remains visible');
+    expect(portal.querySelector('.sv-floating-caption')).toBeNull();
 
     const close = portal.querySelector<HTMLButtonElement>('[aria-label="Close interpreter"]');
     act(() => close?.click());
@@ -119,7 +118,7 @@ describe('SignPlaybackPanel', () => {
     expect(container.textContent).toContain('Preparing ISL playback');
   });
 
-  it('shows the floating audio caption while interpretation is still loading', () => {
+  it('keeps the floating interpreter available while loading without source captions', () => {
     const portal = document.createElement('div');
     document.body.append(portal);
     act(() => root.render(<SignPlaybackPanel
@@ -128,8 +127,8 @@ describe('SignPlaybackPanel', () => {
       state={{ status: 'loading' }}
     />));
 
-    expect(portal.querySelector('.sv-floating-caption')?.textContent)
-      .toContain('Audio transcription is ready.');
+    expect(portal.querySelector('.sv-floating-caption')).toBeNull();
+    expect(portal.textContent).not.toContain('Audio transcription is ready.');
     expect(portal.querySelector('[aria-label="Floating SignVerse interpreter"]')).not.toBeNull();
     portal.remove();
   });

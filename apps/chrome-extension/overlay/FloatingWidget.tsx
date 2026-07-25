@@ -80,7 +80,7 @@ function productionStatuses({
     sourceText.trim().length === 0;
   const error = backendHealthState.status === 'error' ||
     interpretationState.status === 'error' ||
-    playbackActivity === 'Attention needed' ||
+    playbackActivity === 'Error' ||
     sourceError;
   return [
     { label: 'Connected', active: backendHealthState.status === 'connected' },
