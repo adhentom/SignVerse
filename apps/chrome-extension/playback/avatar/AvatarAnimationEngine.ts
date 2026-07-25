@@ -3,6 +3,7 @@ import type { AvatarPoseSnapshot, RenderingDiagnostics } from '../types';
 import { AnimationController } from './controllers/AnimationController';
 import { ExpressionController } from './controllers/ExpressionController';
 import { HandController } from './controllers/HandController';
+import { IdleReadinessController } from './controllers/IdleReadinessController';
 import { RenderLoop } from './controllers/RenderLoop';
 import { RigController } from './controllers/RigController';
 import { SecondaryMotionController } from './controllers/SecondaryMotionController';
@@ -60,6 +61,7 @@ export class AvatarAnimationEngine {
   private readonly coArticulation: CoArticulationController;
   private readonly expression = new ExpressionController();
   private readonly hands = new HandController();
+  private readonly idleReadiness = new IdleReadinessController();
   private readonly rig: RigController;
   private readonly neutralPose: AvatarPoseSnapshot;
   private readonly mergedPose: Partial<Record<AvatarPart, AvatarPose>> = {};
@@ -243,6 +245,11 @@ export class AvatarAnimationEngine {
     let pose = this.holdNeutral ? {} : this.animation.sample();
     this.hands.apply(pose);
     pose = mergeWithNeutral(this.neutralPose, pose, this.mergedPose);
+    // The waiting avatar may move naturally, but governed sign clips remain
+    // authoritative and are never modified by this non-linguistic idle motion.
+    if (!this.animation.hasClip && !this.holdNeutral) {
+      this.idleReadiness.apply(pose, time, this.reducedMotion);
+    }
     pose = this.coArticulation.apply(pose);
     const terminalFrame = this.animation.finished && !this.coArticulation.active;
     this.wristAndFingers.apply(pose, elapsedSeconds, terminalFrame, this.reducedMotion);

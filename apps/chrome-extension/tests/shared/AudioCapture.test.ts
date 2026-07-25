@@ -7,7 +7,13 @@ describe('audio capture messaging', () => {
     expect(isAudioCaptureMessage({
       type: 'SIGNVERSE_AUDIO_FALLBACK_START',
       target: 'background',
+      tabId: 7,
     })).toBe(true);
+    expect(isAudioCaptureMessage({
+      type: 'SIGNVERSE_AUDIO_FALLBACK_START',
+      target: 'background',
+      tabId: '7',
+    })).toBe(false);
     expect(isAudioCaptureMessage({
       type: 'SIGNVERSE_AUDIO_TRANSCRIPT',
       target: 'content',

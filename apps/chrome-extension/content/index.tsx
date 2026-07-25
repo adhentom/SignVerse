@@ -69,9 +69,22 @@ function WidgetContainer() {
           target: 'background',
         } satisfies AudioCaptureMessage) as { error?: string; ok: boolean };
         if (!response.ok) {
+          const message = response.error ??
+            'Open the SignVerse toolbar popup to enable video-audio transcription.';
           console.warn('[SignVerse] audio_fallback_start_failed', {
-            error: response.error ?? 'Automatic audio capture could not start.',
+            error: message,
           });
+          setAudioLiveState((previous) => audioStatusSnapshot(
+            previous,
+            liveStateRef.current as YouTubeLiveSnapshot | null,
+            {
+              type: 'SIGNVERSE_AUDIO_CAPTURE_STATUS',
+              target: 'content',
+              tabId: -1,
+              status: 'error',
+              message,
+            },
+          ));
         }
         return response.ok;
       },
@@ -266,12 +279,16 @@ function WidgetContainer() {
       ? resolveLiveSourceText(effectiveLiveState)
       : ''
   );
+  const { retry: retryHealth, state: backendHealthState } = useBackendHealth(visible);
+  // Do not create a WebSocket until the service worker has confirmed that the
+  // backend is reachable. This keeps an extension/page reload from producing a
+  // native connection-refused error while FastAPI is still starting.
+  const streamingEnabled = visible && backendHealthState.status === 'connected';
   const { retry, state: interpretationState } = useStreamingInterpretation(
     activePacket,
     0,
-    visible,
+    streamingEnabled,
   );
-  const { retry: retryHealth, state: backendHealthState } = useBackendHealth(visible);
 
   useEffect(() => {
     if (!visible || !supportsLiveContent(platformAdapter)) {

@@ -171,7 +171,7 @@ function PlaybackController({ sequence, sourceStatus, sourceText, paused, portal
       detail: activeDiagnostic.detail,
       playbackItems: sequence.items.length,
       registeredAssets: signAssetRegistry.list().length,
-    }, 'warn');
+    });
   }, [
     activeDiagnostic?.code,
     activeDiagnostic?.detail,

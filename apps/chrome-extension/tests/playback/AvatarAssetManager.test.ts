@@ -47,6 +47,14 @@ afterEach(() => {
 });
 
 describe('AvatarAssetManager', () => {
+  it('treats an empty predeclared animation library as an on-demand state', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const manager = new AvatarAssetManager();
+
+    expect(warn).not.toHaveBeenCalled();
+    manager.dispose();
+  });
+
   it('discovers versioned avatar profiles and metadata libraries', () => {
     const manager = new AvatarAssetManager();
 

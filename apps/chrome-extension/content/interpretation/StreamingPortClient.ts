@@ -10,9 +10,27 @@ import {
   streamCorrelationId,
 } from '../../shared/runtimeDiagnostics';
 
+const EXTENSION_CONTEXT_INVALIDATED = /extension context invalidated/i;
+const EXTENSION_CONTEXT_INVALIDATED_MESSAGE =
+  'The extension was updated. Refresh this page to reconnect SignVerse.';
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string'
+  ) {
+    return error.message;
+  }
+  return String(error);
+}
+
 export class StreamingPortClient {
   private port?: chrome.runtime.Port;
   private closed = false;
+  private closeReason?: string;
   private sequence = 0;
   private sessionId = crypto.randomUUID();
   private listener?: (message: StreamServerMessage) => void;
@@ -21,8 +39,12 @@ export class StreamingPortClient {
   private reconnectTimer: number | undefined;
 
   constructor() {
-    this.connect();
+    const port = this.connect();
+    if (this.closed) {
+      throw new Error(this.closeReason ?? EXTENSION_CONTEXT_INVALIDATED_MESSAGE);
+    }
     window.addEventListener('pageshow', this.handlePageShow);
+    if (!port) this.scheduleReconnect();
   }
 
   private readonly handleMessage = (value: unknown) => {
@@ -78,7 +100,7 @@ export class StreamingPortClient {
       sessionId: this.sessionId,
       reason: 'service-worker-port-closed',
       pending: this.pending.size,
-    }, 'warn');
+    });
     this.listener?.({ type: 'status', status: 'reconnecting' });
     this.scheduleReconnect();
   };
@@ -95,7 +117,7 @@ export class StreamingPortClient {
       attempt: this.reconnectAttempt,
       delayMs,
       pending: this.pending.size,
-    }, 'warn');
+    });
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectTimer = undefined;
       this.reconnectAndReplay();
@@ -125,7 +147,7 @@ export class StreamingPortClient {
         this.port = undefined;
         runtimeDiagnostic('content_stream_replay_failed', {
           correlationId: streamCorrelationId(message.session_id, message.sequence),
-          message: error instanceof Error ? error.message : String(error),
+          message: errorMessage(error),
           sequence: message.sequence,
         }, 'error');
         this.scheduleReconnect();
@@ -149,10 +171,30 @@ export class StreamingPortClient {
       });
       return port;
     } catch (error) {
-      runtimeDiagnostic('content_stream_port_connect_failed', {
-        sessionId: this.sessionId,
-        message: error instanceof Error ? error.message : String(error),
-      }, 'error');
+      const message = errorMessage(error);
+      if (EXTENSION_CONTEXT_INVALIDATED.test(message)) {
+        this.closed = true;
+        this.closeReason = EXTENSION_CONTEXT_INVALIDATED_MESSAGE;
+        window.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = undefined;
+        window.removeEventListener('pageshow', this.handlePageShow);
+        runtimeDiagnostic('content_stream_context_invalidated', {
+          sessionId: this.sessionId,
+          message: this.closeReason,
+        });
+        this.listener?.({
+          type: 'error',
+          sequence: this.sequence,
+          session_id: this.sessionId,
+          code: 'extension-context-invalidated',
+          message: this.closeReason,
+        });
+      } else {
+        runtimeDiagnostic('content_stream_port_connect_failed', {
+          sessionId: this.sessionId,
+          message,
+        }, 'error');
+      }
       return undefined;
     }
   }
@@ -174,11 +216,7 @@ export class StreamingPortClient {
       } catch (retryError) {
         this.port = undefined;
         runtimeDiagnostic('content_stream_message_dropped', {
-          message: retryError instanceof Error
-            ? retryError.message
-            : error instanceof Error
-              ? error.message
-              : String(retryError),
+          message: errorMessage(retryError ?? error),
         }, 'error');
         return false;
       }
@@ -220,8 +258,8 @@ export class StreamingPortClient {
       runtimeDiagnostic('content_packet_not_sent', {
         correlationId,
         sequence: this.sequence,
-        reason: 'runtime-port-unavailable',
-      }, 'error');
+        reason: this.closeReason ?? 'runtime-port-unavailable',
+      }, this.closed ? 'info' : 'error');
       return undefined;
     }
     this.pending.set(this.sequence, message);
@@ -241,7 +279,10 @@ export class StreamingPortClient {
       correlationId: streamCorrelationId(this.sessionId, this.sequence),
       sequence: this.sequence,
     });
-    if (!this.post({ type: 'reset', sequence: this.sequence, session_id: this.sessionId })) {
+    if (
+      !this.closed &&
+      !this.post({ type: 'reset', sequence: this.sequence, session_id: this.sessionId })
+    ) {
       runtimeDiagnostic('streaming_context_reset_not_sent', {
         correlationId: streamCorrelationId(this.sessionId, this.sequence),
         sequence: this.sequence,

@@ -39,7 +39,7 @@ export class StreamingBridge {
     runtimeDiagnostic('stream_bridge_port_disconnected', {
       tabId: this.port.sender?.tab?.id ?? null,
       pending: this.pending.size,
-    }, 'warn');
+    });
     this.close();
   };
 
@@ -141,11 +141,14 @@ export class StreamingBridge {
       this.sent.clear();
       runtimeDiagnostic('stream_bridge_disconnected', {
         pending: this.pending.size,
-      }, 'warn');
+      });
       this.scheduleReconnect();
     });
     socket.addEventListener('error', () => {
-      runtimeDiagnostic('stream_bridge_socket_error', { url }, 'error');
+      runtimeDiagnostic('stream_bridge_socket_error', {
+        url,
+        recovery: 'automatic-reconnect',
+      });
       socket.close();
     });
   }
@@ -173,7 +176,7 @@ export class StreamingBridge {
       delayMs: delay,
       reconnectAttempt: this.reconnectAttempt,
       pending: this.pending.size,
-    }, 'warn');
+    });
     this.reconnectTimer = setTimeout(() => this.connect(), delay);
   }
 

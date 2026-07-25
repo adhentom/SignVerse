@@ -12,11 +12,13 @@ export interface AudioCaptureStartMessage {
 export interface AudioFallbackStartMessage {
   type: 'SIGNVERSE_AUDIO_FALLBACK_START';
   target: 'background';
+  tabId?: number;
 }
 
 export interface AudioFallbackStopMessage {
   type: 'SIGNVERSE_AUDIO_FALLBACK_STOP';
   target: 'background';
+  tabId?: number;
 }
 
 export interface AudioCaptureStopMessage {
@@ -59,7 +61,11 @@ export function isAudioCaptureMessage(value: unknown): value is AudioCaptureMess
     candidate.type === 'SIGNVERSE_AUDIO_FALLBACK_START' ||
     candidate.type === 'SIGNVERSE_AUDIO_FALLBACK_STOP'
   ) {
-    return candidate.target === 'background';
+    return (
+      candidate.target === 'background' &&
+      (candidate.tabId === undefined ||
+        (typeof candidate.tabId === 'number' && Number.isInteger(candidate.tabId)))
+    );
   }
   if (!('tabId' in candidate) || typeof candidate.tabId !== 'number') return false;
   if (candidate.type === 'SIGNVERSE_AUDIO_CAPTURE_START') {

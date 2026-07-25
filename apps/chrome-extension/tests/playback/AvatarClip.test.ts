@@ -110,6 +110,38 @@ describe('landmark avatar clips', () => {
     engine.dispose();
   });
 
+  it('never overlays idle hand motion on a governed sign clip', () => {
+    const svg = createSignVerseInterpreterSvg();
+    const engine = new AvatarAnimationEngine(svg, {
+      id: 'governed-hand-pose',
+      duration: 1,
+      keyframes: [
+        {
+          offset: 0,
+          pose: {
+            'left-hand': { rotation: 20 },
+            'right-hand': { rotation: -15 },
+          },
+        },
+        {
+          offset: 1,
+          pose: {
+            'left-hand': { rotation: 20 },
+            'right-hand': { rotation: -15 },
+          },
+        },
+      ],
+    });
+
+    engine.seek(0.5);
+
+    expect(svg.querySelector('[data-avatar-part="left-hand"]')?.getAttribute('transform'))
+      .toBe('rotate(20)');
+    expect(svg.querySelector('[data-avatar-part="right-hand"]')?.getAttribute('transform'))
+      .toBe('rotate(-15)');
+    engine.dispose();
+  });
+
   it('ignores per-bone translation and scaling so clips cannot detach limbs', () => {
     const svg = createSignVerseInterpreterSvg();
     const engine = new AvatarAnimationEngine(svg, {

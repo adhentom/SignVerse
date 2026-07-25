@@ -174,6 +174,7 @@ describe('SignPlaybackPanel', () => {
   });
 
   it('diagnoses a valid backend response with no governed gloss or playback', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     act(() => {
       root.render(<SignPlaybackPanel state={{
         status: 'ready',
@@ -194,6 +195,9 @@ describe('SignPlaybackPanel', () => {
     expect(container.textContent)
       .toContain('The interpretation provider returned no governed ISL gloss.');
     expect(container.textContent).not.toContain('Preparing interpretation');
+    expect(warn.mock.calls.some(([message]) => (
+      typeof message === 'string' && message.includes('playback_blocked')
+    ))).toBe(false);
   });
 
   it('supports keyboard movement and persists interpreter geometry', () => {

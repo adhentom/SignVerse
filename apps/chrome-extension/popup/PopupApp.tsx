@@ -9,11 +9,14 @@ import {
   setDomainEnabled,
   type SitePreferences,
 } from '../shared/sitePreferences';
+import type { AudioCaptureMessage } from '../shared/audioCapture';
 
 interface PageState {
   hostname: string;
   pageTitle: string;
   preferences: SitePreferences;
+  tabId: number;
+  url: string;
 }
 
 type ViewState =
@@ -32,11 +35,15 @@ async function getActiveTab(): Promise<chrome.tabs.Tab> {
 
 async function loadPageState(): Promise<PageState> {
   const [tab, preferences] = await Promise.all([getActiveTab(), getSitePreferences()]);
+  const tabId = tab.id;
+  if (tabId === undefined) throw new Error('No active browser tab is available.');
   const hostname = new URL(tab.url ?? '').hostname;
   return {
     hostname,
     pageTitle: tab.title || 'Untitled page',
     preferences,
+    tabId,
+    url: tab.url ?? '',
   };
 }
 
@@ -110,12 +117,56 @@ function SiteControls({
   hostname,
   pageTitle,
   preferences,
+  tabId,
+  url,
   onPreferencesChange,
 }: PageState & { onPreferencesChange: (preferences: SitePreferences) => void }) {
   const [domainInput, setDomainInput] = useState('');
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [audioState, setAudioState] = useState<
+    { kind: 'idle' | 'listening' | 'starting' } | { kind: 'error'; message: string }
+  >({ kind: 'idle' });
   const enabled = isSiteEnabled(hostname, preferences);
+  const isYouTubeWatchPage =
+    /(^|\.)youtube\.com$/iu.test(hostname) &&
+    (new URL(url).pathname === '/watch' || new URL(url).pathname.startsWith('/shorts/'));
+
+  async function startVideoAudio(): Promise<void> {
+    setAudioState({ kind: 'starting' });
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: 'SIGNVERSE_AUDIO_FALLBACK_START',
+        target: 'background',
+        tabId,
+      } satisfies AudioCaptureMessage) as { error?: string; ok: boolean };
+      setAudioState(response.ok
+        ? { kind: 'listening' }
+        : {
+            kind: 'error',
+            message: response.error ?? 'Video-audio transcription could not start.',
+          });
+    } catch (error) {
+      setAudioState({
+        kind: 'error',
+        message: error instanceof Error
+          ? error.message
+          : 'Video-audio transcription could not start.',
+      });
+    }
+  }
+
+  async function stopVideoAudio(): Promise<void> {
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'SIGNVERSE_AUDIO_FALLBACK_STOP',
+        target: 'background',
+        tabId,
+      } satisfies AudioCaptureMessage);
+    } finally {
+      setAudioState({ kind: 'idle' });
+    }
+  }
 
   async function update(operation: () => Promise<SitePreferences>) {
     setSaving(true);
@@ -183,6 +234,40 @@ function SiteControls({
             : 'Extraction, backend connections, audio capture, and the interpreter are stopped here.'}
         </p>
       </div>
+
+      {isYouTubeWatchPage && enabled && (
+        <div className="rounded-2xl border border-cyan-300/20 bg-cyan-400/10 p-5">
+          <h2 className="text-sm font-semibold text-cyan-100">
+            Listen without YouTube captions
+          </h2>
+          <p className="mt-1 text-xs leading-5 text-cyan-100/70">
+            Use the video&apos;s English audio when no official transcript is available.
+            Chrome requires this one-click action for each newly opened YouTube tab.
+          </p>
+          <button
+            aria-label={audioState.kind === 'listening'
+              ? 'Stop listening to YouTube video audio'
+              : 'Start listening to YouTube video audio without captions'}
+            className="mt-4 w-full rounded-xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-wait disabled:opacity-60 motion-reduce:transition-none"
+            disabled={audioState.kind === 'starting'}
+            onClick={() => void (
+              audioState.kind === 'listening' ? stopVideoAudio() : startVideoAudio()
+            )}
+            type="button"
+          >
+            {audioState.kind === 'starting'
+              ? 'Connecting to video audio…'
+              : audioState.kind === 'listening'
+                ? 'Stop listening'
+                : 'Listen without captions'}
+          </button>
+          {audioState.kind === 'error' && (
+            <p className="mt-3 text-xs leading-5 text-rose-200" role="alert">
+              {audioState.message}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
         <h2 className="text-sm font-semibold text-slate-100">Excluded domains</h2>

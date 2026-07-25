@@ -11,12 +11,14 @@ describe('PopupApp production controls', () => {
   let container: HTMLDivElement;
   let root: Root;
   let preferences: SitePreferences;
+  let sendMessage: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     container = document.createElement('div');
     document.body.append(container);
     root = createRoot(container);
     preferences = { onboardingComplete: false, excludedDomains: [] };
+    sendMessage = vi.fn(async () => ({ ok: true, tabId: 9 }));
   });
 
   afterEach(() => {
@@ -27,6 +29,7 @@ describe('PopupApp production controls', () => {
 
   function installChrome(url: string) {
     vi.stubGlobal('chrome', {
+      runtime: { sendMessage },
       tabs: {
         query: vi.fn(async () => [{
           id: 9,
@@ -113,5 +116,25 @@ describe('PopupApp production controls', () => {
     );
     await act(async () => remove?.click());
     expect(preferences.excludedDomains).not.toContain('news.example.org');
+  });
+
+  it('starts user-authorized video audio without enabling YouTube captions', async () => {
+    preferences = { onboardingComplete: true, excludedDomains: [] };
+    installChrome('https://www.youtube.com/watch?v=no-transcript');
+    await renderPopup();
+
+    const listen = container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Start listening to YouTube video audio without captions"]',
+    );
+    expect(listen).not.toBeNull();
+
+    await act(async () => listen?.click());
+
+    expect(sendMessage).toHaveBeenCalledWith({
+      type: 'SIGNVERSE_AUDIO_FALLBACK_START',
+      target: 'background',
+      tabId: 9,
+    });
+    expect(container.textContent).toContain('Stop listening');
   });
 });

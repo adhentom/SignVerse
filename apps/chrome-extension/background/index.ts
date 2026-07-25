@@ -12,6 +12,7 @@ import {
   type AudioCaptureMessage,
 } from '../shared/audioCapture';
 import { runtimeDiagnostic } from '../shared/runtimeDiagnostics';
+import { ensureAudioOffscreenDocument } from './offscreenDocument';
 
 const backendConfig = getBackendConfig();
 const backendClient = new BackendClient(backendConfig);
@@ -47,6 +48,10 @@ chrome.runtime.onConnect.addListener((port) => {
     }, 'warn');
   }
   port.onDisconnect.addListener(() => {
+    // Chrome may attach a lastError when a page enters BFCache or an unpacked
+    // extension is reloaded. Reading it here prevents an unchecked runtime
+    // error from being recorded for this bookkeeping-only listener.
+    void chrome.runtime.lastError?.message;
     const remaining = Math.max(0, (activeStreamPorts.get(key) ?? 1) - 1);
     if (remaining === 0) activeStreamPorts.delete(key);
     else activeStreamPorts.set(key, remaining);
@@ -69,17 +74,8 @@ chrome.runtime.onMessage.addListener((message: unknown, sender) => {
   }
 });
 
-async function ensureOffscreenDocument(): Promise<void> {
-  if (await chrome.offscreen.hasDocument()) return;
-  await chrome.offscreen.createDocument({
-    url: 'offscreen.html',
-    reasons: [chrome.offscreen.Reason.USER_MEDIA],
-    justification: 'Capture user-authorized tab audio for accessible live transcription.',
-  });
-}
-
 async function startAudioCapture(tabId: number, streamId: string): Promise<void> {
-  await ensureOffscreenDocument();
+  await ensureAudioOffscreenDocument();
   await chrome.storage.local.set({ [AUDIO_CAPTURE_STORAGE_KEY]: tabId });
   await chrome.runtime.sendMessage({
     type: 'SIGNVERSE_AUDIO_CAPTURE_START',
@@ -109,7 +105,7 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.type === 'SIGNVERSE_AUDIO_FALLBACK_START') {
-      const tabId = sender.tab?.id;
+      const tabId = message.tabId ?? sender.tab?.id;
       if (tabId === undefined) {
         sendResponse({ ok: false, error: 'Automatic audio capture requires a browser tab.' });
         return false;
@@ -119,16 +115,21 @@ chrome.runtime.onMessage.addListener(
         .then(() => sendResponse({ ok: true, tabId }))
         .catch((error: unknown) => {
           console.error('[SignVerse] audio_fallback_start_failed', error);
+          const detail = error instanceof Error
+            ? error.message
+            : 'Automatic audio capture could not start.';
           sendResponse({
             ok: false,
-            error: error instanceof Error ? error.message : 'Automatic audio capture could not start.',
+            error: /not been invoked|activeTab|user gesture/iu.test(detail)
+              ? 'Open the SignVerse toolbar popup on this YouTube tab and select “Listen without YouTube captions”.'
+              : detail,
           });
         });
       return true;
     }
 
     if (message.type === 'SIGNVERSE_AUDIO_FALLBACK_STOP') {
-      const tabId = sender.tab?.id;
+      const tabId = message.tabId ?? sender.tab?.id;
       if (tabId === undefined) {
         sendResponse({ ok: false, error: 'Automatic audio capture requires a browser tab.' });
         return false;

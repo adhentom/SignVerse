@@ -133,8 +133,9 @@ export class AvatarAssetManager {
     });
     if (this.bundle.animations.length === 0) {
       runtimeDiagnostic('avatar_animation_library_empty', {
-        diagnosis: 'No approved animation found in this extension build.',
-      }, 'warn');
+        diagnosis:
+          'No predeclared animation assets are bundled; validated playback assets load on demand.',
+      });
     }
     this.preloadAnimationLibrary();
   }

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AnimationController } from '../../playback/avatar/controllers/AnimationController';
 import { BlendController } from '../../playback/avatar/controllers/BlendController';
 import { HandController } from '../../playback/avatar/controllers/HandController';
+import { IdleReadinessController } from '../../playback/avatar/controllers/IdleReadinessController';
 import { RenderLoop } from '../../playback/avatar/controllers/RenderLoop';
 import { SecondaryMotionController } from '../../playback/avatar/controllers/SecondaryMotionController';
 import type { MotionPose } from '../../playback/avatar/motion/types';
@@ -70,6 +71,43 @@ describe('production avatar controllers', () => {
     expect(pose['left-index-pip'].rotation).toBe(44);
     expect(pose['left-index-dip'].rotation).toBe(32);
     expect(pose).toMatchObject({ 'left-middle-pip': { rotation: 108 } });
+  });
+
+  it('adds a visible, bilateral hand readiness motion only while idle', () => {
+    const idle = new IdleReadinessController();
+    const pose: MotionPose = {
+      'left-hand': { rotation: 0 },
+      'right-hand': { rotation: 0 },
+      'left-forearm': { rotation: 0 },
+      'right-forearm': { rotation: 0 },
+    };
+
+    idle.apply(pose, 660, false);
+
+    expect(Math.abs(pose['left-hand']?.rotation ?? 0)).toBeGreaterThan(5);
+    expect(pose['right-hand']?.rotation).toBeCloseTo(
+      -(pose['left-hand']?.rotation ?? 0),
+      8,
+    );
+    expect(pose['right-forearm']?.rotation).toBeCloseTo(
+      -(pose['left-forearm']?.rotation ?? 0),
+      8,
+    );
+  });
+
+  it('disables idle hand motion when reduced motion is requested', () => {
+    const idle = new IdleReadinessController();
+    const pose: MotionPose = {
+      'left-hand': { rotation: 3 },
+      'right-hand': { rotation: -3 },
+    };
+
+    idle.apply(pose, 660, true);
+
+    expect(pose).toEqual({
+      'left-hand': { rotation: 3 },
+      'right-hand': { rotation: -3 },
+    });
   });
 
   it('preserves hold timing and continuous velocity across approved keyframes', () => {

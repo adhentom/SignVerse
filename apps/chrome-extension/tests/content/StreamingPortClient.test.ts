@@ -83,6 +83,71 @@ describe('StreamingPortClient', () => {
     client.close();
   });
 
+  it('stops reconnecting when an extension reload invalidates the runtime context', async () => {
+    vi.useFakeTimers();
+    const first = port();
+    const connect = vi.fn()
+      .mockReturnValueOnce(first.value)
+      .mockImplementationOnce(() => {
+        throw new Error('Extension context invalidated.');
+      });
+    vi.stubGlobal('chrome', { runtime: { connect, lastError: undefined } });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const client = new StreamingPortClient();
+    const received: unknown[] = [];
+    client.subscribe((message) => received.push(message));
+    first.onDisconnect.emit();
+    await vi.runOnlyPendingTimersAsync();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(connect).toHaveBeenCalledTimes(2);
+    expect(received).toContainEqual({
+      type: 'error',
+      sequence: 0,
+      session_id: expect.any(String),
+      code: 'extension-context-invalidated',
+      message: 'The extension was updated. Refresh this page to reconnect SignVerse.',
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+    client.close();
+  });
+
+  it('reports an already-invalidated context without installing reconnect work', async () => {
+    vi.useFakeTimers();
+    const connect = vi.fn(() => {
+      throw new Error('Extension context invalidated.');
+    });
+    vi.stubGlobal('chrome', { runtime: { connect, lastError: undefined } });
+
+    expect(() => new StreamingPortClient()).toThrow(
+      'The extension was updated. Refresh this page to reconnect SignVerse.',
+    );
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(connect).toHaveBeenCalledOnce();
+  });
+
+  it('recognizes Chrome invalidation errors represented as plain objects', async () => {
+    vi.useFakeTimers();
+    const first = port();
+    const connect = vi.fn()
+      .mockReturnValueOnce(first.value)
+      .mockImplementationOnce(() => {
+        throw { message: 'Extension context invalidated.' };
+      });
+    vi.stubGlobal('chrome', { runtime: { connect, lastError: undefined } });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const client = new StreamingPortClient();
+    first.onDisconnect.emit();
+    await vi.runOnlyPendingTimersAsync();
+    await vi.advanceTimersByTimeAsync(60_000);
+
+    expect(connect).toHaveBeenCalledTimes(2);
+    expect(errorSpy).not.toHaveBeenCalled();
+    client.close();
+  });
+
   it('drops stale interpretation responses after a reading-context reset', () => {
     const connection = port();
     vi.stubGlobal('chrome', {
