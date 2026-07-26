@@ -73,26 +73,50 @@ describe('production avatar controllers', () => {
     expect(pose).toMatchObject({ 'left-middle-pip': { rotation: 108 } });
   });
 
-  it('adds a visible, bilateral hand readiness motion only while idle', () => {
+  it('raises one open palm and waves it as a recognizable idle greeting', () => {
     const idle = new IdleReadinessController();
-    const pose: MotionPose = {
-      'left-hand': { rotation: 0 },
-      'right-hand': { rotation: 0 },
-      'left-forearm': { rotation: 0 },
+    const initialPose: MotionPose = {
+      'right-upper-arm': { rotation: 74 },
       'right-forearm': { rotation: 0 },
+      'right-hand': { rotation: 0 },
+    };
+    const raisedPose: MotionPose = {
+      'right-upper-arm': { rotation: 74 },
+      'right-forearm': { rotation: 0 },
+      'right-hand': { rotation: 0 },
     };
 
-    idle.apply(pose, 660, false);
+    idle.apply(initialPose, 5_000, false);
+    idle.apply(raisedPose, 5_000 + 750 + 2_050 / 12, false);
 
-    expect(Math.abs(pose['left-hand']?.rotation ?? 0)).toBeGreaterThan(5);
-    expect(pose['right-hand']?.rotation).toBeCloseTo(
-      -(pose['left-hand']?.rotation ?? 0),
-      8,
-    );
-    expect(pose['right-forearm']?.rotation).toBeCloseTo(
-      -(pose['left-forearm']?.rotation ?? 0),
-      8,
-    );
+    expect(initialPose['right-upper-arm']?.rotation).toBe(74);
+    expect(raisedPose['right-upper-arm']?.rotation).toBe(20);
+    expect(raisedPose['right-forearm']?.rotation).toBe(-112);
+    expect(raisedPose['right-hand']?.rotation).toBeCloseTo(22, 5);
+    expect(raisedPose['right-hand']?.scaleY).toBe(1);
+    expect(raisedPose['left-hand']).toBeUndefined();
+  });
+
+  it('returns to rest between greetings and restarts after governed playback', () => {
+    const idle = new IdleReadinessController();
+    const restingPose: MotionPose = {
+      'right-upper-arm': { rotation: 74 },
+      'right-forearm': { rotation: 0 },
+      'right-hand': { rotation: 0 },
+    };
+
+    idle.apply(restingPose, 2_000, false);
+    idle.apply(restingPose, 2_000 + 4_000, false);
+
+    expect(restingPose).toEqual({
+      'right-upper-arm': { rotation: 74 },
+      'right-forearm': { rotation: 0 },
+      'right-hand': { rotation: 0 },
+    });
+
+    idle.reset();
+    idle.apply(restingPose, 20_000, false);
+    expect(restingPose['right-upper-arm']?.rotation).toBe(74);
   });
 
   it('disables idle hand motion when reduced motion is requested', () => {

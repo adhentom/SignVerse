@@ -249,6 +249,8 @@ export class AvatarAnimationEngine {
     // authoritative and are never modified by this non-linguistic idle motion.
     if (!this.animation.hasClip && !this.holdNeutral) {
       this.idleReadiness.apply(pose, time, this.reducedMotion);
+    } else {
+      this.idleReadiness.reset();
     }
     pose = this.coArticulation.apply(pose);
     const terminalFrame = this.animation.finished && !this.coArticulation.active;

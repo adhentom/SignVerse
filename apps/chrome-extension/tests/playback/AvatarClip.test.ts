@@ -119,15 +119,17 @@ describe('landmark avatar clips', () => {
         {
           offset: 0,
           pose: {
-            'left-hand': { rotation: 20 },
-            'right-hand': { rotation: -15 },
+            'right-upper-arm': { rotation: 38 },
+            'right-forearm': { rotation: -76 },
+            'right-hand': { rotation: -15, scaleY: 0.84 },
           },
         },
         {
           offset: 1,
           pose: {
-            'left-hand': { rotation: 20 },
-            'right-hand': { rotation: -15 },
+            'right-upper-arm': { rotation: 38 },
+            'right-forearm': { rotation: -76 },
+            'right-hand': { rotation: -15, scaleY: 0.84 },
           },
         },
       ],
@@ -135,10 +137,14 @@ describe('landmark avatar clips', () => {
 
     engine.seek(0.5);
 
-    expect(svg.querySelector('[data-avatar-part="left-hand"]')?.getAttribute('transform'))
-      .toBe('rotate(20)');
+    expect(svg.querySelector('[data-avatar-part="right-upper-arm"]')?.getAttribute('transform'))
+      .toBe('rotate(38)');
+    expect(svg.querySelector('[data-avatar-part="right-forearm"]')?.getAttribute('transform'))
+      .toBe('rotate(-76)');
     expect(svg.querySelector('[data-avatar-part="right-hand"]')?.getAttribute('transform'))
       .toBe('rotate(-15)');
+    expect(svg.querySelector('[data-avatar-hand-artwork="right"]')?.getAttribute('transform'))
+      .toBe('scale(1 0.84)');
     engine.dispose();
   });
 
